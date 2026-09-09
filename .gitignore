@@ -1,0 +1,37 @@
+# HANNA v2 — .gitignore
+# Keep secrets and environment out of the repo (project will go public later).
+
+# Environments / secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+config.local.yaml
+config.local.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Data / artifacts
+# Patient-card images and fetched data are SENSITIVE — never commit real patient forms.
+uploads/
+output/
+verification_output/
+test_output/
+*.zip
+*.db
+*.sqlite3
+# Real patient form photos (add to test fixtures only if clearly synthetic/consented)
+**/patient_forms/
+
+# Node
+node_modules/
+
+# OS / editor
+.DS_Store
