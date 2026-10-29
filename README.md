@@ -156,6 +156,10 @@ Three processes, no framework beyond FastAPI on the existing venv:
 curl -s localhost:8100/healthz
 ```
 
+Bench screen 1 is at `http://127.0.0.1:8100/` — consent, country, camera with the client
+gate (sharpness, light, glare), upload, and the live stream. No framework, no web fonts,
+about 20 KB of HTML/CSS/JS in total.
+
 Upload and watch one card:
 
 ```bash

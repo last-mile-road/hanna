@@ -101,3 +101,13 @@ def test_reuploading_a_known_card_does_not_repoint_it():
     assert second_card["id"] == first_card["id"], "same bytes must not create a second card"
     assert second_card["image_path"] == first_card["image_path"]
     assert second_card["kind"] == "upload"
+
+
+def test_bench_page_is_served():
+    response = client.get("/")
+    assert response.status_code == 200
+    body = response.text
+    assert "HANNA" in body
+    assert "attested_dummy" not in body  # the attestation is sent by the client, not typed
+    assert client.get("/static/bench.css").status_code == 200
+    assert client.get("/static/bench.js").status_code == 200

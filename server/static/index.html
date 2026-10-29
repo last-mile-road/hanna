@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>HANNA — testar cartão</title>
+<link rel="stylesheet" href="/static/bench.css">
+</head>
+<body>
+<header>
+  <div class="brand">HANNA</div>
+  <div class="tag">Servidor de teste</div>
+</header>
+
+<main>
+  <!-- 1. consent -->
+  <section id="view-consent" class="view">
+    <h1>Antes de começar</h1>
+    <div class="card">
+      <p><strong>Use apenas cartões de teste.</strong> Não fotografe cartões de doentes reais.
+      Este servidor é público e as imagens são enviadas a um serviço de inferência externo.</p>
+      <p><strong>Verifique cada valor.</strong> O que aceitar passa a alimentar as estatísticas de
+      precisão e o treino do modelo. Um valor aceite sem ser lido torna os números menos úteis.</p>
+    </div>
+    <label class="check">
+      <input type="checkbox" id="consent">
+      <span>Confirmo que este cartão é um cartão de teste e que vou verificar cada valor
+      contra o cartão antes de submeter.</span>
+    </label>
+    <button id="consent-next" disabled>Continuar</button>
+  </section>
+
+  <!-- 2. country -->
+  <section id="view-country" class="view hidden">
+    <h1>País</h1>
+    <div class="card">
+      <label for="country">Cartão a testar</label>
+      <select id="country">
+        <option value="mozambique">Moçambique — Ficha clínica lepra</option>
+      </select>
+    </div>
+    <button id="country-next">Abrir câmara</button>
+  </section>
+
+  <!-- 3. capture -->
+  <section id="view-capture" class="view hidden">
+    <h1>Fotografar o cartão</h1>
+    <p class="hint">Segure o telefone na horizontal, com o cartão inteiro dentro do ecrã,
+    luz uniforme e sem sombra da mão.</p>
+
+    <div class="stage">
+      <video id="video" playsinline muted autoplay class="hidden"></video>
+      <img id="preview" alt="" class="hidden">
+      <div id="placeholder" class="placeholder">A câmara ainda não está aberta</div>
+    </div>
+
+    <div id="gate" class="gate hidden">
+      <div class="gate-row"><span>Nitidez</span><b id="g-blur">—</b></div>
+      <div class="gate-row"><span>Luz</span><b id="g-bright">—</b></div>
+      <div class="gate-row"><span>Reflexo</span><b id="g-glare">—</b></div>
+      <div id="gate-reason" class="gate-reason"></div>
+    </div>
+
+    <div class="actions">
+      <button id="btn-start">Abrir câmara</button>
+      <button id="btn-shot" class="hidden">Tirar fotografia</button>
+      <button id="btn-retake" class="secondary hidden">Repetir</button>
+      <button id="btn-upload" class="hidden">Enviar para análise</button>
+      <label class="file-fallback">
+        <input type="file" id="file" accept="image/jpeg,image/png" hidden>
+        <span class="link" id="btn-file">Sem câmara? Escolher ficheiro</span>
+      </label>
+    </div>
+    <p id="file-note" class="hint hidden">Atenção: um ficheiro escolhido do telefone fica
+    guardado no dispositivo. Prefira a câmara.</p>
+    <p id="size-note" class="hint"></p>
+  </section>
+
+  <!-- 4. progress -->
+  <section id="view-progress" class="view hidden">
+    <h1>A ler o cartão</h1>
+    <p id="progress-status" class="hint">Em fila…</p>
+    <div id="blocks" class="blocks"></div>
+    <p class="hint">Pode fechar o ecrã? Não — o resultado chega a esta página.</p>
+  </section>
+
+  <!-- 5. verdict -->
+  <section id="view-verdict" class="view hidden">
+    <h1 id="verdict-title">Resultado</h1>
+    <p id="verdict-sub" class="hint"></p>
+    <div id="verdict-issues"></div>
+    <div class="actions">
+      <button id="btn-again">Corrigir o cartão e fotografar de novo</button>
+      <button id="btn-done" class="secondary">Terminar</button>
+    </div>
+    <p id="verdict-meta" class="hint"></p>
+  </section>
+</main>
+
+<footer>
+  <span id="net"></span>
+</footer>
+<script src="/static/bench.js"></script>
+</body>
+</html>
