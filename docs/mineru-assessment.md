@@ -75,6 +75,48 @@ This is the strongest argument for keeping MinerU: two independent readers that 
 different ways (the VLM swaps columns, the OCR drops cells) turn a silent wrong answer into
 a flagged one.
 
+## Audit, resolved by eye (2026-10-29)
+
+The five disputed fields were cropped from the aligned cards and read directly. Two of my
+earlier conclusions were wrong.
+
+| card | field | card reads | stored truth | verdict |
+|---|---|---|---|---|
+| form19 | patient_name | **Maria** José de Souza | Marie Jose de Souza | truth wrong |
+| form21 | locality | Namgogotra | Namogelia | truth wrong |
+| form16 | reference_person | Chefe da Aldera | Chefe da Aldera | truth right, **pipeline wrong** (it normalised to Aldeia) |
+| form16 | contact_number | 82543260, with a stroke over the last digits | 82543210 | probably truth wrong; the stroke may be a correction — leave it |
+| form19 | contact_number | 82123321 (8 digits) | 821233210 (9) | probably truth wrong; the `Sexo:` label overlaps the last digit — check |
+
+So the first pass through the audit yields **two confirmed truth errors, two to verify and
+one pipeline error I had misattributed to the sheet**. That is the real yield: the audit
+works, and it corrected the auditor.
+
+## Block crop versus whole card
+
+The owner's hypothesis holds. Same reader, same card: form16's nerve grid scores **8/12 on
+the whole aligned card** and **11/12 on the `debug_nerve_wide` crop** (enlargement exactly
+right, `- + - - - +`; pain 5/6). Cropping to the block is what makes the grid assignable —
+which is also why the pipeline sends crops rather than the page.
+
+## Treatment grid
+
+form16's grid shows one filled cell (`31/5`) in the May column and blanks elsewhere, which
+matches the truth (start 2025-05-31, one dose, one month). form19 is blank throughout, which
+matches zero doses. form21 shows none of its single dose. So cell occupancy is readable on
+two of three, and it is a better emptiness signal than any model's opinion.
+
+## Coordinates and confidence
+
+- **Coordinates: yes.** `middle.json` carries a normalised bbox (0–1) on every block, line
+  and span, plus the block type; `model.json` carries the raw detections. Verified in the
+  installed 4.0.12 schema (`docvortex.schema.BlockBase.bbox`).
+- **Per-cell coordinates: no.** The HTML table has `colspan`/`rowspan` only, so a cell's box
+  must be reconstructed from the block box and the table geometry.
+- **Confidence: no.** There is no `score` field anywhere in the 4.0.12 public schema
+  (`middle.json` or `model.json`). Any arbitration must come from reader agreement, not
+  from a confidence number.
+
 ## Cost and speed
 
 No API cost: it runs locally. I did not measure wall time — this install reports no local
