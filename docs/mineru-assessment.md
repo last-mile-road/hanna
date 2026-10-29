@@ -19,8 +19,8 @@ property, because it is exactly the mapping the VLM prompt has to re-derive from
 ## Where it is strong
 
 **Numbers, IDs and dates.** All 11 identifier/number/date values across the three cards are
-present in MinerU's text: NIL `KDR-55-7210`, `82543260`, `82123321`, `1972`, `1968`, `1984`,
-and the three diagnosis dates. The routed pipeline scored 9/11 on the same fields, and three
+present in MinerU's text: the form16 NIL, two mobile numbers, three birth years, and the
+three diagnosis dates. The routed pipeline scored 9/11 on the same fields, and three
 of its two misses turned out to be suspect ground truth (below).
 
 **Clean tables.** On form19 MinerU read the nerve grid 12/12 (enlargement
@@ -59,9 +59,8 @@ extraction failures:
 
 | card | field | pipeline | sheet | second reader |
 |---|---|---|---|---|
-| form16 | contact_number | 82543260 | 82543210 | 82543260 |
-| form19 | contact_number | 82123321 | 821233210 (10 digits) | 82123321 |
-| form19 | patient_name | Maria Jose de Souza | Marie Jose de Souza | Maria José de Souza |
+| form16 | contact_number | ...3260 | ...3210 | ...3260 |
+| form19 | contact_number | 8 digits | 10 digits | 8 digits |
 | form16 | reference_person | Chefe da Aldeia | Chefe da Aldera | Chefe da Aldera |
 | form21 | locality | Nangogotia | Namogelia | Namgogetra |
 
@@ -82,11 +81,11 @@ earlier conclusions were wrong.
 
 | card | field | card reads | stored truth | verdict |
 |---|---|---|---|---|
-| form19 | patient_name | **Maria** José de Souza | Marie Jose de Souza | truth wrong |
+| form19 | patient_name | first name **Maria** | sheet says Marie | truth wrong |
 | form21 | locality | Namgogotra | Namogelia | truth wrong |
 | form16 | reference_person | Chefe da Aldera | Chefe da Aldera | truth right, **pipeline wrong** (it normalised to Aldeia) |
-| form16 | contact_number | 82543260, with a stroke over the last digits | 82543210 | probably truth wrong; the stroke may be a correction — leave it |
-| form19 | contact_number | 82123321 (8 digits) | 821233210 (9) | probably truth wrong; the `Sexo:` label overlaps the last digit — check |
+| form16 | contact_number | ...3260, with a stroke over the last digits | ...3210 | probably truth wrong; the stroke may be a correction — leave it |
+| form19 | contact_number | 8 digits | sheet has 9 | probably truth wrong; the `Sexo:` label overlaps the last digit — check |
 
 So the first pass through the audit yields **two confirmed truth errors, two to verify and
 one pipeline error I had misattributed to the sheet**. That is the real yield: the audit

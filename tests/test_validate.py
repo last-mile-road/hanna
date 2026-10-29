@@ -8,8 +8,8 @@ AS_OF = date(2026, 10, 28)
 
 def base_values():
     values = {
-        "unique_nr": "KDR-55-7210",
-        "patient_name": "Samuel Alberto Joao",
+        "unique_nr": "TEST-000-0001",
+        "patient_name": "Jose da Silva",
         "birth_year": "1990",
         "gender": "M",
         "district": "Balama",

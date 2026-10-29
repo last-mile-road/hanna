@@ -46,7 +46,7 @@ def test_numbers_and_dates():
 
 
 def test_text_ignores_accents_but_not_meaning():
-    assert n.compare("person_name", "Samuel Alberto Joao", "Samuel Alberto João") is True
+    assert n.compare("person_name", "Jose da Silva", "José da Silva") is True
     assert n.compare("text", "Na Cava", "Na cara") is False
 
 
