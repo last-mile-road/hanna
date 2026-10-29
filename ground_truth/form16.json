@@ -1,9 +1,0 @@
-{
-  "form_id": "form16",
-  "image_path": "",
-  "expected": {
-    "nerve_enlargement": "-,+,-,-,-,+",
-    "nerve_pain": "-,-,-,+,-,-",
-    "skin_patches_total": "4"
-  }
-}

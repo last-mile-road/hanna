@@ -1,0 +1,324 @@
+{
+  "form_id": "form23",
+  "image": "form23.jpg",
+  "template": "template.jpg",
+  "status": "partial",
+  "fields_verified": 46,
+  "fields_total": 62,
+  "fields_scoreable": 54,
+  "last_updated": "2026-10-23",
+  "reviewed_by": "Arie",
+  "note": "Filled card. No ground truth anywhere in the archive. Needs the owner to read it.",
+  "fields": {
+    "patient_name": {
+      "value": null,
+      "status": "pending",
+      "source": null
+    },
+    "patient_id": {
+      "value": null,
+      "status": "pending",
+      "source": null
+    },
+    "previous_patient_id": {
+      "value": null,
+      "status": "pending",
+      "source": null
+    },
+    "contact_number": {
+      "value": null,
+      "status": "pending",
+      "source": null
+    },
+    "date_of_birth_or_age": {
+      "value": null,
+      "status": "pending",
+      "source": null
+    },
+    "gender": {
+      "value": "F",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "district": {
+      "value": "Gile",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "locality": {
+      "value": null,
+      "status": "pending",
+      "source": null
+    },
+    "village": {
+      "value": null,
+      "status": "pending",
+      "source": null
+    },
+    "case_category": {
+      "value": "re_entry",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "transferred_from": {
+      "value": null,
+      "status": "pending",
+      "source": null
+    },
+    "classification": {
+      "value": "PB_adult",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "date_diagnosed": {
+      "value": "2024-07-24",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "referred_by": {
+      "value": "traditional healer",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "symptom_duration": {
+      "value": "Ha 3 anos - 3 years",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "symptom_location": {
+      "value": "Nos pes - On the feet",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "itching": {
+      "value": "Yes",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "leprosy_contact": {
+      "value": "No",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "previous_leprosy_treatment": {
+      "value": "No",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "other_registration_comments": {
+      "value": null,
+      "status": "pending",
+      "source": null
+    },
+    "skin_patch_count": {
+      "value": "3",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "body_area_percentage": {
+      "value": "2",
+      "status": "derived",
+      "source": "owner reading, 2026-10-23"
+    },
+    "skin_lesion_notes": {
+      "value": "One patch at the back of the neck, on the right buttock and on the left forearm",
+      "status": "derived",
+      "source": "owner reading, 2026-10-23"
+    },
+    "nerve_enlargement_cubital_right": {
+      "value": "-",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "nerve_enlargement_cubital_left": {
+      "value": "-",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "nerve_enlargement_radial_cutaneous_right": {
+      "value": "+",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "nerve_enlargement_radial_cutaneous_left": {
+      "value": "+",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "nerve_enlargement_popliteal_external_right": {
+      "value": "-",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "nerve_enlargement_popliteal_external_left": {
+      "value": "-",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "nerve_pain_cubital_right": {
+      "value": "+",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "nerve_pain_cubital_left": {
+      "value": "+",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "nerve_pain_radial_cutaneous_right": {
+      "value": "-",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "nerve_pain_radial_cutaneous_left": {
+      "value": "-",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "nerve_pain_popliteal_external_right": {
+      "value": "+",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "nerve_pain_popliteal_external_left": {
+      "value": "+",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "eye_blinking_right": {
+      "value": "Yes",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "eye_blinking_left": {
+      "value": "Yes",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "eye_lagophthalmos_right": {
+      "value": "0",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "eye_lagophthalmos_left": {
+      "value": "0",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "hand_ulnar_right": {
+      "value": "Normal",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "hand_ulnar_left": {
+      "value": "Weak",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "foot_dorsiflex_right": {
+      "value": "Weak",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "foot_dorsiflex_left": {
+      "value": "Paralysed",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "insensitive_points_right_hand": {
+      "value": "0",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "insensitive_points_left_hand": {
+      "value": "2",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "insensitive_points_right_foot": {
+      "value": "0",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "insensitive_points_left_foot": {
+      "value": "0",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "hand_foot_exam_notes": {
+      "value": "Ulcer on the right foot behind big toe and ulcer on left foot next to the 5´th toe",
+      "status": "derived",
+      "source": "owner reading, 2026-10-23"
+    },
+    "complications_hands": {
+      "value": null,
+      "status": "pending",
+      "source": null
+    },
+    "complications_feet": {
+      "value": null,
+      "status": "pending",
+      "source": null
+    },
+    "disability_grade_eye_right": {
+      "value": "0",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "disability_grade_eye_left": {
+      "value": "0",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "disability_grade_hand_right": {
+      "value": "0",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "disability_grade_hand_left": {
+      "value": "1",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "disability_grade_foot_right": {
+      "value": "2",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "disability_grade_foot_left": {
+      "value": "2",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "treatment_start_date": {
+      "value": "2024-07-24",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "treatment_doses_total": {
+      "value": "6",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "treatment_months_total": {
+      "value": "8",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "treatment_missed": {
+      "value": "2",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23"
+    },
+    "treatment_completion_date": {
+      "value": null,
+      "status": "pending",
+      "source": null
+    },
+    "reference_person": {
+      "value": null,
+      "status": "pending",
+      "source": null
+    }
+  }
+}

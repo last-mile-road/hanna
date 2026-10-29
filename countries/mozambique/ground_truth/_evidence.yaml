@@ -1,0 +1,147 @@
+# Ground-truth evidence ledger — Mozambique card
+#
+# Every value in a ground_truth/*.json file must trace to a row here. Nothing
+# enters a ground-truth sheet from inference: only from a human statement, a
+# corrected record, or a note written by the owner.
+#
+# Statuses used downstream:
+#   verified  - a human stated it, and the source is named
+#   partial   - some fields verified, the rest still pending
+#   pending   - skeleton only, nothing known
+#
+# The owner is the only person who can move a value from pending to verified.
+
+nerve_column_order:
+  # hanna_archive/notes/nerve_coordinates.txt, lines 4-10
+  order: [cubital_right, cubital_left, radial_cutaneous_right, radial_cutaneous_left, popliteal_external_right, popliteal_external_left]
+  source: "hanna_archive/notes/nerve_coordinates.txt"
+  note: "Left to right on the card. Both rows use the same order."
+
+forms:
+
+  form16:
+    image: form16.jpg
+    evidence:
+      - source: "hanna_archive/notes/AI_self_make.txt (line 1)"
+        says:
+          nerve_enlargement_row: "-,+,-,-,-,+"
+          nerve_pain_row: "-,-,-,+,-,-"
+      - source: "hanna_archive/notes/AI_self_make.txt (line 23)"
+        says:
+          nr_skinpatches: "2 front + 2 back = 4"
+      - source: "hanna_archive/versions/v4_hanna3_2025-2026/MOBILE_APP4/corrected_ground_truth.py"
+        says:
+          nerve_enlargement_row: "-+---+"
+          nerve_pain_row: "---+--"
+        note: "Agrees with the row strings above once separators are removed."
+    fields:
+      nerve_enlargement_cubital_right: "-"
+      nerve_enlargement_cubital_left: "+"
+      nerve_enlargement_radial_cutaneous_right: "-"
+      nerve_enlargement_radial_cutaneous_left: "-"
+      nerve_enlargement_popliteal_external_right: "-"
+      nerve_enlargement_popliteal_external_left: "+"
+      nerve_pain_cubital_right: "-"
+      nerve_pain_cubital_left: "-"
+      nerve_pain_radial_cutaneous_right: "-"
+      nerve_pain_radial_cutaneous_left: "+"
+      nerve_pain_popliteal_external_right: "-"
+      nerve_pain_popliteal_external_left: "-"
+      skin_patch_count: "4"
+
+  form19:
+    image: form19.jpg
+    evidence:
+      - source: "hanna_archive/notes/AI_self_make.txt (lines 16 and 144)"
+        says:
+          nerve_enlargement_row: "-,-,+,-,-,-"
+          nerve_pain_row: "-,-,-,-,-,-"
+          nr_skinpatches: "0"
+          gender: "Female"
+          case_category: "new case"
+          classification: "PB adult"
+          itching: "No"
+          leprosy_contact: "Yes"
+          previous_leprosy_treatment: "No"
+          referred_by: "Self referred"
+      - source: "hanna_server/ground_truth/form19.json (pre-existing gold standard)"
+        says: "agrees on all of the above"
+    fields:
+      nerve_enlargement_cubital_right: "-"
+      nerve_enlargement_cubital_left: "-"
+      nerve_enlargement_radial_cutaneous_right: "+"
+      nerve_enlargement_radial_cutaneous_left: "-"
+      nerve_enlargement_popliteal_external_right: "-"
+      nerve_enlargement_popliteal_external_left: "-"
+      nerve_pain_cubital_right: "-"
+      nerve_pain_cubital_left: "-"
+      nerve_pain_radial_cutaneous_right: "-"
+      nerve_pain_radial_cutaneous_left: "-"
+      nerve_pain_popliteal_external_right: "-"
+      nerve_pain_popliteal_external_left: "-"
+      skin_patch_count: "0"
+      gender: "F"
+      case_category: "new_case"
+      classification: "PB_adult"
+      itching: "No"
+      leprosy_contact: "Yes"
+      previous_leprosy_treatment: "No"
+      referred_by: "self referred"
+
+  form21:
+    image: form21.jpg
+    evidence:
+      - source: "hanna_archive/notes/AI_self_make.txt (lines 2 and 13)"
+        says:
+          nerve_enlargement_row: "-,+,-,-,+,-"
+          nerve_pain_row: "-,+,-,-,-,-"
+          nr_skinpatches: "3"
+      - source: "hanna_server/ground_truth/form21.json (pre-existing gold standard)"
+        says: "agrees on all three"
+      - source: "hanna_archive/notes/AI_self_make.txt (line 2)"
+        says:
+          nerve_enlargement_row: "-,+,-,-,+,-"
+          nerve_pain_row: "-,+,-,-,-,-"
+        note: "Second mention in the same file, used to check the first was not a typo."
+    fields:
+      nerve_enlargement_cubital_right: "-"
+      nerve_enlargement_cubital_left: "+"
+      nerve_enlargement_radial_cutaneous_right: "-"
+      nerve_enlargement_radial_cutaneous_left: "-"
+      nerve_enlargement_popliteal_external_right: "+"
+      nerve_enlargement_popliteal_external_left: "-"
+      nerve_pain_cubital_right: "-"
+      nerve_pain_cubital_left: "+"
+      nerve_pain_radial_cutaneous_right: "-"
+      nerve_pain_radial_cutaneous_left: "-"
+      nerve_pain_popliteal_external_right: "-"
+      nerve_pain_popliteal_external_left: "-"
+      skin_patch_count: "3"
+
+  form22:
+    image: form22.jpg
+    evidence: []
+    fields: {}
+    note: "Filled card. No ground truth anywhere in the archive. Needs the owner to read it."
+
+  form23:
+    image: form23.jpg
+    evidence: []
+    fields: {}
+    note: "Filled card. No ground truth anywhere in the archive. Needs the owner to read it."
+
+  form25:
+    image: form25.jpg
+    evidence: []
+    fields: {}
+    note: "Filled card. No ground truth anywhere in the archive. Needs the owner to read it."
+
+  form30:
+    image: form30.jpg
+    evidence:
+      - source: "owner reading, 2026-10-23"
+        says:
+          insensitive_points_left_foot: "3"
+        note: "Left foot only. The rest of the card is unread."
+    fields:
+      insensitive_points_left_foot: "3"

@@ -1,0 +1,54 @@
+# Human layer: the printed label next to each value pair.
+#
+# The form builder will capture these when a country team draws the label box.
+# Until then they are written here, because the concept name alone does not tell
+# the model which row or column of a table it is looking at.
+
+labels:
+  ehf_right_eye: "Graus de deformidade - Olhos (coluna D, direito)"
+  ehf_left_eye: "Graus de deformidade - Olhos (coluna E, esquerdo)"
+  ehf_right_hand: "Graus de deformidade - Mãos (coluna D, direito)"
+  ehf_left_hand: "Graus de deformidade - Mãos (coluna E, esquerdo)"
+  ehf_right_foot: "Graus de deformidade - Pés (coluna D, direito)"
+  ehf_left_foot: "Graus de deformidade - Pés (coluna E, esquerdo)"
+  right_eye_blinking: "Pestanejo (coluna D)"
+  left_eye_blinking: "Pestanejo (coluna E)"
+  right_eye_lagoft: "Lagofalmia em mm (coluna D)"
+  left_eye_lagoft: "Lagofalmia em mm (coluna E)"
+  right_hipothenar: "Abdução dos dedos mínimos (coluna D)"
+  left_hipothenar: "Abdução dos dedos mínimos (coluna E)"
+  right_foot_dorsiflex: "Dorsi-flexão dos pés (coluna D)"
+  left_foot_dorsiflex: "Dorsi-flexão dos pés (coluna E)"
+  insensitive_points_right_hand: "Teste sensitivo das mãos (coluna D, mão direita). X = insensível, V = sensível"
+  insensitive_points_left_hand: "Teste sensitivo das mãos (coluna E, mão esquerda). X = insensível, V = sensível"
+  insensitive_points_right_foot: "Teste sensitivo dos pés (coluna D, pé direito). X = insensível, V = sensível"
+  insensitive_points_left_foot: "Teste sensitivo dos pés (coluna E, pé esquerdo). X = insensível, V = sensível"
+
+# Corrections to a generated block box. The nerve table's printed header and its
+# +/- legend sit above the box the v5 config carried, so the model could see the
+# marks but not which nerve each column belonged to.
+block_bbox:
+  nerve_assessment: [2661, 470, 3297, 721]
+  hand_feet_assessment: [2680, 714, 3297, 1680]
+
+# Block-level instructions. The hand/feet diagram needs the legend and the D/E
+# convention stated explicitly; without them the model counts ticks and swaps sides.
+block_hints:
+  hand_feet_assessment: |
+    Rules for this diagram:
+    - The left half is column D = the patient's right; the right half is column E = the patient's left.
+    - An X marks an insensitive point. A tick, a dot or a printed mark is NOT an X.
+    - A filled black circle is an ulcer, not an insensitive point.
+    - A blacked-out or amputated digit is a complication, not an X.
+    - Count only X marks, separately for the hand and the foot.
+    - Also answer is_filled: true if there is at least one handwritten tick or X anywhere in the four drawings.
+
+  clinical_history: |
+    This block has six rows, top to bottom. Read the handwritten value or the
+    ticked option on the same row; do not merge adjacent rows.
+    1. Há quanto tempo apareceram as manchas? (free text)
+    2. Onde estava localizada a 1ª mancha? (free text)
+    3. As lesões da pele dão comichão? (sim / não tickbox)
+    4. O doente tem familiares/vizinhos/amigos com lepra? (sim / não)
+    5. O doente já teve diagnóstico e tratamento de lepra no passado? (sim / não)
+    6. Quem trouxe o doente à consulta? (tickbox list; return the printed option)

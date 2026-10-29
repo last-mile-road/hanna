@@ -20,6 +20,7 @@ import argparse
 import csv
 import dataclasses
 import json
+import os
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Protocol
 
@@ -36,11 +37,34 @@ class GroundTruth:
     expected: Dict[str, str]  # field key -> expected value (normalised)
 
     @classmethod
-    def from_json(cls, path: Path) -> "GroundTruth":
+    def from_json(cls, path: Path, images_dir: Optional[Path] = None) -> "GroundTruth":
         d = json.loads(path.read_text())
+
+        # HANNA form-pack sheet (countries/<x>/ground_truth/<form>.json):
+        # only fields a human has verified are scoreable.
+        if "fields" in d:
+            expected = {
+                key: str(field["value"])
+                for key, field in d["fields"].items()
+                if field.get("status") == "verified" and field.get("value") is not None
+            }
+            # Identifying values are kept out of the committed sheet, so they are
+            # read from the local sidecar. They are scored like any other field:
+            # a name or a phone number read wrongly is still a failure.
+            sidecar = path.parent / "_identifying" / path.name
+            if sidecar.exists():
+                expected.update(
+                    {key: str(value) for key, value in json.loads(sidecar.read_text()).items()}
+                )
+            image = d.get("image")
+            if image and images_dir:
+                image = str(images_dir / image)
+            return cls(d["form_id"], image, expected)
+
+        # Legacy flat gold standard (form_id / image_path / expected).
         return cls(
             form_id=d["form_id"],
-            image_path=d.get("image_path"),
+            image_path=d.get("image_path") or None,
             expected={k: str(v) for k, v in d.get("expected", {}).items()},
         )
 
@@ -170,23 +194,33 @@ def write_report(results: List[RunResult], out_csv: Path, groups=None) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description="HANNA v2 benchmark harness (skeleton)")
     ap.add_argument("--config", default="benchmarks/run_config.yaml")
-    ap.add_argument("--ground-truth-dir", default="ground_truth")
+    ap.add_argument("--ground-truth-dir", default="countries/mozambique/ground_truth")
+    ap.add_argument(
+        "--images-dir",
+        default=os.environ.get("HANNA_IMAGES_DIR"),
+        help="directory holding the filled cards named in each sheet (env HANNA_IMAGES_DIR)",
+    )
     ap.add_argument("--out", default="benchmarks/report.csv")
     args = ap.parse_args()
 
     gt_dir = Path(args.ground_truth_dir)
+    images_dir = Path(args.images_dir) if args.images_dir else None
     ground_truths = [
-        GroundTruth.from_json(p) for p in sorted(gt_dir.glob("*.json"))
+        GroundTruth.from_json(p, images_dir) for p in sorted(gt_dir.glob("form*.json"))
     ]
     if not ground_truths:
-        print("No ground-truth JSON found. Add them under ground_truth/ (see ground_truth/README.md).")
+        print("No ground-truth sheets found. See countries/mozambique/ground_truth/README.md.")
+
+    scoreable = [gt for gt in ground_truths if gt.expected]
+    print(f"Found {len(ground_truths)} sheet(s); {len(scoreable)} with verified values:")
+    for gt in ground_truths:
+        state = f"{len(gt.expected)} verified fields" if gt.expected else "nothing verified yet"
+        print(f"  {gt.form_id:8s} {state}")
 
     print(
         "Benchmark harness is a SCAFFOLD: no inference backend is wired yet. "
-        "Phase 1 must implement an InferenceBackend (Ollama/OpenAI) once a GPU/VPS "
-        "inference path exists, then this runner scores it."
+        "Implement InferenceBackend for OpenRouter, then run_benchmark() scores it."
     )
-    print(f"Found {len(ground_truths)} ground-truth form(s) to score.")
 
 
 if __name__ == "__main__":

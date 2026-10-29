@@ -1,54 +1,193 @@
-# HANNA Server v2 — Fresh Technical Iteration (Objective 2)
+# hanna_server — the build
 
-**Status:** Scaffolding (project foundation only; model runs deferred to GPU/VPS environment)
-**Date:** 2026-09-09
-**Aligns with:** memory pack objective 2
-**Working directory:** `/home/sam/Documents/hanna_project/objective-2-server/`
-**Baseline to build on:** `new_agent/hanna_scalable/` (last working iteration)
+The running version of HANNA for testing and iteration. Design lives in
+`../hanna_next/`; the read-only baseline lives in `../hanna_v2/`.
 
-> This folder is the fresh, professionally-managed start of the new server. Its docs live in
-> `./docs/`. The new repo will live on **private GitHub first, public later** (no secrets).
+**Status:** working vertical slice with a validation layer. PostgreSQL 18.6 run
+ledger, form contract, alignment, prompt generation, OpenRouter extraction,
+scoring and a required/parameter validator; 105 tests pass. Phase 1 adds a job
+worker, an HTTP/SSE surface and signed image links, with no UI or auth yet. No remote or
+remote yet. Renamed from `objective-2-server` on 2026-10-23.
 
----
+## Decisions taken 2026-10-23
 
-## Objectives (this iteration)
-1. **Generic & user-definable form setup** — a country scans its template form, identifies
-   information areas / data groups / fields, and the system builds its config from that (no
-   hardcoded per-country config).
-2. **Model quality upgrade** — test **Qwen 3.5** and possibly **Qwen 3.8** VLMs against the prior
-   iteration and against ground-truth forms; measure extraction accuracy.
-3. **Structured, professional dev cycle** — objectives + commits per milestone; roadmap-driven;
-   clean repo hygiene (private → public later).
-4. **Local on this machine → VPS later** — must run on modest hardware before cloud migration.
-
-## Working method & phasing (suggested)
-- **Phase 0 (this folder):** docs, architecture, benchmark harness skeleton, repo init. No GPU needed.
-- **Phase 1:** local environment (venv), pick inference path — remote Qwen 3.5/3.8 API or a capable
-  GPU/VPS. Build the **model-comparison benchmark** on the existing Mozambique gold standards
-  (form16/19/21 ground truths from `hanna/AI_self_make.txt`).
-- **Phase 2:** implement **generic template definition** (UI to scan/upload a form, define field
-  groups + bounding boxes, auto-suggest fields) → generate extraction config.
-- **Phase 3:** multi-country config + accuracy validation on other country forms (Bangladesh, Chad,
-  DRC, India, Nigeria samples exist in `Reading patient cards with AI/`).
-- **Phase 4:** local full-stack test, then VPS deployment + open-sourcing decision.
-
-## Constraints / notes
-- **No GPU / no Ollama on the dev machine right now** (verified: 14GB RAM, 16 CPU, no nvidia-smi,
-  no docker). Local VLM runs are not feasible here; plan for a remote/GPU inference path in Phase 1.
-- Python 3.14 is the system python (externally managed) — use a dedicated venv.
-- Keep the provider-agnostic `inference` layer concept from `hanna_scalable` — it is a core lesson
-  (see `memory/lessons/2026-09-09-scalable-config-driven.md`).
-
-## Files in this folder
-| Path | Purpose |
+| | |
 |---|---|
-| `README.md` | This file |
-| `docs/requirements-generic-forms.md` | Requirements for the generic/user-definable template setup |
-| `docs/benchmark-plan.md` | Model-comparison & accuracy benchmark plan |
-| `benchmarks/benchmark_harness.py` | Skeleton harness for running a model on ground-truth forms and scoring extraction |
-| `ground_truth/README.md` | Note on where ground truths come from |
+| Design vs build | `hanna_next/` = design notes, `hanna_server/` = code. One repo each. |
+| GitHub | local first, push when the code is stable. Private first, public later. |
+| Inference | OpenRouter, same path for local work and for the VPS. |
+| VPS | Oracle VPS currently running a Hermes agent. Wiped and rebuilt only when the test server goes public; not now. |
+| Local runtime | `~/.venv` (Python 3.14, already has cv2, opencv, requests, openai, pyyaml, pytest). |
+| Entry ticket | undecided: 3 or 10 dummy cards per country (`hanna_next/PURPOSE.md` D-C). |
 
-## Dev-cycle conventions
-- One commit per logical unit; branch per milestone; conventional commit messages.
-- Each milestone ends with a verification step (tests / benchmark run).
-- No secrets in the repo (inference provider API keys go in env / gitignored config).
+## Layout
+
+```
+hanna_server/
+├── core/                     the shared pipeline
+│   ├── schema.py             the run ledger (12 tables, 2 views)
+│   ├── forms.py              form-pack loader and contract checks
+│   ├── align.py              SIFT/CLAHE/USAC_MAGSAC alignment and crops
+│   ├── prompts.py            one generated prompt per block type
+│   ├── inference.py          OpenRouter client
+│   ├── normalise.py          card-vocabulary canonicaliser and comparison
+│   ├── validate.py           required fields, rules and clinical cross-checks
+│   ├── treatment.py          treatment-grid parser and derived metrics
+│   └── run.py                one card through one profile
+├── migrations/               Alembic baseline
+├── countries/
+│   ├── _template/            starter pack for a new country
+│   └── mozambique/
+│       ├── form.draft.yaml   generated from the v5 config: 8 blocks, 62 pairs
+│       ├── labels.yaml       printed labels, block hints and box corrections
+│       ├── validation.yaml   required fields, Portuguese advice, rules
+│       ├── template.jpg      the blank card, MD5 pinned by a test
+│       ├── template.md       which scan, and why the other one must not be used
+│       ├── location.yaml     hierarchy, card mapping, fuzzy rules and tiers
+│       ├── gazetteer/        COD-AB v02 admin units + MFL facilities
+│       └── ground_truth/     7 sheets, 61 fields each, evidence ledger
+├── docs/
+│   ├── concepts/concepts.yaml   the shared vocabulary, 70 concepts
+│   ├── baseline-2026-02.md      what v5 actually scored, and where it fails
+│   ├── requirements-generic-forms.md
+│   └── benchmark-plan.md
+├── benchmarks/benchmark_harness.py   loader + scorer; no backend wired yet
+├── tools/
+│   ├── load_pack.py                  load a country pack into the ledger
+│   ├── run_card.py                   run one card through one profile
+│   ├── build_gazetteer.py            COD-AB + MFL -> country-pack CSVs
+│   ├── location_resolver.py          district -> ADM3 -> facility -> ADM4
+│   ├── location_combinations.py      rank chains from all three written names
+│   ├── convert_v5_config.py          v5 config -> form.draft.yaml
+│   ├── new_ground_truth_form.py      regenerate a sheet from the ledger
+│   └── gt_capture/                   ground-truth capture UI (standalone, disposable)
+├── data/baseline/field_accuracy.csv  per-field baseline, aggregates only
+└── tests/                            105 checks; only the queue tests need the dev database
+```
+
+## Run it
+
+```bash
+cd ~/Documents/hanna_project/hanna_server
+~/.venv/bin/python tools/load_pack.py                 # concepts, form, cards, truth
+~/.venv/bin/python tools/run_card.py --form form16    # one card, one profile
+# each run writes output/runs/<id>/validation.json and runs.validation_status
+~/.venv/bin/python -m pytest tests -q                 # 105 passed
+```
+
+The ledger is PostgreSQL. `DATABASE_URL` defaults to the rootless dev instance
+on port 55432; the durable system install is still pending. Card images come
+from `HANNA_IMAGES_DIR`.
+
+Credentials come from `.env` (gitignored, `OPENROUTER_API_KEY`). `.env.example`
+shows the three names. The key was verified against OpenRouter on 2026-10-23:
+auth OK, $20 limit, $0 used.
+
+Card images are **not** in this repo. Point the harness at them:
+
+```bash
+export HANNA_IMAGES_DIR=/home/sam/Documents/hanna_project/hanna_archive/versions/v4_hanna3_2025-2026/test_forms
+```
+
+## What exists now, measured
+
+**Latest 2026-10-28.** Hand/feet with the block legend and 9B: **26/28 (92.9%)** with the required `is_filled` field; 27/28 before that field was added.
+Clinical history with the 27B: **41/42 (97.6%)**. Treatment with the 8B:
+**21/23 (91.3%)**; the only miss is form22's August 7 read as a missed F. The
+validator records `blocked`, `review` or `ok` in `runs.validation_status` and
+writes the issue list with Portuguese advice and highlight boxes to
+`validation.json`. route v3 is 8B for classification/nerve/skin/treatment, 9B for
+demographics/hand-feet, 27B for clinical/disability.
+
+**Older slice, 2026-10-26.** form16, `qwen/qwen3-vl-8b-instruct`, four
+parallel calls: **47/53 = 88.7%**, about 17 s, $0.0032. The treatment block is
+now a `dose_grid` and scores 4/4 (start date, doses, months, missed). The other
+per-block scores: nerve 12/12, def_exam 12/14, classification 3/3, demographics
+8/9, clinical history 5/6, skin 1/1, hand/feet 2/4.
+
+form19: 8B 43/49 (87.8%), 9B 42/49 (85.7%). form21, the hardest capture
+(230 alignment matches): 8B 32/48 (66.7%), 9B 38/48 (79.2%), 27B low 44/48
+(91.7%) but very slow. Across the three cards the 8B is 122/150 (81.3%) and the
+9B 121/150 (80.7%).
+
+**Model comparison on the same card and prompt:**
+
+| Profile | Score | Wall | Cost |
+|---|---|---|---|
+| qwen3-vl-8b, 4 parallel | 44/49 (89.8%) | 16.8 s | $0.0032 |
+| qwen3.5-27b, reasoning low | 48/49 (98.0%) | 121 s | $0.0129 |
+| qwen3.8-27b, tuned | 47/49 (95.9%) | 202 s | $0.0092 |
+| qwen3.8-27b, default settings | 33/52 (63.5%) | 277 s | $0.0147 |
+
+Qwen3.8 at its default output budget returned empty content for the disability
+table. With `reasoning_effort: low`, `max_tokens: 8000`, `temperature: 0.3` and
+`top_p: 0.95` it scored 14/14 on that block. The 27B at `reasoning_effort: low`
+keeps 48/49 and cuts the wall time from 416 s to 121 s. Parallel calls help the
+8B and hurt the 27B, which the provider queues.
+
+Field accuracy of v5, from 53 human-reviewed jobs on the VPS: **94.2% over 3,045
+judgements**. Read that with the first caveat in `docs/baseline-2026-02.md`: the
+53 jobs are only 15 patients, and one patient supplies 37% of the judgements. The
+weakest fields are the three blocks v5 never declared as value pairs:
+`right_foot_dorsiflex` 58%, `nr_skinpatches` 70%, `insensitive_points_*` 62–74%.
+
+Ground truth for the seven test cards: 337 verified values of 427. All seven are
+read (46 to 51 of 61 fields each); the gaps are fields that are blank on the card.
+form20 was dropped: it is a duplicate of form16.
+
+## Capture ground truth
+
+```bash
+~/.venv/bin/python tools/gt_capture/app.py     # http://127.0.0.1:8765
+```
+
+Standalone page: card on the left with zoom, fields on the right with the widget
+each concept declares (`+`/`-`, dropdown, number, text). Save writes the sheet.
+Identifying fields are excluded from the committed file by default. See
+`tools/gt_capture/README.md`.
+
+## The web layer (Phase 1)
+
+Three processes, no framework beyond FastAPI on the existing venv:
+
+```bash
+~/.venv/bin/uvicorn server.app:app --host 127.0.0.1 --port 8100   # HTTP + SSE
+~/.venv/bin/python -m server.worker                                # claims jobs
+curl -s localhost:8100/healthz
+```
+
+Upload and watch one card:
+
+```bash
+curl -s -F file=@form16.jpg -F country=mozambique -F attested_dummy=true \
+     localhost:8100/api/runs
+curl -N localhost:8100/api/runs/<run_id>/events        # block events, then one verdict
+```
+
+- `POST /api/runs` refuses any upload without the dummy-card attestation.
+- The run id exists before the work starts, so the stream can be opened immediately.
+- Progress comes from `block_runs`, so a worker restart does not lose the stream.
+- Images are served only through HMAC-signed URLs with a 15-minute expiry.
+- `tools/cleanup_images.py --days 30` implements the retention rule; it writes an
+  audit line per deletion.
+
+Still missing: the UI (Phase 2), login and country scoping (Phase 3), and the form
+builder (Studio).
+
+## Not built yet, deliberately
+
+- The form builder (Studio) and the review screen (Bench).
+- Login, invite codes and country scoping; the API is localhost-only.
+- The verification UI and the re-photograph workflow; the validator output exists.
+- HANNA-issued patient numbers and district-supervisor notifications.
+- The location ladder beyond the declaration in `location.yaml`.
+- A durable PostgreSQL install; the dev instance on port 55432 is still the ledger.
+
+## Rules
+
+- No real patient data in this repo. Cards stay in the archive; only the blank
+  template is tracked.
+- No secrets in git. `.env` is ignored; `.env.example` is not.
+- One commit per logical unit, conventional messages, a verification step per
+  milestone (the existing repo convention).
+

@@ -18,6 +18,10 @@ venv/
 *.egg-info/
 .pytest_cache/
 
+# Sensitive data
+# Ground truth for identifying fields is captured to a sidecar and never committed.
+countries/mozambique/ground_truth/_identifying/
+
 # Data / artifacts
 # Patient-card images and fetched data are SENSITIVE — never commit real patient forms.
 uploads/

@@ -1,0 +1,579 @@
+# GENERATED DRAFT - do not edit by hand, re-run tools/convert_v5_config.py
+form:
+  id: mozambique_leprosy_card_pt
+  country: mozambique
+  template: template.jpg
+  status: draft
+  reference_year: 2026
+  reference_year_note: REQUIRED, no silent default (CONSTRAINTS §1.6). Confirm before
+    any birth-year inference.
+  generated_by: tools/convert_v5_config.py
+  note: Mechanical conversion of the v5 config. concepts came from docs/concepts/concepts.yaml;
+    nulls need review.
+blocks:
+- id: general_demographic
+  source_group: General_demographic
+  block_type: value_pairs
+  bbox:
+  - 15
+  - 15
+  - 1472
+  - 869
+  value_pairs:
+  - id: unique_nr
+    concept: patient_id
+    value_type: code_number
+    bbox:
+    - 679
+    - 206
+    - 1462
+    - 382
+    sensitivity: identifying
+  - id: patient_name
+    concept: patient_name
+    value_type: person_name
+    bbox:
+    - 73
+    - 397
+    - 1457
+    - 513
+    sensitivity: identifying
+  - id: birth_year
+    concept: date_of_birth_or_age
+    value_type: date_or_age
+    bbox:
+    - 430
+    - 505
+    - 717
+    - 583
+    sensitivity: identifying
+  - id: cellphone_nr
+    concept: contact_number
+    value_type: phone_number
+    bbox:
+    - 819
+    - 504
+    - 1061
+    - 601
+    sensitivity: identifying
+  - id: district
+    concept: district
+    value_type: text
+    bbox:
+    - 172
+    - 574
+    - 678
+    - 682
+    sensitivity: administrative
+  - id: locality
+    concept: locality
+    value_type: text
+    bbox:
+    - 838
+    - 587
+    - 1461
+    - 682
+    sensitivity: identifying
+  - id: patient_reference
+    concept: reference_person
+    value_type: person_name
+    bbox:
+    - 362
+    - 673
+    - 1461
+    - 774
+    sensitivity: identifying
+  - id: village_name
+    concept: village
+    value_type: text
+    bbox:
+    - 414
+    - 769
+    - 1462
+    - 853
+    sensitivity: identifying
+  - id: gender
+    concept: gender
+    value_type: choice_single
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - Male
+    - Female
+    - Others
+- id: classification
+  source_group: Classification
+  block_type: tick_grid
+  bbox:
+  - 12
+  - 856
+  - 689
+  - 1796
+  value_pairs:
+  - id: date_diagnosed
+    concept: date_diagnosed
+    value_type: date
+    bbox:
+    - 64
+    - 913
+    - 672
+    - 971
+    sensitivity: clinical
+  - id: admin_classification
+    concept: case_category
+    value_type: choice_single
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - New
+    - Transferred in
+    - Retreatment
+  - id: transferred_from
+    concept: transferred_from
+    value_type: text
+    bbox: null
+    sensitivity: administrative
+  - id: other_admin_comments
+    concept: other_registration_comments
+    value_type: text
+    bbox: null
+    sensitivity: administrative
+  - id: leprosy_classification
+    concept: classification
+    value_type: choice_single
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - PB_child
+    - PB_adult
+    - MB_child
+    - MB_adult
+- id: clinical_history
+  source_group: Clinical_history
+  block_type: value_pairs
+  bbox:
+  - 669
+  - 853
+  - 1484
+  - 1996
+  value_pairs:
+  - id: skinpatch_time
+    concept: symptom_duration
+    value_type: text
+    bbox: null
+    sensitivity: clinical
+  - id: skinpatch_location
+    concept: symptom_location
+    value_type: text
+    bbox: null
+    sensitivity: clinical
+  - id: skinpatch_itching
+    concept: itching
+    value_type: choice_single
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - 'Yes'
+    - 'No'
+  - id: leprosy_contact
+    concept: leprosy_contact
+    value_type: choice_single
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - 'Yes'
+    - 'No'
+  - id: previous_leptreatment
+    concept: previous_leprosy_treatment
+    value_type: choice_single
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - 'Yes'
+    - 'No'
+  - id: who_referred
+    concept: referred_by
+    value_type: choice_single
+    bbox: null
+    sensitivity: administrative
+    allowed_values:
+    - Community volunteer
+    - Health worker
+    - Private practitioner
+    - Person affected by leprosy
+    - Transferred-in (under treatment)
+- id: nerve_assessment
+  source_group: nerve_assessment
+  block_type: annotated_table
+  bbox:
+  - 2661
+  - 555
+  - 3297
+  - 721
+  value_pairs:
+  - id: nerve_enlargement_cubital_right
+    concept: nerve_enlargement_cubital_right
+    value_type: tick_box
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - +
+    - '-'
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: nerve_enlargement_cubital_left
+    concept: nerve_enlargement_cubital_left
+    value_type: tick_box
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - +
+    - '-'
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: nerve_enlargement_radial_cutaneous_right
+    concept: nerve_enlargement_radial_cutaneous_right
+    value_type: tick_box
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - +
+    - '-'
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: nerve_enlargement_radial_cutaneous_left
+    concept: nerve_enlargement_radial_cutaneous_left
+    value_type: tick_box
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - +
+    - '-'
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: nerve_enlargement_popliteal_external_right
+    concept: nerve_enlargement_popliteal_external_right
+    value_type: tick_box
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - +
+    - '-'
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: nerve_enlargement_popliteal_external_left
+    concept: nerve_enlargement_popliteal_external_left
+    value_type: tick_box
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - +
+    - '-'
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: nerve_pain_cubital_right
+    concept: nerve_pain_cubital_right
+    value_type: tick_box
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - +
+    - '-'
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: nerve_pain_cubital_left
+    concept: nerve_pain_cubital_left
+    value_type: tick_box
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - +
+    - '-'
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: nerve_pain_radial_cutaneous_right
+    concept: nerve_pain_radial_cutaneous_right
+    value_type: tick_box
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - +
+    - '-'
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: nerve_pain_radial_cutaneous_left
+    concept: nerve_pain_radial_cutaneous_left
+    value_type: tick_box
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - +
+    - '-'
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: nerve_pain_popliteal_external_right
+    concept: nerve_pain_popliteal_external_right
+    value_type: tick_box
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - +
+    - '-'
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: nerve_pain_popliteal_external_left
+    concept: nerve_pain_popliteal_external_left
+    value_type: tick_box
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - +
+    - '-'
+    geometry_source: v5 had no per-pair box; block crop only
+- id: skin_patch
+  source_group: Skin_patch
+  block_type: visual_annotation
+  bbox:
+  - 1461
+  - 853
+  - 2704
+  - 1991
+  value_pairs:
+  - id: nr_skinpatches
+    concept: skin_patch_count
+    value_type: integer
+    bbox: null
+    sensitivity: clinical
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: body_area_percentage
+    concept: body_area_percentage
+    value_type: percent
+    bbox: null
+    sensitivity: clinical
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: skinpatch_notes
+    concept: skin_lesion_notes
+    value_type: text
+    bbox: null
+    sensitivity: clinical
+    geometry_source: v5 had no per-pair box; block crop only
+- id: hand_feet_assessment
+  source_group: Hand_feet_assessment
+  block_type: visual_annotation
+  bbox:
+  - 2680
+  - 714
+  - 3297
+  - 1588
+  value_pairs:
+  - id: insensitive_points_right_hand
+    concept: insensitive_points_right_hand
+    value_type: integer
+    bbox: null
+    sensitivity: clinical
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: insensitive_points_left_hand
+    concept: insensitive_points_left_hand
+    value_type: integer
+    bbox: null
+    sensitivity: clinical
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: insensitive_points_right_foot
+    concept: insensitive_points_right_foot
+    value_type: integer
+    bbox: null
+    sensitivity: clinical
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: insensitive_points_left_foot
+    concept: insensitive_points_left_foot
+    value_type: integer
+    bbox: null
+    sensitivity: clinical
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: hand_feet_notes
+    concept: hand_foot_exam_notes
+    value_type: text
+    bbox: null
+    sensitivity: clinical
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: other_complications_hands
+    concept: complications_hands
+    value_type: text
+    bbox: null
+    sensitivity: clinical
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: other_complications_feet
+    concept: complications_feet
+    value_type: text
+    bbox: null
+    sensitivity: clinical
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: is_filled
+    concept: exam_section_filled
+    value_type: choice_single
+    bbox: null
+    sensitivity: administrative
+    allowed_values:
+    - true
+    - false
+    geometry_source: v5 had no per-pair box; block crop only
+- id: def_exam
+  source_group: def_exam
+  block_type: annotated_table
+  bbox:
+  - 2684
+  - 1729
+  - 3323
+  - 2492
+  value_pairs:
+  - id: ehf_right_eye
+    concept: disability_grade_eye_right
+    value_type: integer
+    bbox:
+    - 2697
+    - 2175
+    - 2760
+    - 2224
+    sensitivity: clinical
+    allowed_values:
+    - 0
+    - 1
+    - 2
+  - id: ehf_left_eye
+    concept: disability_grade_eye_left
+    value_type: integer
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - 0
+    - 1
+    - 2
+  - id: ehf_right_hand
+    concept: disability_grade_hand_right
+    value_type: integer
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - 0
+    - 1
+    - 2
+  - id: ehf_left_hand
+    concept: disability_grade_hand_left
+    value_type: integer
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - 0
+    - 1
+    - 2
+  - id: ehf_right_foot
+    concept: disability_grade_foot_right
+    value_type: integer
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - 0
+    - 1
+    - 2
+  - id: ehf_left_foot
+    concept: disability_grade_foot_left
+    value_type: integer
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - 0
+    - 1
+    - 2
+  - id: right_eye_blinking
+    concept: eye_blinking_right
+    value_type: choice_single
+    bbox:
+    - 2696
+    - 1785
+    - 2760
+    - 1833
+    sensitivity: clinical
+    allowed_values:
+    - 'Yes'
+    - 'No'
+  - id: left_eye_blinking
+    concept: eye_blinking_left
+    value_type: choice_single
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - 'Yes'
+    - 'No'
+  - id: right_eye_lagoft
+    concept: eye_lagophthalmos_right
+    value_type: integer
+    bbox: null
+    sensitivity: clinical
+  - id: left_eye_lagoft
+    concept: eye_lagophthalmos_left
+    value_type: integer
+    bbox: null
+    sensitivity: clinical
+  - id: right_hipothenar
+    concept: hand_ulnar_right
+    value_type: choice_single
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - Normal
+    - Weak
+    - Paralysed
+  - id: left_hipothenar
+    concept: hand_ulnar_left
+    value_type: choice_single
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - Normal
+    - Weak
+    - Paralysed
+  - id: right_foot_dorsiflex
+    concept: foot_dorsiflex_right
+    value_type: choice_single
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - Normal
+    - Weak
+    - Paralysed
+  - id: left_foot_dorsiflex
+    concept: foot_dorsiflex_left
+    value_type: choice_single
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - Normal
+    - Weak
+    - Paralysed
+- id: treatment_follow
+  source_group: treatment_follow
+  block_type: dose_grid
+  bbox:
+  - 52
+  - 1976
+  - 2713
+  - 2437
+  value_pairs:
+  - id: treatment_grid
+    concept: treatment_grid
+    value_type: json
+    bbox: null
+    sensitivity: clinical
+  - id: treatment_start_date
+    concept: treatment_start_date
+    value_type: date
+    bbox: null
+    sensitivity: clinical
+    derived: true
+  - id: total_treatment_times
+    concept: treatment_doses_total
+    value_type: integer
+    bbox: null
+    sensitivity: clinical
+    derived: true
+  - id: treatment_months_total
+    concept: treatment_months_total
+    value_type: integer
+    bbox: null
+    sensitivity: clinical
+    derived: true
+  - id: treatment_missed
+    concept: treatment_missed
+    value_type: integer
+    bbox: null
+    sensitivity: clinical
+    derived: true

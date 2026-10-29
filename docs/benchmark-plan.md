@@ -4,6 +4,12 @@
 quality vs. the prior iteration (which used qwen3-vl / minicpm-v :8b), and establish a repeatable
 accuracy baseline for any country form.
 
+> **Status 2026-10-26.** The first slice runs locally through OpenRouter; see the
+> README and `../../hanna_next/CONTRACTS.md`. The "cannot run locally" note below
+> is historical. The corrected form16 baseline is 43/52 = 82.7% with
+> `qwen/qwen3-vl-8b-instruct`; Qwen3.5-27B and 35B-A3B reach 47/52 = 90.4%
+> (D-2026-10-26-06).
+
 ## Data: ground truths (start here)
 Existing gold standards documented in `hanna/AI_self_make.txt` (Mozambique template,
 `Mozambique_Leprosy_clinic_card_PT_front.jpg`):

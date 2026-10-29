@@ -1,0 +1,21 @@
+# What this card does and does not carry.
+#
+# The concept index is country-agnostic: it holds every WHO data element a card
+# might have. This file says which ones this card does not print, so they are
+# not left pending forever in every sheet.
+#
+# Only concepts that are genuinely absent belong here. A field that exists but
+# is often blank (transferred_from, treatment_completion_date) is not absent; it
+# stays pending until it is read.
+
+card: mozambique_leprosy_card_pt
+
+absent_concepts:
+  mode_of_detection: >
+    Not printed. The card asks who referred the patient, which is captured in
+    referred_by. WHO's active-detection, school-health and contact-examination
+    options have no box on this form.
+  retreatment_type: >
+    Not printed. The card's case category distinguishes new, re-entry,
+    re-infection and wrong classification, which is not WHO's relapse / loss to
+    follow-up / other split.
