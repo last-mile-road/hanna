@@ -11,7 +11,12 @@ from server import uploads
 
 
 def _jpeg(width: int, height: int) -> bytes:
+    # Textured on purpose: a flat frame is rejected as blank, so the fixture draws a grid.
     image = np.full((height, width, 3), 200, dtype=np.uint8)
+    for x in range(0, width, 40):
+        image[:, x:x + 2] = 40
+    for y in range(0, height, 40):
+        image[y:y + 2, :] = 40
     ok, encoded = cv2.imencode(".jpg", image)
     assert ok
     return encoded.tobytes()
@@ -51,3 +56,11 @@ def test_save_uses_generated_name(tmp_path, monkeypatch):
     assert path.name.endswith(".jpg")
     assert path.read_bytes() == b"data"
     assert "card" not in path.name
+
+
+def test_blank_frame_is_rejected_with_an_actionable_message():
+    """A white frame reached the pipeline seven times on the first phone test."""
+    blank = uploads.decode(_jpeg(1600, 1200))
+    flat = np.full_like(blank, 220)
+    message = uploads.check_quality(flat)
+    assert message and "em branco" in message

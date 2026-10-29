@@ -102,6 +102,9 @@ async def create_run(
     file: UploadFile = File(...),
     country: str = Form("mozambique"),
     attested_dummy: bool = Form(False),
+    gate_blur: float | None = Form(None),
+    gate_brightness: float | None = Form(None),
+    gate_glare: float | None = Form(None),
 ):
     if not attested_dummy:
         raise HTTPException(
@@ -151,7 +154,13 @@ async def create_run(
         job_id = jobs.enqueue(
             conn,
             "extract",
-            {"run_id": str(run_id), "card_id": card_id, "routing": True, "purpose": "upload"},
+            {
+                "run_id": str(run_id),
+                "card_id": card_id,
+                "routing": True,
+                "purpose": "upload",
+                "client_gate": {"blur": gate_blur, "brightness": gate_brightness, "glare": gate_glare},
+            },
         )
         conn.commit()
 

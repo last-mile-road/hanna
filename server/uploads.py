@@ -42,6 +42,14 @@ def decode(data: bytes) -> np.ndarray:
 def check_quality(image: np.ndarray) -> str | None:
     """Cheap server-side floor. The richer gate (blur, glare, alignment) is Phase 2."""
     height, width = image.shape[:2]
+    scale = 600 / max(height, width)
+    thumb = cv2.resize(image, (max(1, int(width * scale)), max(1, int(height * scale))))
+    gray = cv2.cvtColor(thumb, cv2.COLOR_BGR2GRAY)
+    if cv2.Laplacian(gray, cv2.CV_64F).var() < 5:
+        return (
+            "A fotografia parece estar em branco ou sem contraste. "
+            "Verifique se o cartão está no enquadramento e a câmara a focar."
+        )
     long_edge = max(height, width)
     if long_edge < settings.MIN_UPLOAD_LONG_EDGE:
         return (

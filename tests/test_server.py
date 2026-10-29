@@ -70,6 +70,10 @@ def test_reuploading_a_known_card_does_not_repoint_it():
     from sqlalchemy import text as sql
 
     image = np.full((1600, 1200, 3), 220, dtype=np.uint8)
+    for x in range(0, 1200, 40):
+        image[:, x:x + 2] = 40
+    for y in range(0, 1600, 40):
+        image[y:y + 2, :] = 40
     ok, encoded = cv2.imencode(".jpg", image)
     assert ok
     payload = encoded.tobytes()

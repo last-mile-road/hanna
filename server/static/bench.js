@@ -78,6 +78,26 @@ $("btn-shot").addEventListener("click", () => {
   canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
   shotCanvas = canvas;
 
+  acceptCanvas(canvas);
+});
+
+$("btn-retake").addEventListener("click", resetCapture);
+
+$("file").addEventListener("change", async (event) => {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, CAPTURE_LONG_EDGE / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  acceptCanvas(canvas);
+  $("file-note").classList.remove("hidden");
+});
+
+function acceptCanvas(canvas) {
+  shotCanvas = canvas;
   canvas.toBlob((blob) => {
     shotBlob = blob;
     $("preview").src = URL.createObjectURL(blob);
@@ -89,6 +109,7 @@ $("btn-shot").addEventListener("click", () => {
     gateResult = runGate(canvas);
     renderGate(gateResult);
     if (gateResult.ok) {
+      $("btn-upload").disabled = false;
       $("btn-upload").classList.remove("hidden");
       $("btn-upload").textContent = "Enviar para análise";
     } else {
@@ -97,9 +118,7 @@ $("btn-shot").addEventListener("click", () => {
       $("btn-shot").classList.remove("hidden");
     }
   }, "image/jpeg", 0.9);
-});
-
-$("btn-retake").addEventListener("click", resetCapture);
+}
 
 function resetCapture() {
   shotBlob = null; shotCanvas = null; gateResult = null;
@@ -193,6 +212,11 @@ async function upload() {
   form.append("file", shotBlob, "cartao.jpg");
   form.append("country", $("country").value);
   form.append("attested_dummy", "true");
+  if (gateResult) {
+    form.append("gate_blur", String(Math.round(gateResult.blur)));
+    form.append("gate_brightness", String(Math.round(gateResult.brightness)));
+    form.append("gate_glare", String(gateResult.glare.toFixed(4)));
+  }
 
   let response;
   try {
@@ -311,7 +335,7 @@ function showVerdict(data, started) {
     blocked: ["Corrija o cartão", "O cartão tem dados obrigatórios em falta ou inválidos. Corrija o cartão e fotografe de novo."],
     review: ["Rever", "Os valores foram lidos. Reveja os campos assinalados antes de submeter."],
     ok: ["Aceite", "Nenhum problema obrigatório encontrado."],
-    failed: ["Falhou", "O servidor não conseguiu ler este cartão."],
+    failed: ["Não foi possível ler", "A fotografia não foi reconhecida como um cartão. Verifique se o cartão inteiro está visível, com luz uniforme, e fotografe de novo."],
   };
   const [title, sub] = labels[status] || labels.review;
   $("verdict-title").textContent = title;
