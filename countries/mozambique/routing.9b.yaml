@@ -1,0 +1,11 @@
+# Experiment 2026-10-29: the two 27B blocks moved to the 9B, to price the latency saved
+default: or-qwen3vl-8b-v1
+blocks:
+  general_demographic: or-qwen35-9b-v1
+  clinical_history: or-qwen35-9b-v1
+  skin_patch: or-qwen3vl-8b-v1
+  hand_feet_assessment: or-qwen35-9b-v1
+  def_exam: or-qwen35-9b-v1
+  classification: or-qwen3vl-8b-v1
+  nerve_assessment: or-qwen3vl-8b-v1
+  treatment_follow: or-qwen3vl-8b-v1

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>HANNA — rever valores</title>
+<link rel="stylesheet" href="/static/bench.css?v=4">
+<link rel="stylesheet" href="/static/review.css?v=4">
+</head>
+<body class="review">
+<header>
+  <div class="brand">HANNA</div>
+  <div class="tag" id="status-tag">rever valores</div>
+</header>
+
+<main>
+  <div id="loading" class="hint">A carregar…</div>
+
+  <section id="overview" class="hidden">
+    <div class="stage card-stage">
+      <img id="card" alt="cartão alinhado">
+      <div id="highlight" class="highlight"></div>
+    </div>
+    <div class="overview-line">
+      <span id="verdict-badge" class="badge"></span>
+      <button id="first-issue" class="link-button">Ir para o primeiro problema</button>
+    </div>
+    <div id="block-chips" class="chips"></div>
+  </section>
+
+  <section id="sections"></section>
+
+  <div id="summary" class="hidden card"></div>
+</main>
+
+<footer class="review-footer">
+  <span id="progress">0 de 0 revistos</span>
+  <button id="submit" disabled>Submeter revisão</button>
+</footer>
+<script src="/static/review.js?v=4"></script>
+</body>
+</html>

@@ -115,3 +115,14 @@ def test_bench_page_is_served():
     assert "attested_dummy" not in body  # the attestation is sent by the client, not typed
     assert client.get("/static/bench.css").status_code == 200
     assert client.get("/static/bench.js").status_code == 200
+
+
+def test_review_page_is_served():
+    response = client.get("/review")
+    assert response.status_code == 200
+    assert "rever valores" in response.text
+    assert client.get("/static/review.js").status_code == 200
+
+
+def test_review_rejects_an_unknown_run():
+    assert client.get("/api/runs/00000000-0000-0000-0000-000000000000/review").status_code == 404

@@ -34,7 +34,6 @@ $("consent").addEventListener("change", (e) => { $("consent-next").disabled = !e
 $("consent-next").addEventListener("click", () => show("view-country"));
 $("country-next").addEventListener("click", () => { show("view-capture"); startCamera(); });
 $("btn-again").addEventListener("click", () => { resetCapture(); show("view-capture"); });
-$("btn-done").addEventListener("click", () => { resetAll(); show("view-country"); });
 
 if (/FBAN|FBAV|Instagram|Line\/|WhatsApp/i.test(navigator.userAgent)) {
   $("file-note").textContent = "Está a abrir dentro de outra aplicação. A câmara pode não funcionar: abra o link no Chrome ou Safari.";
@@ -344,9 +343,10 @@ function showVerdict(data, started) {
   // Only a blocked run needs a new photograph. A review run is a recorded card with notes.
   const blocked = status === "blocked" || status === "failed";
   $("btn-again").textContent = blocked ? "Corrigir o cartão e fotografar de novo" : "Repetir a fotografia";
-  $("btn-done").textContent = blocked ? "Terminar" : "Continuar";
-  $("btn-again").classList.toggle("secondary", !blocked);
-  $("btn-done").classList.toggle("secondary", blocked);
+  $("btn-again").classList.toggle("secondary", blocked);
+  $("btn-done").textContent = blocked ? "Ver valores lidos" : "Rever valores";
+  $("btn-done").classList.remove("secondary");
+  $("btn-done").onclick = () => { location.href = `/review?run=${runId}`; };
 
   const issues = (data.validation && data.validation.issues) || [];
   const box = $("verdict-issues");

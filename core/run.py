@@ -54,8 +54,8 @@ def _profiles(conn) -> dict[str, dict]:
     }
 
 
-def _routing(form: dict, profile_id: str) -> dict:
-    path = settings.COUNTRIES_DIR / form["definition"].get("country", "") / "routing.yaml"
+def _routing(form: dict, profile_id: str, filename: str = "routing.yaml") -> dict:
+    path = settings.COUNTRIES_DIR / form["definition"].get("country", "") / filename
     if not path.exists():
         return {"default": profile_id, "blocks": {}}
     data = yaml.safe_load(path.read_text()) or {}
@@ -78,6 +78,7 @@ def run_card(
     routing: bool = False,
     card_id: int | None = None,
     run_id=None,
+    routing_file: str = "routing.yaml",
 ) -> dict[str, Any]:
     """Run one card. CLI benchmarks pass `form_name`; the worker passes `card_id` and a
     pre-created `run_id`, so the HTTP layer can hand out the id before the work starts."""
@@ -86,7 +87,11 @@ def run_card(
         form = _find_form(conn)
         profiles_by_id = _profiles(conn)
         profile = profiles_by_id[profile_id]
-        routing_map = _routing(form, profile_id) if routing else {"default": profile_id, "blocks": {}}
+        routing_map = (
+            _routing(form, profile_id, routing_file)
+            if routing
+            else {"default": profile_id, "blocks": {}}
+        )
         run_profile_id = "or-routing-v1" if routing else profile_id
         blocks, pairs, concepts = store.form_rows(conn, form["id"])
         truth = store.ground_truth_map(conn, card["id"], version=1)

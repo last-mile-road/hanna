@@ -196,6 +196,9 @@ observations = Table(
     Column("confidence", Numeric(4, 3)),
     Column("expected_value", Text),
     Column("correct", Boolean),
+    # What a human did with it: accepted, corrected (reviewed_value holds the fix), skipped.
+    Column("review_mode", String(16)),
+    Column("reviewed_value", Text),
     UniqueConstraint("run_id", "pair_id", name="uq_observations_run_pair"),
 )
 

@@ -1,0 +1,52 @@
+/* Review screen — read the values, accept or correct each one. */
+body.review { padding-bottom: 5rem; }
+.card-stage { position: relative; margin-bottom: .4rem; }
+.highlight {
+  position: absolute; display: none; pointer-events: none;
+  border: 2px solid var(--accent); background: rgba(20, 83, 45, .12);
+}
+.overview-line { display: flex; align-items: center; gap: .8rem; margin: .5rem 0 0; }
+.link-button {
+  background: none; border: none; color: var(--accent); text-decoration: underline;
+  width: auto; padding: 0; margin: 0; font-weight: 500; font-size: .88rem;
+}
+.chips { display: flex; flex-wrap: wrap; gap: .3rem; margin: .6rem 0 0; }
+.chip {
+  font-size: .76rem; padding: .28rem .55rem; border: 1px solid var(--line);
+  border-radius: 1rem; background: var(--card); color: var(--muted); cursor: pointer;
+}
+.chip.issue { border-color: var(--bad); color: var(--bad); }
+.chip.active { border-color: var(--accent); color: var(--accent); }
+.section { margin: 1.4rem 0 .6rem; }
+.section h2 { font-size: .95rem; margin: 0 0 .3rem; display: flex; justify-content: space-between; }
+.section h2 .count { color: var(--muted); font-weight: 400; font-size: .82rem; }
+.pair {
+  background: var(--card); border: 1px solid var(--line); border-radius: .5rem;
+  padding: .6rem .7rem; margin: .4rem 0;
+}
+.pair.accepted { border-color: color-mix(in srgb, var(--good) 55%, var(--line)); }
+.pair.corrected { border-color: color-mix(in srgb, var(--warn) 55%, var(--line)); }
+.pair.skipped { opacity: .75; }
+.pair-head { display: flex; justify-content: space-between; gap: .7rem; align-items: baseline; }
+.pair .label { color: var(--muted); font-size: .8rem; }
+.pair .value { font-weight: 600; text-align: right; word-break: break-word; }
+.pair .value.empty { color: var(--bad); font-weight: 400; font-style: italic; }
+.pair-actions { display: flex; gap: .4rem; margin-top: .5rem; }
+.pair-actions button {
+  width: auto; margin: 0; padding: .45rem .85rem; font-size: .85rem; font-weight: 600;
+}
+.pair-actions button.secondary { border-color: var(--line); color: var(--muted); }
+.issue-note { margin-top: .45rem; font-size: .84rem; color: var(--bad); }
+.issue-note.info { color: var(--warn); }
+.editor { display: flex; gap: .4rem; margin-top: .5rem; }
+.editor input, .editor select {
+  flex: 1; min-width: 0; padding: .55rem; border: 1px solid var(--line);
+  border-radius: .4rem; font-size: .95rem; background: var(--bg); color: var(--ink);
+}
+.review-footer {
+  position: fixed; bottom: 0; left: 0; right: 0; display: flex; align-items: center;
+  gap: .7rem; padding: .55rem .8rem; background: var(--card); border-top: 1px solid var(--line);
+}
+.review-footer span { flex: 1; font-size: .84rem; color: var(--muted); }
+.review-footer button { width: auto; margin: 0; padding: .7rem 1.1rem; }
+.corrected-list { font-size: .86rem; color: var(--muted); margin-top: .5rem; }
