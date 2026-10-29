@@ -3,7 +3,7 @@
   "image": "form16.jpg",
   "template": "template.jpg",
   "status": "partial",
-  "fields_verified": 48,
+  "fields_verified": 49,
   "fields_total": 62,
   "fields_scoreable": 54,
   "last_updated": "2026-10-23",
@@ -316,9 +316,9 @@
       "source": null
     },
     "reference_person": {
-      "value": null,
-      "status": "pending",
-      "source": null
+      "value": "Chefe da Aldeia",
+      "status": "verified",
+      "source": "owner reading, 2026-10-23; corrected 2026-10-29 (Aldera is Aldeia, head of the village)"
     }
   }
 }

@@ -161,6 +161,9 @@ def ground_truth_rows(sheet_path: Path, pack) -> tuple[list[dict], list[str], li
         candidates = by_concept.get(concept_id, [])
         if len(candidates) == 1:
             pair = candidates[0]
+            # Last writer wins: the sidecar is applied after the sheet, so an identifying
+            # value overrides the sheet rather than colliding with it on (card, gt_key).
+            rows[:] = [row for row in rows if row["pair_id"] != pair.id]
             rows.append(
                 {
                     "gt_key": pair.id,

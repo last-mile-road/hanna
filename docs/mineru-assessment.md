@@ -74,22 +74,35 @@ This is the strongest argument for keeping MinerU: two independent readers that 
 different ways (the VLM swaps columns, the OCR drops cells) turn a silent wrong answer into
 a flagged one.
 
-## Audit, resolved by eye (2026-10-29)
+## Ground-truth audit — owner-verified outcome (2026-10-29)
 
-The five disputed fields were cropped from the aligned cards and read directly. Two of my
-earlier conclusions were wrong.
+I cropped each disputed field from the aligned card and read it, then put the five cases to
+the owner. My first read was wrong on most of them; this is the corrected record.
 
-| card | field | card reads | stored truth | verdict |
+| card | field | card reads | stored truth | owner's verdict |
 |---|---|---|---|---|
-| form19 | patient_name | first name **Maria** | sheet says Marie | truth wrong |
-| form21 | locality | Namgogotra | Namogelia | truth wrong |
-| form16 | reference_person | Chefe da Aldera | Chefe da Aldera | truth right, **pipeline wrong** (it normalised to Aldeia) |
-| form16 | contact_number | ...3260, with a stroke over the last digits | ...3210 | probably truth wrong; the stroke may be a correction — leave it |
-| form19 | contact_number | 8 digits | sheet has 9 | probably truth wrong; the `Sexo:` label overlaps the last digit — check |
+| form16 | contact_number | ...3260 (a stroke over the last digits) | ...3210 | **truth correct** — both readers wrong |
+| form19 | contact_number | 8 digits, the last hidden under the `Sexo:` label | 9 digits | **truth correct** — both readers wrong |
+| form16 | reference_person | "Chefe da Aldera" | "Chefe da Aldeia" | **truth corrected**: Aldera is Aldeia, head of the village |
+| form21 | locality | Namgogotra | Namogelia | **truth correct** — confirmed against the location database; the readers misread the handwriting |
+| form19 | patient_name | first name Maria | sheet says Marie | **not yet confirmed** — the card appears to read Maria; left unchanged |
 
-So the first pass through the audit yields **two confirmed truth errors, two to verify and
-one pipeline error I had misattributed to the sheet**. That is the real yield: the audit
-works, and it corrected the auditor.
+What the audit actually produced:
+
+1. **One confirmed data defect, not five.** The sidecar carried the literal card text
+   ("Chefe da Aldera") while the sheet already held the corrected value as *pending*, so the
+   correct reading never scored. Fixed: sidecar corrected, sheet field verified, and
+   `load_pack` now lets the sidecar override the sheet by `pair_id` instead of inserting a
+   duplicate row (which it did, loudly, on the first attempt).
+2. **A pipeline lesson.** form16 moved from 51/53 to 52/53 (98.1%) once the truth was
+   right — the VLM had read "Chefe da Aldeia" correctly and was penalised for it.
+3. **Agreement is not evidence.** On both phone numbers the VLM and MinerU agreed with each
+   other and were both wrong: they share the same failure on cursive digits. Two readers
+   only help where their failure modes differ — tables, column order, cell retention — not
+   where they share a handwriting problem.
+4. **Truth may be canonical, not literal.** Namogelia is the gazetteer name; the card says
+   Namgogotra. A stored truth that holds the administrative name is right to do so, and no
+   OCR can infer it. The audit has to ask the owner, not the image.
 
 ## Block crop versus whole card
 

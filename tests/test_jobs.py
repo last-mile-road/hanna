@@ -37,10 +37,10 @@ def test_enqueue_and_claim_are_exclusive():
         conn.commit()
 
     with connect() as first, connect() as second:
-        claimed = jobs.claim(first, "worker-a")
+        claimed = jobs.claim(first, "worker-a", kind="test")
         assert claimed is not None, "the queued job should be claimable"
         assert str(claimed["id"]) == str(job_id)
-        blocked = jobs.claim(second, "worker-b")
+        blocked = jobs.claim(second, "worker-b", kind="test")
         assert blocked is None, "SKIP LOCKED must not hand the same job to two workers"
         jobs.finish(first, job_id)
         first.commit()

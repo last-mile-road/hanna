@@ -29,6 +29,7 @@ CLAIM_SQL = text(
         SELECT id FROM jobs
          WHERE status = 'queued'
            AND attempts < :max_attempts
+           AND (CAST(:kind AS text) IS NULL OR kind = CAST(:kind AS text))
          ORDER BY created_at
          FOR UPDATE SKIP LOCKED
          LIMIT 1
@@ -60,9 +61,13 @@ def enqueue(conn: Connection, kind: str, payload: dict[str, Any]) -> uuid.UUID:
     return job_id
 
 
-def claim(conn: Connection, worker: str, max_attempts: int = 2) -> dict[str, Any] | None:
+def claim(
+    conn: Connection, worker: str, max_attempts: int = 2, kind: str | None = None
+) -> dict[str, Any] | None:
+    """Claim one queued job. `kind` scopes the queue, which keeps tests and future
+    job types from competing for each other's work."""
     row = conn.execute(
-        CLAIM_SQL, {"worker": worker, "max_attempts": max_attempts}
+        CLAIM_SQL, {"worker": worker, "max_attempts": max_attempts, "kind": kind}
     ).mappings().first()
     return dict(row) if row else None
 

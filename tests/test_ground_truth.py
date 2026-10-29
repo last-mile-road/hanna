@@ -82,3 +82,22 @@ def test_template_is_the_measured_scan():
         "template.jpg is not the scan the coordinates were measured on; "
         "see countries/mozambique/template.md"
     )
+
+
+def test_sidecar_overrides_the_sheet_without_duplicating():
+    """A concept present in both files must yield one row, sidecar wins."""
+    import sys
+
+    sys.path.insert(0, str(ROOT))
+    from core.forms import load_form_pack
+    from tools.load_pack import ground_truth_rows
+
+    pack = load_form_pack("mozambique", "form.draft.yaml")
+    rows, _, _ = ground_truth_rows(GT_DIR / "form16.json", pack)
+    by_pair = {}
+    for row in rows:
+        assert row["pair_id"] not in by_pair, f"duplicate row for {row['pair_id']}"
+        by_pair[row["pair_id"]] = row
+    reference = [r for r in rows if r["concept_id"] == "reference_person"]
+    assert len(reference) == 1
+    assert reference[0]["source"] == "identifying sidecar" or "owner reading" in reference[0]["source"]
