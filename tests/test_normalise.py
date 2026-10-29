@@ -85,3 +85,19 @@ def test_lagophthalmos_negative_sign_is_ignored():
     assert n.canonical("integer", "-1", concept) == "1"
     assert n.canonical("integer", "-0", concept) == "0"
     assert n.canonical("integer", "12 mm", concept) == "12"
+
+
+def test_age_is_converted_to_a_birth_year_when_the_card_has_no_year():
+    """Patients often give an age: 28A, 28 anos, idade 28. The record needs a year."""
+    for raw in ("28A", "28 a", "28 anos", "idade 28", "28y"):
+        assert n.canonical("date_or_age", raw, None, reference_year=2026) == "1998", raw
+    # A four-digit year is untouched, and a date still canonicalises as a date.
+    assert n.canonical("date_or_age", "1984", None, reference_year=2026) == "1984"
+    assert n.canonical("date_or_age", "28/05/1984", None, reference_year=2026) == "1984-05-28"
+
+
+def test_a_mangled_three_digit_value_is_not_mistaken_for_an_age():
+    """284 is neither a year nor an age; it must stay visible so validation can complain."""
+    assert n.age_from_text("284") is None
+    assert n.age_from_text("28A") == 28
+    assert n.canonical("date_or_age", "284", None, reference_year=2026) == "284"

@@ -55,6 +55,8 @@ VALUE_GUIDANCE = {
     "person_name": "answer with the name exactly as written",
     "text": "answer with the handwritten text exactly as written",
     "json": "answer with the structured object described in the instructions",
+    "date_or_age": 'the card may carry a birth year or an age; if it carries an age, write it '
+                   'as the card does (for example "28A" or "28 anos"); never turn an age into a year',
 }
 
 

@@ -103,6 +103,8 @@ $("btn-retake").addEventListener("click", resetCapture);
 
 function resetCapture() {
   shotBlob = null; shotCanvas = null; gateResult = null;
+  $("btn-upload").disabled = false;
+  $("btn-upload").textContent = "Enviar para análise";
   $("preview").classList.add("hidden");
   $("gate").classList.add("hidden");
   $("btn-upload").classList.add("hidden");
@@ -315,18 +317,36 @@ function showVerdict(data, started) {
   $("verdict-title").textContent = title;
   $("verdict-sub").innerHTML = `<span class="badge ${status}">${status}</span> ${sub}`;
 
+  // Only a blocked run needs a new photograph. A review run is a recorded card with notes.
+  const blocked = status === "blocked" || status === "failed";
+  $("btn-again").textContent = blocked ? "Corrigir o cartão e fotografar de novo" : "Repetir a fotografia";
+  $("btn-done").textContent = blocked ? "Terminar" : "Continuar";
+  $("btn-again").classList.toggle("secondary", !blocked);
+  $("btn-done").classList.toggle("secondary", blocked);
+
   const issues = (data.validation && data.validation.issues) || [];
   const box = $("verdict-issues");
   box.innerHTML = "";
   if (!issues.length) {
     box.innerHTML = `<p class="hint">${data.error ? data.error : "Sem problemas registados."}</p>`;
   }
-  issues.forEach((issue) => {
-    const div = document.createElement("div");
-    div.className = "issue" + (issue.severity === "info" ? " info" : "");
-    const advice = issue.advice ? `<span>${issue.advice}</span>` : "";
-    div.innerHTML = `<strong>${issue.block_id || issue.pair_id || "problema"}</strong>${advice}`;
-    box.appendChild(div);
+  const groups = [
+    ["Impede a submissão", issues.filter((i) => i.severity === "blocking")],
+    ["Notas — não impedem", issues.filter((i) => i.severity && i.severity !== "blocking")],
+  ];
+  groups.forEach(([heading, list]) => {
+    if (!list.length) return;
+    const h = document.createElement("p");
+    h.className = "hint";
+    h.textContent = heading;
+    box.appendChild(h);
+    list.forEach((issue) => {
+      const div = document.createElement("div");
+      div.className = "issue" + (issue.severity === "info" ? " info" : "");
+      const advice = issue.advice ? `<span>${issue.advice}</span>` : "";
+      div.innerHTML = `<strong>${issue.block_id || issue.pair_id || "problema"}</strong>${advice}`;
+      box.appendChild(div);
+    });
   });
 
   $("verdict-meta").textContent =

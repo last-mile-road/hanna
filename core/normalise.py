@@ -88,6 +88,29 @@ TICK = {
 
 DATE_FORMATS = ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%d.%m.%Y", "%Y/%m/%d", "%d %m %Y")
 
+# Patients often do not know their birth year and the card records an age instead:
+# "28A", "28 A", "28 anos", "idade 28", "28y". The A is not a digit.
+AGE_PATTERN = re.compile(r"^\s*(?:idade\s*)?(\d{1,3})\s*(?:a|aa|anos?|years?|y|idade)?\s*$", re.IGNORECASE)
+
+
+def age_from_text(value: Any) -> int | None:
+    """Return a plausible age in years, or None. 284 is not an age and not a year."""
+    text = "" if value is None else str(value).strip()
+    match = AGE_PATTERN.match(text)
+    if not match:
+        return None
+    number = int(match.group(1))
+    if 5 <= number <= 120:
+        return number
+    return None
+
+
+def birth_year_from_age(value: Any, reference_year: int | None) -> int | None:
+    age = age_from_text(value)
+    if age is None or reference_year is None:
+        return None
+    return int(reference_year) - age
+
 
 def key(value: Any) -> str:
     text = "" if value is None else str(value)
@@ -126,7 +149,12 @@ def _portuguese_text(text: str) -> str:
     return text
 
 
-def canonical(value_type: str, value: Any, concept: dict[str, Any] | None = None) -> str | None:
+def canonical(
+    value_type: str,
+    value: Any,
+    concept: dict[str, Any] | None = None,
+    reference_year: int | None = None,
+) -> str | None:
     concept = concept or {}
     text = _clean(value)
     if text is None:
@@ -165,6 +193,11 @@ def canonical(value_type: str, value: Any, concept: dict[str, Any] | None = None
     if value_type == "date_or_age":
         if re.fullmatch(r"\d{4}", text):
             return text
+        derived = birth_year_from_age(text, reference_year)
+        if derived is not None:
+            # The card held an age; the record needs a birth year. The raw age stays in
+            # the observation so the reviewer can see where the year came from.
+            return str(derived)
         return _canonical_date(text)
 
     if value_type == "phone_number":

@@ -137,7 +137,7 @@ cross_checks:
   - id: late_insufficient
     severity: info
     audience: [clinician, supervisor]
-    advice: "Passaram mais de 9 meses (PB) ou 18 meses (MB) e o número de doses é inferior a 6/12. Verifique se o tratamento está incompleto ou não foi marcado."
+    advice: "Não impede a notificação. Passaram mais de 9 meses (PB) ou 18 meses (MB) e o número de doses é inferior a 6/12: confirme se o tratamento está incompleto ou não foi marcado."
   - id: treatment_start_before_diagnosis
     severity: blocking
     audience: [clinician]

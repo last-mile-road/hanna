@@ -14,7 +14,7 @@ import yaml
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import select, update
+from sqlalchemy import select, text, update
 
 from . import align, normalise, settings, store
 from .db import connect
@@ -127,6 +127,8 @@ def run_card(
         result["good_matches"] = alignment.good_matches
         result["alignment_ms"] = alignment_ms
 
+        reference_year = int(form["definition"].get("reference_year") or date.today().year)
+        age_derived: dict[str, int] = {}
         selected = [
             b for b in blocks
             if (not only_blocks or b.id in only_blocks) and b.pairs
@@ -238,7 +240,13 @@ def run_card(
                 for pair in pairs_in_block:
                     concept = concepts[pair.concept]
                     raw_value = parsed.get(pair.id)
-                    got = normalise.canonical(pair.value_type, raw_value, concept)
+                    got = normalise.canonical(
+                        pair.value_type, raw_value, concept, reference_year=reference_year
+                    )
+                    if pair.value_type == "date_or_age":
+                        age = normalise.age_from_text(raw_value)
+                        if age is not None:
+                            age_derived[pair.id] = age
                     all_values[pair.id] = got
                     expected_row = truth.get(pair.id)
                     expected = expected_row["value"] if expected_row else None
@@ -317,6 +325,41 @@ def run_card(
                     # Persist as each block lands: SSE reads block_runs, so a late
                     # write would turn progress into one batch at the end.
                     record(item)
+
+        # An age is as-of the visit, not as-of today. Once the diagnosis date is known,
+        # re-anchor every age-derived birth year to it and keep the observation honest.
+        diagnosis = all_values.get("date_diagnosed")
+        diagnosis_year = None
+        if diagnosis and str(diagnosis)[:4].isdigit():
+            diagnosis_year = int(str(diagnosis)[:4])
+        if diagnosis_year and age_derived:
+            for pair_id, age in age_derived.items():
+                corrected_year = str(diagnosis_year - age)
+                if all_values.get(pair_id) == corrected_year:
+                    continue
+                all_values[pair_id] = corrected_year
+                expected_row = truth.get(pair_id)
+                expected = expected_row["value"] if expected_row else None
+                concept = concepts.get(pair_id) or {}
+                for pair in pairs:
+                    if pair.id == pair_id:
+                        concept = concepts[pair.concept]
+                        break
+                correct = (
+                    normalise.compare("date_or_age", corrected_year, expected, concept)
+                    if expected is not None
+                    else None
+                )
+                with connect() as conn:
+                    conn.execute(
+                        text(
+                            "UPDATE observations SET value = :value, correct = :correct "
+                            "WHERE run_id = :run_id AND pair_id = :pair_id"
+                        ),
+                        {"value": corrected_year, "correct": correct,
+                         "run_id": run_id, "pair_id": pair_id},
+                    )
+                    conn.commit()
 
         validation = validate_run(
             blocks,
