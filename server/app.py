@@ -26,6 +26,7 @@ from sqlalchemy import select
 
 from core import jobs, settings, store
 from core.db import connect
+from core.schema import cards as cards_t
 from core.schema import countries as countries_t
 from core.schema import forms as forms_t
 from core.schema import runs as runs_t
@@ -119,9 +120,20 @@ async def create_run(
         form = _form(conn)
         if form is None:
             raise HTTPException(503, "nenhum formulário carregado; corra tools/load_pack.py")
-        card_id = store.upsert_card(
-            conn, country_row["id"], path, kind="upload", attested_dummy=True
-        )
+        # The same bytes may already be a known card (a dummy card, or an earlier
+        # upload). Never repoint or restyle an existing row: upsert_card updates on an
+        # md5 conflict, which silently turned three ground-truth cards into uploads.
+        checksum = store.md5(path)
+        existing = conn.execute(
+            select(cards_t).where(cards_t.c.md5 == checksum)
+        ).mappings().first()
+        if existing is not None:
+            card_id = existing["id"]
+            path.unlink(missing_ok=True)
+        else:
+            card_id = store.upsert_card(
+                conn, country_row["id"], path, kind="upload", attested_dummy=True
+            )
         run_id = store.create_run(
             conn, card_id, form["id"], form["version"], "or-routing-v1", "upload",
             status="queued",

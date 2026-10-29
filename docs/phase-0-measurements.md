@@ -107,6 +107,12 @@ framing_and_rotation: server-side alignment gate only
 - **Measured cost per routed card: $0.0045** (`runs.cost_usd` on the first end-to-end API
   run), consistent with the $0.003–0.013 range in the README.
 
+## 3a. MinerU addendum
+
+A separate assessment of the MinerU runs the owner produced is in
+`docs/mineru-assessment.md`: no replacement for the VLM, but a useful second reader, a
+ground-truth audit, and a candidate auto-drafter for Studio.
+
 ## 4. Still to measure
 
 - Repeat one cell three times to get the noise band; then decide whether a second run per cell changes any conclusion.
