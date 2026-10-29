@@ -233,14 +233,26 @@ function renderBlocks(done) {
 function openStream(id, started) {
   eventSource = new EventSource(`/api/runs/${id}/events`);
   const done = {};
+  let gotAny = false;
+
+  // Fallback: some proxies (the Cloudflare quick tunnel does) buffer text/event-stream
+  // and deliver everything at the end. If nothing arrives shortly, poll instead. SSE stays
+  // the primary path because on a direct connection it is one request instead of thirty.
+  const fallback = setTimeout(() => {
+    if (gotAny) return;
+    if (eventSource) { eventSource.close(); eventSource = null; }
+    pollRun(id, started, done);
+  }, 3500);
 
   eventSource.addEventListener("status", (e) => {
+    gotAny = true;
     const data = JSON.parse(e.data);
     if (data.status === "queued") $("progress-status").textContent = "Em fila…";
     if (data.status === "running") $("progress-status").textContent = `A ler… ${data.blocks_done} de 8 blocos`;
   });
 
   eventSource.addEventListener("block", (e) => {
+    gotAny = true;
     const data = JSON.parse(e.data);
     done[data.block_id] = true;
     const el = document.querySelector(`[data-block="${data.block_id}"]`);
@@ -249,6 +261,8 @@ function openStream(id, started) {
   });
 
   eventSource.addEventListener("verdict", (e) => {
+    gotAny = true;
+    clearTimeout(fallback);
     const data = JSON.parse(e.data);
     eventSource.close();
     showVerdict(data, started);
@@ -256,8 +270,35 @@ function openStream(id, started) {
 
   eventSource.onerror = () => {
     if (eventSource) { eventSource.close(); eventSource = null; }
+    if (!gotAny) { pollRun(id, started, done); return; }
     $("progress-status").textContent = "A ligação caiu. O resultado pode estar pronto; recarregue ou fotografe de novo.";
   };
+}
+
+async function pollRun(id, started, done) {
+  $("progress-status").textContent = "A ler o cartão…";
+  for (;;) {
+    let data;
+    try {
+      const response = await fetch(`/api/runs/${id}`, { cache: "no-store" });
+      if (!response.ok) throw new Error("poll");
+      data = await response.json();
+    } catch (err) {
+      $("progress-status").textContent = "Sem ligação ao servidor. Tente novamente.";
+      return;
+    }
+    (data.blocks || []).forEach((block) => {
+      if (done[block.block_id]) return;
+      done[block.block_id] = true;
+      const el = document.querySelector(`[data-block="${block.block_id}"]`);
+      if (el) el.classList.add("done");
+    });
+    const count = Object.keys(done).length;
+    if (data.status === "queued") $("progress-status").textContent = "Em fila…";
+    else if (count < 8) $("progress-status").textContent = `A ler… ${count} de 8 blocos`;
+    if (["done", "partial", "failed"].includes(data.status)) { showVerdict(data, started); return; }
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
 }
 
 function showVerdict(data, started) {

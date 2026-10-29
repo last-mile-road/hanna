@@ -183,6 +183,8 @@ def _sse(kind: str, payload: dict) -> str:
 
 
 def _stream(run_id: str, timeout_seconds: int = 900):
+    # Open the stream immediately and forbid intermediaries from buffering it.
+    yield ": open\n\n"
     seen: set[str] = set()
     previous_status: str | None = None
     heartbeat = time.monotonic()
@@ -233,9 +235,9 @@ def run_events(run_id: str):
         _stream(run_id),
         media_type="text/event-stream",
         headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
+            "Cache-Control": "no-cache, no-transform",
             "X-Accel-Buffering": "no",
+            "Content-Encoding": "identity",
         },
     )
 
