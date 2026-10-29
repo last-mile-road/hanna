@@ -5,39 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
 <title>HANNA — rever valores</title>
-<link rel="stylesheet" href="/static/bench.css?v=4">
-<link rel="stylesheet" href="/static/review.css?v=4">
+<link rel="stylesheet" href="/static/bench.css?v=7">
+<link rel="stylesheet" href="/static/review.css?v=7">
 </head>
 <body class="review">
 <header>
   <div class="brand">HANNA</div>
-  <div class="tag" id="status-tag">rever valores</div>
+  <label class="dev-toggle">
+    <input type="checkbox" id="dev-mode" checked>
+    <span>modo desenvolvimento</span>
+  </label>
 </header>
 
 <main>
   <div id="loading" class="hint">A carregar…</div>
-
-  <section id="overview" class="hidden">
-    <div class="stage card-stage">
-      <img id="card" alt="cartão alinhado">
-      <div id="highlight" class="highlight"></div>
-    </div>
-    <div class="overview-line">
-      <span id="verdict-badge" class="badge"></span>
-      <button id="first-issue" class="link-button">Ir para o primeiro problema</button>
-    </div>
-    <div id="block-chips" class="chips"></div>
-  </section>
-
+  <div id="topline" class="hidden">
+    <span id="verdict-badge" class="badge"></span>
+    <button id="next-issue" class="link-button">Ir para o primeiro problema</button>
+    <span id="saved" class="saved"></span>
+  </div>
   <section id="sections"></section>
-
-  <div id="summary" class="hidden card"></div>
 </main>
 
 <footer class="review-footer">
-  <span id="progress">0 de 0 revistos</span>
-  <button id="submit" disabled>Submeter revisão</button>
+  <span id="progress">0 revistos</span>
+  <button id="finish">Terminar</button>
 </footer>
-<script src="/static/review.js?v=4"></script>
+<script src="/static/review.js?v=7"></script>
 </body>
 </html>

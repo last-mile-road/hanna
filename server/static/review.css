@@ -1,52 +1,78 @@
-/* Review screen — read the values, accept or correct each one. */
-body.review { padding-bottom: 5rem; }
-.card-stage { position: relative; margin-bottom: .4rem; }
-.highlight {
-  position: absolute; display: none; pointer-events: none;
-  border: 2px solid var(--accent); background: rgba(20, 83, 45, .12);
-}
-.overview-line { display: flex; align-items: center; gap: .8rem; margin: .5rem 0 0; }
+/* Review screen — fields you can edit where they sit, tables that mirror the card. */
+body.review { padding-bottom: 4.5rem; }
+header { position: sticky; top: 0; z-index: 5; }
+.dev-toggle { margin-left: auto; display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: var(--muted); }
+.dev-toggle input { width: 1.1rem; height: 1.1rem; }
+#topline { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; margin: .2rem 0 .6rem; }
+.saved { font-size: .78rem; color: var(--good); margin-left: auto; }
 .link-button {
   background: none; border: none; color: var(--accent); text-decoration: underline;
-  width: auto; padding: 0; margin: 0; font-weight: 500; font-size: .88rem;
+  width: auto; padding: 0; margin: 0; font-weight: 500; font-size: .86rem;
 }
-.chips { display: flex; flex-wrap: wrap; gap: .3rem; margin: .6rem 0 0; }
-.chip {
-  font-size: .76rem; padding: .28rem .55rem; border: 1px solid var(--line);
-  border-radius: 1rem; background: var(--card); color: var(--muted); cursor: pointer;
+.section { margin: 1.2rem 0 .4rem; }
+.section-head {
+  display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+  border-bottom: 1px solid var(--line); padding-bottom: .35rem; margin-bottom: .5rem;
 }
-.chip.issue { border-color: var(--bad); color: var(--bad); }
-.chip.active { border-color: var(--accent); color: var(--accent); }
-.section { margin: 1.4rem 0 .6rem; }
-.section h2 { font-size: .95rem; margin: 0 0 .3rem; display: flex; justify-content: space-between; }
-.section h2 .count { color: var(--muted); font-weight: 400; font-size: .82rem; }
-.pair {
-  background: var(--card); border: 1px solid var(--line); border-radius: .5rem;
-  padding: .6rem .7rem; margin: .4rem 0;
+.section-head h2 { font-size: .98rem; margin: 0; flex: 1; }
+.section-head .count { color: var(--muted); font-weight: 400; font-size: .8rem; }
+.mini {
+  width: auto; margin: 0; padding: .3rem .55rem; font-size: .76rem;
+  border-radius: .35rem; background: var(--card); color: var(--accent); border: 1px solid var(--line);
+  font-weight: 600;
 }
-.pair.accepted { border-color: color-mix(in srgb, var(--good) 55%, var(--line)); }
-.pair.corrected { border-color: color-mix(in srgb, var(--warn) 55%, var(--line)); }
-.pair.skipped { opacity: .75; }
-.pair-head { display: flex; justify-content: space-between; gap: .7rem; align-items: baseline; }
-.pair .label { color: var(--muted); font-size: .8rem; }
-.pair .value { font-weight: 600; text-align: right; word-break: break-word; }
-.pair .value.empty { color: var(--bad); font-weight: 400; font-style: italic; }
-.pair-actions { display: flex; gap: .4rem; margin-top: .5rem; }
-.pair-actions button {
-  width: auto; margin: 0; padding: .45rem .85rem; font-size: .85rem; font-weight: 600;
+.crop { width: 100%; border: 1px solid var(--line); border-radius: .4rem; background-repeat: no-repeat; margin-bottom: .5rem; }
+.pair { padding: .45rem 0; border-bottom: 1px solid var(--line); }
+.pair:last-child { border-bottom: none; }
+.pair-top { display: flex; align-items: center; gap: .5rem; }
+.pair .label { color: var(--muted); font-size: .78rem; flex: 1; min-width: 0; }
+.pair .ok {
+  flex: none; width: 2.1rem; height: 2.1rem; padding: 0; margin: 0; border-radius: .4rem;
+  border: 1px solid var(--line); background: var(--card); color: var(--muted); font-size: 1rem;
 }
-.pair-actions button.secondary { border-color: var(--line); color: var(--muted); }
-.issue-note { margin-top: .45rem; font-size: .84rem; color: var(--bad); }
+.pair.accepted .ok { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pair.corrected .label::after { content: " · corrigido"; color: var(--warn); }
+.field { width: 100%; margin-top: .3rem; }
+.field input, .field select, .field textarea {
+  width: 100%; box-sizing: border-box; padding: .55rem .6rem; font-size: .95rem;
+  border: 1px solid var(--line); border-radius: .4rem; background: var(--bg); color: var(--ink);
+  font-family: inherit;
+}
+.field textarea { min-height: 2.6rem; resize: vertical; }
+.field select { padding-right: 1.6rem; }
+.dev-only { opacity: .9; }
+.dev-only .label::before { content: "dev · "; color: var(--muted); font-size: .72rem; }
+.hidden { display: none !important; }
+.issue-note { font-size: .8rem; color: var(--bad); margin-top: .25rem; }
 .issue-note.info { color: var(--warn); }
-.editor { display: flex; gap: .4rem; margin-top: .5rem; }
-.editor input, .editor select {
-  flex: 1; min-width: 0; padding: .55rem; border: 1px solid var(--line);
-  border-radius: .4rem; font-size: .95rem; background: var(--bg); color: var(--ink);
+.table-wrap { overflow-x: auto; margin: .4rem 0 .6rem; }
+.form-table { border-collapse: collapse; width: 100%; font-size: .85rem; }
+.form-table th, .form-table td { border: 1px solid var(--line); padding: .18rem .2rem; text-align: center; }
+.form-table th.row-label, .form-table thead th { background: var(--card); font-weight: 600; }
+.form-table thead th { font-size: .68rem; color: var(--muted); white-space: normal; line-height: 1.15; }
+.form-table th.row-label { text-align: left; white-space: nowrap; font-size: .74rem; width: 3.6rem; }
+.form-table td input, .form-table td select {
+  width: 3.6rem; padding: .3rem .2rem; text-align: center; font-size: .9rem;
+  border: 1px solid var(--line); border-radius: .3rem; background: var(--bg); color: var(--ink);
 }
+.form-table td input.wide { width: 4.6rem; }
+.tick { display: flex; justify-content: center; }
+.tick button {
+  width: 2rem; height: 1.9rem; padding: 0; margin: 0; border-radius: .3rem;
+  border: 1px solid var(--line); background: var(--bg); color: var(--muted);
+  font-weight: 700; font-size: 1rem;
+}
+.tick button.plus { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tick button.minus { background: color-mix(in srgb, var(--ink) 12%, var(--bg)); color: var(--ink); }
+
+.form-table tr.corrected td { background: color-mix(in srgb, var(--warn) 7%, transparent); }
+.form-table tr.accepted th.row-label { color: var(--good); }
 .review-footer {
   position: fixed; bottom: 0; left: 0; right: 0; display: flex; align-items: center;
   gap: .7rem; padding: .55rem .8rem; background: var(--card); border-top: 1px solid var(--line);
 }
 .review-footer span { flex: 1; font-size: .84rem; color: var(--muted); }
 .review-footer button { width: auto; margin: 0; padding: .7rem 1.1rem; }
-.corrected-list { font-size: .86rem; color: var(--muted); margin-top: .5rem; }
+
+/* development fields are hidden unless the switch is on */
+body:not(.show-dev) .dev-row { display: none; }

@@ -1,0 +1,144 @@
+# Review layout — presentation only. Nothing here changes extraction or scoring.
+#
+# The review screen reads this to decide how a block is shown: as a table that mirrors the
+# card, as plain rows, or not at all. It is country data, not code (PURPOSE §5).
+
+# Location is confirmed on a map, never typed into a list of fields.
+hidden:
+  - district
+  - locality
+  - village_name
+
+# Useful while developing, noise for a clinician. Shown only with "modo desenvolvimento".
+dev_only:
+  - body_area_percentage
+  - skinpatch_notes
+  - hand_feet_notes
+  - treatment_grid
+  - is_filled
+  - unique_nr
+
+# Tables mirror the printed card so a reviewer compares position by position.
+tables:
+  - id: nerves
+    block: nerve_assessment
+    title: Palpação dos nervos periféricos
+    columns: [Cubital D, Cubital E, Radial D, Radial E, Poplíteo D, Poplíteo E]
+    rows:
+      - label: Grosso
+        cells:
+          - nerve_enlargement_cubital_right
+          - nerve_enlargement_cubital_left
+          - nerve_enlargement_radial_cutaneous_right
+          - nerve_enlargement_radial_cutaneous_left
+          - nerve_enlargement_popliteal_external_right
+          - nerve_enlargement_popliteal_external_left
+      - label: Dor
+        cells:
+          - nerve_pain_cubital_right
+          - nerve_pain_cubital_left
+          - nerve_pain_radial_cutaneous_right
+          - nerve_pain_radial_cutaneous_left
+          - nerve_pain_popliteal_external_right
+          - nerve_pain_popliteal_external_left
+
+  - id: insensitive_points
+    block: hand_feet_assessment
+    title: Pontos insensíveis
+    columns: [Direito, Esquerdo]
+    rows:
+      - label: Mão
+        cells: [insensitive_points_right_hand, insensitive_points_left_hand]
+      - label: Pé
+        cells: [insensitive_points_right_foot, insensitive_points_left_foot]
+
+  - id: eye_exam
+    block: def_exam
+    title: Exame dos olhos
+    columns: [Direito (D), Esquerdo (E)]
+    rows:
+      - label: Pestanejo (+/-)
+        cells: [right_eye_blinking, left_eye_blinking]
+      - label: Lagoftalmia (mm)
+        cells: [right_eye_lagoft, left_eye_lagoft]
+
+  - id: muscles
+    block: def_exam
+    title: Testagem dos músculos voluntários
+    columns: [Direito (D), Esquerdo (E)]
+    rows:
+      - label: Abdução dos dedos mínimos
+        cells: [right_hipothenar, left_hipothenar]
+      - label: Dorsi-flexão dos pés
+        cells: [right_foot_dorsiflex, left_foot_dorsiflex]
+
+  - id: grades
+    block: def_exam
+    title: Graus de deformidade (0, 1 ou 2)
+    columns: [Direito (D), Esquerdo (E)]
+    rows:
+      - label: Olhos
+        cells: [ehf_right_eye, ehf_left_eye]
+      - label: Mãos
+        cells: [ehf_right_hand, ehf_left_hand]
+      - label: Pés
+        cells: [ehf_right_foot, ehf_left_foot]
+
+# Portuguese display text. Extraction and scoring stay canonical; this is what a person reads.
+labels:
+  unique_nr: NIL
+  patient_name: Nome completo
+  birth_year: Ano de nascimento / Idade
+  cellphone_nr: Celular
+  patient_reference: Pessoa de referência
+  gender: Sexo
+  date_diagnosed: Data do diagnóstico
+  admin_classification: Categoria do caso
+  leprosy_classification: Classificação (PB/MB, adulto/criança)
+  transferred_from: Transferido de (unidade)
+  other_admin_comments: Outros comentários administrativos
+  skinpatch_time: Há quanto tempo apareceram as manchas
+  skinpatch_location: Onde estava a primeira mancha
+  itching: As lesões dão comichão
+  household_contact: Familiares ou vizinhos com lepra
+  previous_leprosy_treatment: Já teve diagnóstico e tratamento de lepra
+  who_referred: Quem trouxe o doente
+  nr_skinpatches: Número de manchas
+  body_area_percentage: Percentagem da área do corpo
+  skinpatch_notes: Descrição das lesões
+  insensitive_points_right_hand: Pontos insensíveis, mão direita
+  insensitive_points_left_hand: Pontos insensíveis, mão esquerda
+  insensitive_points_right_foot: Pontos insensíveis, pé direito
+  insensitive_points_left_foot: Pontos insensíveis, pé esquerdo
+  hand_feet_notes: Notas de mãos e pés
+  other_complications_hands: Outras complicações, mãos
+  other_complications_feet: Outras complicações, pés
+  is_filled: Secção preenchida
+  treatment_start_date: Início do tratamento
+  total_treatment_times: Total de tomas
+  treatment_months_total: Meses de tratamento
+  treatment_missed: Meses falhados
+  treatment_grid: Grelha de tratamento (bruta)
+
+option_labels:
+  new_case: Caso novo
+  re_entry: Reentrada após abandono
+  re_infection: Reinfecção
+  wrong_classification: Má classificação
+  MB_adult: MB adulto
+  PB_adult: PB adulto
+  MB_child: MB criança
+  PB_child: PB criança
+  M: Masculino
+  F: Feminino
+  Yes: Sim
+  No: Não
+  volunteer: Voluntário
+  family member: Familiar
+  self referred: Veio sozinho
+  traditional healer: Médico tradicional
+  other: Outra situação
+  Normal: Normal
+  Weak: Fraco
+  Paralysed: Paralisado
+  empty: Vazio

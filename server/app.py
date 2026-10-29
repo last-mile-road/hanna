@@ -293,6 +293,18 @@ class ReviewBody(BaseModel):
 
 
 _TEMPLATE_SIZE: dict[str, tuple[int, int]] = {}
+_UI_LAYOUT: dict[str, dict] = {}
+
+
+def _ui_layout(form_definition: dict) -> dict:
+    """countries/<country>/ui.yaml — how the review screen lays a block out."""
+    import yaml
+
+    country = form_definition.get("country", "mozambique")
+    if country not in _UI_LAYOUT:
+        path = settings.COUNTRIES_DIR / country / "ui.yaml"
+        _UI_LAYOUT[country] = yaml.safe_load(path.read_text()) if path.exists() else {}
+    return _UI_LAYOUT[country]
 
 
 def _template_size(path: str) -> tuple[int, int]:
@@ -331,6 +343,15 @@ def get_review(run_id: str):
             select(cards_t).where(cards_t.c.id == run["card_id"])
         ).mappings().one()
 
+    layout = _ui_layout((form["definition"] or {}))
+    hidden = set(layout.get("hidden") or [])
+    dev_only = set(layout.get("dev_only") or [])
+    labels = layout.get("labels") or {}
+    option_labels = layout.get("option_labels") or {}
+    tables_by_block: dict[str, list] = {}
+    for table in layout.get("tables") or []:
+        tables_by_block.setdefault(table.get("block"), []).append(table)
+
     issues = (run["validation"] or {}).get("issues", [])
     by_pair = {i.get("pair_id"): i for i in issues if i.get("pair_id")}
     by_block = {i.get("block_id"): i for i in issues if i.get("block_id") and not i.get("pair_id")}
@@ -342,7 +363,11 @@ def get_review(run_id: str):
         if not block.pairs:
             continue
         rows = []
+        skipped_hidden = 0
         for pair in block.pairs:
+            if pair.id in hidden:
+                skipped_hidden += 1
+                continue
             concept = concepts.get(pair.concept, {})
             obs = observations.get(pair.id, {})
             option_list = prompt_options(pair, concept) or []
@@ -351,7 +376,7 @@ def get_review(run_id: str):
                 {
                     "pair_id": pair.id,
                     "concept": pair.concept,
-                    "label": pair.label_local or concept.get("who_name") or pair.id,
+                    "label": labels.get(pair.id) or pair.label_local or concept.get("who_name") or pair.id,
                     "value_type": pair.value_type,
                     "value": obs.get("value"),
                     "raw_value": obs.get("raw_value"),
@@ -360,7 +385,11 @@ def get_review(run_id: str):
                     "review_mode": obs.get("review_mode"),
                     "reviewed_value": obs.get("reviewed_value"),
                     "options": [str(o) for o in option_list],
+                    "option_labels": {
+                        str(o): str(option_labels.get(str(o), o)) for o in option_list
+                    },
                     "issue": row_issue,
+                    "dev_only": pair.id in dev_only,
                 }
             )
             counts["total"] += 1
@@ -375,6 +404,8 @@ def get_review(run_id: str):
                 "bbox": block.bbox,
                 "issue": by_block.get(block.id),
                 "pairs": rows,
+                "tables": tables_by_block.get(block.id, []),
+                "hidden_count": skipped_hidden,
             }
         )
 
