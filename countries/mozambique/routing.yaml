@@ -1,8 +1,10 @@
 # Block -> profile. The task decides the model, not one global setting.
+# 2026-10-29: clinical history moved to the 9B (same score, ~10 s less);
+# the disability table stays on the 27B because the 9B loses up to 10 of 14 cells.
 default: or-qwen3vl-8b-v1
 blocks:
   general_demographic: or-qwen35-9b-v1
-  clinical_history: or-qwen35-27b-low
+  clinical_history: or-qwen35-9b-v1
   skin_patch: or-qwen3vl-8b-v1
   hand_feet_assessment: or-qwen35-9b-v1
   def_exam: or-qwen35-27b-low
