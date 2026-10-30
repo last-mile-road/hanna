@@ -31,6 +31,10 @@ image = (
 # Weights, not cards. Safe to persist and expensive to fetch.
 models = modal.Volume.from_name("hanna-models", create_if_missing=True)
 
+# One shared secret for the VPS -> Modal hop. Created with:
+#   modal secret create hanna-shared-key HANNA_KEY=<value>
+shared_key = modal.Secret.from_name("hanna-shared-key")
+
 
 @app.function(
     image=image,
@@ -60,24 +64,37 @@ def read_card(image_bytes: bytes, reader: str = "skeleton") -> dict:
     }
 
 
-from fastapi import FastAPI, File, Query, UploadFile
+import os
+
+from fastapi import FastAPI, File, Header, HTTPException, Query, UploadFile
 
 web = FastAPI(title="HANNA readers")
 
 
+def _authorise(key: str | None) -> None:
+    expected = os.environ.get("HANNA_KEY")
+    if not expected or key != expected:
+        raise HTTPException(401, "chave inválida")
+
+
 @web.get("/healthz")
 def healthz():
-    return {"ok": True, "reader": "skeleton"}
+    return {"ok": True, "reader": "skeleton", "auth": True}
 
 
 @web.post("/parse")
-async def parse(file: UploadFile = File(...), reader: str = Query("skeleton")):
+async def parse(
+    file: UploadFile = File(...),
+    reader: str = Query("skeleton"),
+    x_hanna_key: str | None = Header(default=None),
+):
     """Accept the upload, queue the single GPU container, return its JSON."""
+    _authorise(x_hanna_key)
     data = await file.read()
     return await read_card.remote.aio(data, reader)
 
 
-@app.function(image=image)
+@app.function(image=image, secrets=[shared_key])
 @modal.asgi_app()
 def api():
     return web
