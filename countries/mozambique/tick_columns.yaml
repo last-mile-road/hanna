@@ -44,7 +44,7 @@ gender:
 # How the strips are presented to the VLM. tools/render_tick_strip.py implements this, so
 # the drawing below is what the model receives.
 render:
-  left_margin_px: 72        # white space added after the crop, the numbers live there
+  left_margin_px: 56        # white space added after the crop, the numbers live there
   border_px: 12
   number_scale: 1.2
   number_thickness: 3
