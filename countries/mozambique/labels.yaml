@@ -35,12 +35,15 @@ block_bbox:
 # convention stated explicitly; without them the model counts ticks and swaps sides.
 block_hints:
   skin_patch: |
-    The diagram marks where sensation is lost; it is not the lesion description. For
-    `skinpatch_notes`, describe each ulcer or lesion with its body location (for example
-    "face anterior da perna direita"), its approximate size in centimetres when the card
-    gives one (for example "2 cm"), and how many there are (for example "duas úlceras").
-    Use the word "úlcera" for an open sore. Never invent a size the card does not show.
-    Keep it to one short sentence per lesion.
+    The diagram marks where patches are and where sensation is lost. Count the patches for
+    `nr_skinpatches` and mark the affected body areas for `body_area_percentage`.
+
+    A patch is NOT an ulcer. Use the word "úlcera" only when the card itself shows an open
+    sore (a filled circle, a wound drawing, or the ulcer legend). A flat mark on the body
+    diagram is a patch. Do not turn patches into ulcers.
+    For `skinpatch_notes`: one short sentence, body location only, for example
+    "manchas na face anterior da perna direita e no ombro direito". Do not invent a size.
+    If the card shows an actual ulcer, say so and give its size when written.
   hand_feet_assessment: |
     Rules for this diagram:
     - The left half is column D = the patient's right; the right half is column E = the patient's left.
@@ -53,8 +56,11 @@ block_hints:
       complication_other with Yes or No. Look at the four drawings: an open sore, a missing
       digit or limb, a claw hand, or anything else marked that is not an X and not a tick.
       More than one can be Yes.
-    - If any complication is Yes, describe it in hand_feet_notes with its location and its
-      approximate size when the card shows one. Same rule as the skin block: never invent a size.
+    - If any complication is Yes, `hand_feet_notes` must be a sentence, not the word
+      "úlcera" or "amputação". Give the location (hand or foot, and which digit if visible)
+      and the approximate size when the card shows one, for example "úlcera de 2 cm na base
+      do polegar direito". Never invent a size. If the diagram does not show where it is,
+      write what is visible and nothing more.
 
   clinical_history: |
     This block has six rows, top to bottom. Read the handwritten value or the

@@ -227,8 +227,32 @@ def run_card(
                 parsed = parse_json_response(
                     completion.text, [p.id for p in pairs_in_block]
                 )
+                if not parsed and pairs_in_block:
+                    # An empty answer is not a result. One retry, then say so out loud:
+                    # the 13:48 card lost its whole demographics block this way and looked
+                    # like a completed run with every field blank.
+                    try:
+                        retry = client.complete(
+                            item["prompt"],
+                            item["image_paths"],
+                            item["profile"]["model"],
+                            item["profile"]["settings"],
+                        )
+                        parsed = parse_json_response(
+                            retry.text, [p.id for p in pairs_in_block]
+                        )
+                        if parsed:
+                            block_values["retried"] = True
+                            result["input_tokens"] += retry.input_tokens or 0
+                            result["output_tokens"] += retry.output_tokens or 0
+                            result["cost_usd"] += retry.cost_usd or 0.0
+                    except Exception as retry_error:  # keep the first answer visible
+                        item["error"] = f"retry failed: {retry_error}"
                 if block.block_type == "dose_grid" and parsed:
                     parsed.update(derive_treatment_grid(parsed))
+                if not parsed and pairs_in_block:
+                    block_values["status"] = "empty"
+                    result["errors"].append(f"{block.id}: empty response")
                 result["input_tokens"] += completion.input_tokens or 0
                 result["output_tokens"] += completion.output_tokens or 0
                 result["cost_usd"] += completion.cost_usd or 0.0

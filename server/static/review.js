@@ -93,6 +93,18 @@ function render() {
       .forEach((pair) => section.appendChild(renderPair(pair)));
 
     acceptAll.addEventListener("click", () => {
+      // A table's "Verificado" covers that table only. The complication flags and the
+      // notes in the same block are separate judgements and stay untouched.
+      const tables = block.tables || [];
+      if (tables.length) {
+        const cells = new Set();
+        tables.forEach((table) => (table.rows || []).forEach((row) =>
+          row.cells.forEach((cell) => cells.add(cell))));
+        block.pairs.forEach((pair) => {
+          if (cells.has(pair.pair_id)) decide(pair.pair_id, "accepted", null);
+        });
+        return;
+      }
       block.pairs.forEach((pair) => {
         if (pair.dev_only && !devMode) return;
         decide(pair.pair_id, "accepted", null);
