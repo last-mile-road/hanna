@@ -34,6 +34,13 @@ block_bbox:
 # Block-level instructions. The hand/feet diagram needs the legend and the D/E
 # convention stated explicitly; without them the model counts ticks and swaps sides.
 block_hints:
+  skin_patch: |
+    The diagram marks where sensation is lost; it is not the lesion description. For
+    `skinpatch_notes`, describe each ulcer or lesion with its body location (for example
+    "face anterior da perna direita"), its approximate size in centimetres when the card
+    gives one (for example "2 cm"), and how many there are (for example "duas úlceras").
+    Use the word "úlcera" for an open sore. Never invent a size the card does not show.
+    Keep it to one short sentence per lesion.
   hand_feet_assessment: |
     Rules for this diagram:
     - The left half is column D = the patient's right; the right half is column E = the patient's left.

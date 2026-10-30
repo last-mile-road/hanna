@@ -16,6 +16,7 @@ const BLOCK_LABELS = {
 };
 
 let data = null;
+let imageReady = false;
 let devMode = localStorage.getItem("hanna.devMode") !== "off";
 const decisions = new Map();   // pair_id -> {mode, value}
 const timers = new Map();      // pair_id -> debounce
@@ -44,6 +45,7 @@ async function load() {
     return;
   }
   data = await response.json();
+  preloadImage();
   data.blocks.forEach((block) => block.pairs.forEach((pair) => pairsById.set(pair.pair_id, pair)));
   $("loading").classList.add("hidden");
   $("topline").classList.remove("hidden");
@@ -55,6 +57,15 @@ async function load() {
   $("next-issue").classList.toggle("hidden", !firstIssue);
   $("next-issue").addEventListener("click", () =>
     document.querySelector(".has-issue")?.scrollIntoView({ behavior: "smooth", block: "center" }));
+}
+
+function preloadImage() {
+  const image = new Image();
+  image.onload = () => {
+    imageReady = true;
+    document.querySelectorAll(".crop").forEach((crop) => { crop.textContent = ""; });
+  };
+  image.src = data.image.url;
 }
 
 /* ---------- render ---------- */
@@ -73,13 +84,17 @@ function render() {
     const count = document.createElement("span");
     count.className = "count";
     count.textContent = `${block.pairs.length} campos`;
+    const reviewed = document.createElement("span");
+    reviewed.className = "block-count";
+    reviewed.dataset.blockCount = block.id;
     const showCrop = document.createElement("button");
     showCrop.className = "mini";
     showCrop.textContent = "No cartão";
     const acceptAll = document.createElement("button");
-    acceptAll.className = "mini";
+    acceptAll.className = "mini accept";
+    acceptAll.dataset.acceptBlock = block.id;
     acceptAll.textContent = "Tudo correcto";
-    head.append(title, count, showCrop, acceptAll);
+    head.append(title, count, reviewed, showCrop, acceptAll);
     section.appendChild(head);
 
     const crop = document.createElement("div");
@@ -115,6 +130,13 @@ function render() {
 }
 
 function paintCrop(el, block) {
+  el.textContent = imageReady ? "" : "A carregar a imagem do cartão…";
+  if (!block.bbox) {
+    el.style.backgroundSize = "100% 100%";
+    el.style.backgroundPosition = "0 0";
+    el.style.aspectRatio = `${data.image.width} / ${data.image.height}`;
+    return;
+  }
   const [x1, y1, x2, y2] = block.bbox;
   const width = x2 - x1;
   const height = y2 - y1;
@@ -141,7 +163,11 @@ function renderPair(pair) {
   ok.addEventListener("click", () => decide(pair.pair_id, "accepted", null));
   top.append(label, ok);
   row.appendChild(top);
-  row.appendChild(control(pair));
+  if (pair.pair_id === "treatment_grid") {
+    row.appendChild(treatmentGrid(pair));
+  } else {
+    row.appendChild(control(pair));
+  }
   if (pair.issue) {
     const note = document.createElement("div");
     note.className = "issue-note" + (pair.issue.severity === "info" ? " info" : "");
@@ -149,6 +175,51 @@ function renderPair(pair) {
     row.appendChild(note);
   }
   return row;
+}
+
+function treatmentGrid(pair) {
+  let grid = null;
+  try { grid = JSON.parse(pair.value || ""); } catch (error) { grid = null; }
+  const wrap = document.createElement("div");
+  wrap.className = "table-wrap";
+  if (!grid || !(grid.rows || []).length) {
+    wrap.innerHTML = `<p class="table-note">Sem grelha legível. Valor bruto: ${pair.value || "—"}</p>`;
+    return wrap;
+  }
+  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  const table = document.createElement("table");
+  table.className = "form-table";
+  const head = document.createElement("tr");
+  head.appendChild(document.createElement("th"));
+  months.forEach((month) => {
+    const th = document.createElement("th");
+    th.textContent = month;
+    head.appendChild(th);
+  });
+  table.appendChild(head);
+  grid.rows.forEach((row) => {
+    const tr = document.createElement("tr");
+    const label = document.createElement("th");
+    label.className = "row-label";
+    label.textContent = row.year || "—";
+    tr.appendChild(label);
+    const days = {};
+    (row.doses || []).forEach((dose) => { days[dose.month] = String(dose.day); });
+    (row.missed_months || []).forEach((missed) => { days[missed.month] = "F"; });
+    months.forEach((_, index) => {
+      const td = document.createElement("td");
+      td.textContent = days[index + 1] || "·";
+      if (days[index + 1] === "F") td.className = "missed";
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  });
+  wrap.appendChild(table);
+  const note = document.createElement("p");
+  note.className = "table-note";
+  note.textContent = "Grelha de tratamento: dia da toma em cada mês; F = mês falhado.";
+  wrap.appendChild(note);
+  return wrap;
 }
 
 function control(pair, compact = false) {
@@ -252,6 +323,12 @@ function renderTable(table, block) {
   });
   el.appendChild(tbody);
   wrap.appendChild(el);
+  if (table.note) {
+    const note = document.createElement("p");
+    note.className = "table-note";
+    note.textContent = table.note;
+    wrap.appendChild(note);
+  }
   return wrap;
 }
 
@@ -319,6 +396,19 @@ function paint() {
   document.querySelectorAll(".form-table tr[data-rows]").forEach((tr) => {
     const modes = tr.dataset.rows.split(",").map((id) => decisions.get(id)?.mode);
     tr.classList.toggle("accepted", modes.length > 0 && modes.every((mode) => mode === "accepted"));
+  });
+  data.blocks.forEach((block) => {
+    let total = 0;
+    let accepted = 0;
+    block.pairs.forEach((pair) => {
+      if (pair.dev_only && !devMode) return;
+      total += 1;
+      if (decisions.get(pair.pair_id)?.mode === "accepted") accepted += 1;
+    });
+    const counter = document.querySelector(`[data-block-count="${block.id}"]`);
+    if (counter) counter.textContent = `${accepted}/${total}`;
+    const button = document.querySelector(`[data-accept-block="${block.id}"]`);
+    if (button) button.classList.toggle("done", total > 0 && accepted === total);
   });
 }
 

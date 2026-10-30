@@ -45,6 +45,7 @@ tables:
   - id: insensitive_points
     block: hand_feet_assessment
     title: Pontos insensíveis
+    note: Contagem de pontos insensíveis em cada mão e pé (0 a 8). É um número, não um grau.
     columns: [Direito, Esquerdo]
     rows:
       - label: Mão
@@ -118,7 +119,7 @@ labels:
   total_treatment_times: Total de tomas
   treatment_months_total: Meses de tratamento
   treatment_missed: Meses falhados
-  treatment_grid: Grelha de tratamento (bruta)
+  treatment_grid: Grelha de tratamento
 
 option_labels:
   new_case: Caso novo

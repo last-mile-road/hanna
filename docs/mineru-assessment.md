@@ -162,3 +162,10 @@ path. Treat "fast" as applying to this machine, not to the test server.
 A replacement for the VLM. On these three cards 39–41 of the scoreable fields are choice or
 tick fields, which text alone cannot decide, and the visual blocks are diagrams. MinerU
 reads the paper; the pipeline reads the record.
+
+---
+
+**Update 2026-10-30.** The local install only has the flash tier; the HTML table structure
+in the archives above came from the hosted service. A full seven-card comparison of local
+MinerU flash and PaddleOCR-VL 1.6 against the routed pipeline is in
+`docs/readers-comparison-2026-10-30.md`.
