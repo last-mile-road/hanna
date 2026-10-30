@@ -80,6 +80,13 @@ def _field_line(pair: Pair, concept: dict[str, Any]) -> str:
         parts.append('write "+" or "-"')
     elif options and kind in {"choice_single", "tick_box"}:
         parts.append("allowed values: " + " | ".join(str(o) for o in options))
+        if 2 <= len(options) <= 8:
+            # Read the box, not the option. The reviewer sees which boxes were marked, and
+            # two ticked boxes or none is visible instead of silently resolved.
+            boxes = ", ".join(f'"{o}": "ticked" | "unticked"' for o in options)
+            parts.append(
+                f'also answer "{pair.id}_boxes" as an object with every option: {{{boxes}}}'
+            )
 
     marks = concept.get("card_marks")
     if marks:

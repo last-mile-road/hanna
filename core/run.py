@@ -39,6 +39,34 @@ def _find_card_by_id(conn, card_id: int):
     return conn.execute(select(cards).where(cards.c.id == card_id)).mappings().one()
 
 
+def _match_option(text, pair) -> str:
+    key = normalise.key(text)
+    for option in pair.options or []:
+        if normalise.key(option) == key:
+            return str(option)
+    return str(text)
+
+
+def _apply_box_states(parsed: dict, pairs_in_block) -> None:
+    """Use the per-box states when they are unambiguous.
+
+    The model answers `<pair>_boxes` with every printed option marked ticked or unticked.
+    Exactly one ticked box sets the value, whatever the model put in the value field; zero
+    or two ticked boxes leave its answer alone, so the ambiguity reaches the reviewer
+    instead of being resolved inside the prompt.
+    """
+    for pair in pairs_in_block:
+        states = parsed.get(f"{pair.id}_boxes")
+        if not isinstance(states, dict):
+            continue
+        ticked = [
+            option for option, mark in states.items()
+            if str(mark).strip().lower() in {"ticked", "checked", "x", "yes", "sim", "true", "1"}
+        ]
+        if len(ticked) == 1:
+            parsed[pair.id] = _match_option(ticked[0], pair)
+
+
 def _find_form(conn):
     return conn.execute(select(forms).order_by(forms.c.version.desc()).limit(1)).mappings().one()
 
@@ -241,6 +269,7 @@ def run_card(
                         parsed = parse_json_response(
                             retry.text, [p.id for p in pairs_in_block]
                         )
+                        _apply_box_states(parsed, pairs_in_block)
                         if parsed:
                             block_values["retried"] = True
                             result["input_tokens"] += retry.input_tokens or 0
@@ -250,6 +279,7 @@ def run_card(
                         item["error"] = f"retry failed: {retry_error}"
                 if block.block_type == "dose_grid" and parsed:
                     parsed.update(derive_treatment_grid(parsed))
+                _apply_box_states(parsed, pairs_in_block)
                 if not parsed and pairs_in_block:
                     block_values["status"] = "empty"
                     result["errors"].append(f"{block.id}: empty response")
