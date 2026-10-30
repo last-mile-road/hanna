@@ -1,39 +1,42 @@
-# Tick columns, proposed from the printed boxes on the blank template (2026-10-30).
-# AWAITING THE OWNER'S VISUAL CONFIRMATION before any of this is used.
-#
-# Method: contour detection on the template, then one strip per question group with
-# 20 px of padding all round. The numbers are drawn inside the strip; the prompt is given
-# the band -> (question, option) mapping, so the model answers with band numbers only.
+# Tick columns, measured on the blank template (2026-10-30).
+# CONFIRMED by the owner with two adjustments: 55 px of white on the left for the band
+# number, and larger numbers (these are drawn at render time, not stored here).
+# One strip per question group. The prompt is given the band -> option mapping, so the
+# model answers with band numbers and never has to read an option name.
 # Coordinates are template pixels (3332 x 2502).
 
 clinical_history:
-  note: four strips, one per question, instead of one long strip
+  note: four strips, 20 px padding all round, 55 px white on the left for the number
   groups:
-    - {concept: itching, strip: [1340, 1194, 1411, 1314], bands: [[1360, 1214, 31, 30], [1360, 1263, 30, 31]],
-       options: [Yes, No]}
-    - {concept: leprosy_contact, strip: [1340, 1388, 1412, 1508], bands: [[1360, 1408, 32, 32], [1360, 1458, 32, 30]],
-       options: [Yes, No]}
-    - {concept: previous_leprosy_treatment, strip: [1341, 1535, 1412, 1654], bands: [[1361, 1555, 31, 31], [1361, 1604, 31, 30]],
-       options: [Yes, No]}
-    - {concept: referred_by, strip: [1340, 1683, 1413, 1948],
-       bands: [[1362, 1703, 30, 29], [1360, 1750, 32, 32], [1360, 1800, 32, 30], [1362, 1849, 30, 31], [1360, 1898, 33, 30]],
+    - {concept: itching, strip: [1305, 1194, 1411, 1314],
+       bands: [[1360, 1214, 31, 30], [1360, 1263, 30, 31]], options: [Yes, No]}
+    - {concept: leprosy_contact, strip: [1305, 1388, 1412, 1508],
+       bands: [[1360, 1408, 32, 32], [1360, 1458, 32, 30]], options: [Yes, No]}
+    - {concept: previous_leprosy_treatment, strip: [1306, 1535, 1412, 1654],
+       bands: [[1361, 1555, 31, 31], [1361, 1604, 31, 30]], options: [Yes, No]}
+    - {concept: referred_by, strip: [1305, 1683, 1413, 1948],
+       bands: [[1362, 1703, 30, 29], [1360, 1750, 32, 32], [1360, 1800, 32, 30],
+               [1362, 1849, 30, 31], [1360, 1898, 33, 30]],
        options: [self referred, volunteer, family member, traditional healer, other]}
 
 case_category:
-  note: admin_classification, one strip, four bands
-  strip: [548, 1000, 621, 1266]
+  note: admin_classification. The last band sits close to the section rule; leave it.
+  strip: [513, 1000, 621, 1266]
   bands: [[570, 1020, 30, 32], [571, 1118, 29, 30], [568, 1168, 33, 30], [571, 1216, 30, 30]]
   options: [new_case, re_entry, wrong_classification, re_infection]
 
 leprosy_classification:
-  note: one strip, four bands; the fourth box needed a looser threshold
-  strip: [552, 1441, 624, 1803]
+  note: four bands; the fourth needed a looser threshold to detect
+  strip: [517, 1441, 624, 1803]
   bands: [[572, 1461, 31, 32], [571, 1556, 34, 32], [573, 1656, 31, 31], [574, 1753, 31, 30]]
   options: [MB_adult, PB_adult, MB_child, PB_child]
 
 gender:
-  note: horizontal row; cut-and-stack at the split, band 1 = M, band 2 = F
-  strip: [1220, 505, 1445, 580]
+  note: >
+    Horizontal row. Crop from x 1138 so the M label is inside band 1; split at 1305, which
+    puts the F label inside band 2. Each band therefore carries its own letter and box.
+    Stack band 1 above band 2, number them 1 and 2, and ask which numbered band is ticked.
+  strip: [1138, 503, 1448, 582]
   split_x: 1305
-  bands: [[1236, 517, 53, 45], [1373, 516, 56, 46]]
+  bands: [[1138, 503, 167, 79], [1305, 503, 143, 79]]
   options: [M, F]
