@@ -429,6 +429,38 @@ function updateProgress() {
 $("finish").addEventListener("click", async () => {
   timers.forEach((timer) => clearTimeout(timer));
   timers.clear();
+
+  // Untouched is not the same as accepted: a value nobody looked at must not count as
+  // confirmed in the statistics or the training set. Record the remainder as skipped.
+  const untouched = [];
+  data.blocks.forEach((block) => {
+    block.pairs.forEach((pair) => {
+      if (pair.dev_only && !devMode) return;
+      if (!decisions.has(pair.pair_id)) untouched.push(pair.pair_id);
+    });
+  });
+
+  if (untouched.length) {
+    const ok = confirm(
+      `Faltam ${untouched.length} campos por rever.\n\n` +
+      "Continuar regista-os como NÃO revistos (não contam como correctos)."
+    );
+    if (!ok) return;
+    $("finish").textContent = "A guardar…";
+    try {
+      await fetch(`/api/runs/${runId}/review`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reviews: untouched.map((pair_id) => ({ pair_id, mode: "skipped" })),
+        }),
+      });
+    } catch (error) {
+      $("finish").textContent = "Terminar";
+      return;
+    }
+  }
+
   $("finish").textContent = "A guardar…";
   await saveQueue;
   location.href = "/";
