@@ -63,8 +63,13 @@ def prompt_for(group: dict, n: int) -> str:
     )
 
 
-def decode_ticked(parsed: dict) -> list[int]:
-    value = parsed.get("ticked")
+def decode_ticked(parsed) -> list[int]:
+    if isinstance(parsed, list):      # the model may answer with a bare array
+        value = parsed
+    elif isinstance(parsed, dict):
+        value = parsed.get("ticked")
+    else:
+        value = None
     if isinstance(value, int):
         return [value]
     if isinstance(value, list):
