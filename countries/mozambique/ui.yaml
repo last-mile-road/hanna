@@ -119,6 +119,10 @@ labels:
   total_treatment_times: Total de tomas
   treatment_months_total: Meses de tratamento
   treatment_missed: Meses falhados
+  complication_ulcer: Úlcera
+  complication_amputation: Amputação
+  complication_contracture: Contratura / mão em garra
+  complication_other: Outra complicação
   treatment_grid: Grelha de tratamento
 
 option_labels:
@@ -143,3 +147,5 @@ option_labels:
   Weak: Fraco
   Paralysed: Paralisado
   empty: Vazio
+  "True": Sim
+  "False": Não
