@@ -162,7 +162,10 @@ def canonical(
     k = key(text)
 
     if value_type == "tick_box":
-        return TICK.get(k, text)
+        # Clinically a nerve is enlarged or it is not: only a clear plus is positive.
+        # A tilde, a tick, a dot or a smudge all mean "not enlarged", and scoring them
+        # as errors punishes the reader for a mark the clinic treats as a minus.
+        return "+" if TICK.get(k) == "+" else "-"
 
     concept_id = concept.get("id", "")
 

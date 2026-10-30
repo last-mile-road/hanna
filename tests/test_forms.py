@@ -31,7 +31,7 @@ def form():
 
 def test_block_and_pair_counts(form):
     assert len(form["blocks"]) == 8
-    assert sum(len(b["value_pairs"]) for b in form["blocks"]) == 62
+    assert sum(len(b["value_pairs"]) for b in form["blocks"]) == 66
 
 
 def test_every_pair_resolves_to_a_concept(form):

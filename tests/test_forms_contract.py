@@ -10,7 +10,7 @@ def test_mozambique_pack_loads():
     pack = load_form_pack()
     assert pack.form["id"] == "mozambique_leprosy_card_pt"
     assert len(pack.blocks) == 8
-    assert len(pack.pairs) == 62
+    assert len(pack.pairs) == 66
     assert len(pack.concepts) >= 60
 
 

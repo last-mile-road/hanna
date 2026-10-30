@@ -16,7 +16,6 @@ const BLOCK_LABELS = {
 };
 
 let data = null;
-let imageReady = false;
 let devMode = localStorage.getItem("hanna.devMode") !== "off";
 const decisions = new Map();   // pair_id -> {mode, value}
 const timers = new Map();      // pair_id -> debounce
@@ -45,7 +44,6 @@ async function load() {
     return;
   }
   data = await response.json();
-  preloadImage();
   data.blocks.forEach((block) => block.pairs.forEach((pair) => pairsById.set(pair.pair_id, pair)));
   $("loading").classList.add("hidden");
   $("topline").classList.remove("hidden");
@@ -57,15 +55,6 @@ async function load() {
   $("next-issue").classList.toggle("hidden", !firstIssue);
   $("next-issue").addEventListener("click", () =>
     document.querySelector(".has-issue")?.scrollIntoView({ behavior: "smooth", block: "center" }));
-}
-
-function preloadImage() {
-  const image = new Image();
-  image.onload = () => {
-    imageReady = true;
-    document.querySelectorAll(".crop").forEach((crop) => { crop.textContent = ""; });
-  };
-  image.src = data.image.url;
 }
 
 /* ---------- render ---------- */
@@ -87,25 +76,12 @@ function render() {
     const reviewed = document.createElement("span");
     reviewed.className = "block-count";
     reviewed.dataset.blockCount = block.id;
-    const showCrop = document.createElement("button");
-    showCrop.className = "mini";
-    showCrop.textContent = "No cartão";
     const acceptAll = document.createElement("button");
     acceptAll.className = "mini accept";
     acceptAll.dataset.acceptBlock = block.id;
-    acceptAll.textContent = "Tudo correcto";
-    head.append(title, count, reviewed, showCrop, acceptAll);
+    acceptAll.textContent = (block.tables || []).length ? "Verificado" : "Tudo correcto";
+    head.append(title, count, reviewed, acceptAll);
     section.appendChild(head);
-
-    const crop = document.createElement("div");
-    crop.className = "crop hidden";
-    section.appendChild(crop);
-    showCrop.addEventListener("click", () => {
-      const opening = crop.classList.contains("hidden");
-      if (opening) paintCrop(crop, block);
-      crop.classList.toggle("hidden", !opening);
-      showCrop.textContent = opening ? "Fechar" : "No cartão";
-    });
 
     const inTable = new Set();
     (block.tables || []).forEach((table) => {
@@ -127,23 +103,6 @@ function render() {
   });
   paint();
   updateProgress();
-}
-
-function paintCrop(el, block) {
-  el.textContent = imageReady ? "" : "A carregar a imagem do cartão…";
-  if (!block.bbox) {
-    el.style.backgroundSize = "100% 100%";
-    el.style.backgroundPosition = "0 0";
-    el.style.aspectRatio = `${data.image.width} / ${data.image.height}`;
-    return;
-  }
-  const [x1, y1, x2, y2] = block.bbox;
-  const width = x2 - x1;
-  const height = y2 - y1;
-  el.style.backgroundImage = `url(${data.image.url})`;
-  el.style.backgroundSize = `${(data.image.width / width) * 100}% ${(data.image.height / height) * 100}%`;
-  el.style.backgroundPosition = `-${(x1 / width) * 100}% -${(y1 / height) * 100}%`;
-  el.style.aspectRatio = `${width} / ${height}`;
 }
 
 function renderPair(pair) {
@@ -203,13 +162,42 @@ function treatmentGrid(pair) {
     label.className = "row-label";
     label.textContent = row.year || "—";
     tr.appendChild(label);
-    const days = {};
-    (row.doses || []).forEach((dose) => { days[dose.month] = String(dose.day); });
-    (row.missed_months || []).forEach((missed) => { days[missed.month] = "F"; });
     months.forEach((_, index) => {
+      const month = index + 1;
       const td = document.createElement("td");
-      td.textContent = days[index + 1] || "·";
-      if (days[index + 1] === "F") td.className = "missed";
+      const select = document.createElement("select");
+      select.className = "month-cell";
+      const blank = document.createElement("option");
+      blank.value = "";
+      blank.textContent = "·";
+      select.appendChild(blank);
+      for (let day = 1; day <= 31; day += 1) {
+        const option = document.createElement("option");
+        option.value = String(day);
+        option.textContent = String(day);
+        select.appendChild(option);
+      }
+      const missed = document.createElement("option");
+      missed.value = "F";
+      missed.textContent = "F";
+      select.appendChild(missed);
+
+      const dose = (row.doses || []).find((entry) => entry.month === month);
+      const skipped = (row.missed_months || []).find((entry) => entry.month === month);
+      select.value = dose ? String(dose.day) : (skipped ? "F" : "");
+      if (select.value === "F") select.classList.add("missed");
+
+      select.addEventListener("change", () => {
+        row.doses = (row.doses || []).filter((entry) => entry.month !== month);
+        row.missed_months = (row.missed_months || []).filter((entry) => entry.month !== month);
+        if (select.value === "F") row.missed_months.push({ month });
+        else if (select.value) row.doses.push({ month, day: Number(select.value) });
+        row.doses.sort((a, b) => a.month - b.month);
+        row.missed_months.sort((a, b) => a.month - b.month);
+        select.classList.toggle("missed", select.value === "F");
+        decide(pair.pair_id, "corrected", JSON.stringify(grid));
+      });
+      td.appendChild(select);
       tr.appendChild(td);
     });
     table.appendChild(tr);
@@ -217,7 +205,7 @@ function treatmentGrid(pair) {
   wrap.appendChild(table);
   const note = document.createElement("p");
   note.className = "table-note";
-  note.textContent = "Grelha de tratamento: dia da toma em cada mês; F = mês falhado.";
+  note.textContent = "Grelha de tratamento: escolha o dia da toma em cada mês, ou F se o mês foi falhado.";
   wrap.appendChild(note);
   return wrap;
 }

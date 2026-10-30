@@ -49,6 +49,12 @@ block_hints:
     - A blacked-out or amputated digit is a complication, not an X.
     - Count only X marks, separately for the hand and the foot.
     - Also answer is_filled: true if there is at least one handwritten tick or X anywhere in the four drawings.
+    - Answer complication_ulcer, complication_amputation, complication_contracture and
+      complication_other with Yes or No. Look at the four drawings: an open sore, a missing
+      digit or limb, a claw hand, or anything else marked that is not an X and not a tick.
+      More than one can be Yes.
+    - If any complication is Yes, describe it in hand_feet_notes with its location and its
+      approximate size when the card shows one. Same rule as the skin block: never invent a size.
 
   clinical_history: |
     This block has six rows, top to bottom. Read the handwritten value or the

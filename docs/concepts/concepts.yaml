@@ -403,7 +403,36 @@ concepts:
     aliases: []
     note: "Date of the follow-up examination written in each review block. Keys a visit: without it, two reviews of the same card cannot be told apart. Not on any current test card image, which is front only."
 
+  - id: complication_ulcer
+    aliases: [complication_ulcer]
+    who_name: "Ulcer on hand or foot"
+    value_type: choice_single
+    options: [Yes, No]
+    sensitivity: clinical
+    tier: core
+    note: "An open sore marked on the diagram. Report Yes even when the size is not written."
 
+  - id: complication_amputation
+    aliases: [complication_amputation]
+    who_name: "Amputation of a digit or limb"
+    value_type: choice_single
+    options: [Yes, No]
+    sensitivity: clinical
+    tier: core
 
+  - id: complication_contracture
+    aliases: [complication_contracture]
+    who_name: "Contracture or claw hand"
+    value_type: choice_single
+    options: [Yes, No]
+    sensitivity: clinical
+    tier: core
 
-
+  - id: complication_other
+    aliases: [complication_other]
+    who_name: "Other hand or foot complication"
+    value_type: choice_single
+    options: [Yes, No]
+    sensitivity: clinical
+    tier: local
+    note: "Gangrene, a missing nail, a wound dressing, anything marked but none of the above."

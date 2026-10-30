@@ -379,6 +379,42 @@ blocks:
     bbox: null
     sensitivity: clinical
     geometry_source: v5 had no per-pair box; block crop only
+  - id: complication_ulcer
+    concept: complication_ulcer
+    value_type: choice_single
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - true
+    - false
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: complication_amputation
+    concept: complication_amputation
+    value_type: choice_single
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - true
+    - false
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: complication_contracture
+    concept: complication_contracture
+    value_type: choice_single
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - true
+    - false
+    geometry_source: v5 had no per-pair box; block crop only
+  - id: complication_other
+    concept: complication_other
+    value_type: choice_single
+    bbox: null
+    sensitivity: clinical
+    allowed_values:
+    - true
+    - false
+    geometry_source: v5 had no per-pair box; block crop only
   - id: hand_feet_notes
     concept: hand_foot_exam_notes
     value_type: text

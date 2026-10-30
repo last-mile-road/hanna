@@ -4,7 +4,7 @@
   "template": "template.jpg",
   "status": "partial",
   "fields_verified": 45,
-  "fields_total": 61,
+  "fields_total": 65,
   "fields_scoreable": 54,
   "last_updated": "2026-10-23",
   "reviewed_by": "Arie",
@@ -311,6 +311,26 @@
       "source": null
     },
     "treatment_missed": {
+      "value": null,
+      "status": "pending",
+      "source": null
+    },
+    "complication_ulcer": {
+      "value": null,
+      "status": "pending",
+      "source": null
+    },
+    "complication_amputation": {
+      "value": null,
+      "status": "pending",
+      "source": null
+    },
+    "complication_contracture": {
+      "value": null,
+      "status": "pending",
+      "source": null
+    },
+    "complication_other": {
       "value": null,
       "status": "pending",
       "source": null
