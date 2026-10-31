@@ -47,7 +47,7 @@ shared_key = modal.Secret.from_name("hanna-shared-key")
 
 @app.function(
     image=image_mineru,
-    gpu="T4",
+    gpu="L4",
     max_containers=1,
     timeout=1800,
     volumes={"/models": models},
