@@ -16,7 +16,7 @@ from typing import Any
 
 from sqlalchemy import select, text, update
 
-from . import align, normalise, settings, store
+from . import align, normalise, settings, store, ticks
 from .db import connect
 from .forms import Block, Pair
 from .inference import OpenRouter
@@ -27,6 +27,16 @@ from .validate import validate_run
 from .schema import cards, forms, profiles, runs
 
 OCR_BLOCK_TYPES = {"value_pairs", "tick_grid", "annotated_table", "free_text"}
+
+
+def _complete_with_fallback(client, prompt, image_paths, profile, fallback):
+    """Ordered fail-through: one model rate-limited upstream must not fail the block."""
+    try:
+        return client.complete(prompt, image_paths, profile["model"], profile["settings"])
+    except Exception:
+        if not fallback or fallback["id"] == profile["id"]:
+            raise
+        return client.complete(prompt, image_paths, fallback["model"], fallback["settings"])
 
 
 def _find_card(conn, form_name: str):
@@ -121,6 +131,7 @@ def run_card(
             else {"default": profile_id, "blocks": {}}
         )
         run_profile_id = "or-routing-v1" if routing else profile_id
+        fallback_profile = profiles_by_id.get(routing_map.get("fallback", "")) if routing else None
         blocks, pairs, concepts = store.form_rows(conn, form["id"])
         truth = store.ground_truth_map(conn, card["id"], version=1)
         if run_id is None:
@@ -367,11 +378,12 @@ def run_card(
             with ThreadPoolExecutor(max_workers=workers) as pool:
                 futures = {
                     pool.submit(
-                        client.complete,
+                        _complete_with_fallback,
+                        client,
                         item["prompt"],
                         item["image_paths"],
-                        group_profile["model"],
-                        group_profile["settings"],
+                        group_profile,
+                        fallback_profile,
                     ): item
                     for item in items
                 }
@@ -384,6 +396,56 @@ def run_card(
                     # Persist as each block lands: SSE reads block_runs, so a late
                     # write would turn progress into one batch at the end.
                     record(item)
+
+        # Tick groups: one strip per printed question, overriding the block values for the
+        # tick fields. Measured 49/49 for strips against 30/35 for the block prompt.
+        tick_values: dict = {}
+        if routing:
+            tick_profile_id = routing_map.get("strips", profile_id)
+            tick_profile = profiles_by_id.get(tick_profile_id, profile)
+            try:
+                tick_values, tick_usage = ticks.read_ticks(
+                    alignment.image,
+                    str(form["definition"].get("country", "mozambique")).lower(),
+                    client,
+                    tick_profile,
+                    run_dir,
+                )
+                result["input_tokens"] += tick_usage["input_tokens"]
+                result["output_tokens"] += tick_usage["output_tokens"]
+                result["cost_usd"] += tick_usage["cost_usd"]
+                result["tick_calls"] = tick_usage["calls"]
+                for note in tick_usage["errors"]:
+                    print("  warning:", note)
+            except Exception as exc:  # strips are an improvement, not a hard dependency
+                print("  warning: tick strips failed:", exc)
+
+        if tick_values:
+            spec_groups = {g["concept"]: g for g in ticks.groups(ticks.load_spec(
+                str(form["definition"].get("country", "mozambique")).lower()))}
+            for concept, entry in tick_values.items():
+                pair_id = (spec_groups.get(concept) or {}).get("pair")
+                if not pair_id:
+                    continue
+                all_values[pair_id] = entry["value"]
+                pair = next((item for item in pairs if item.id == pair_id), None)
+                expected_row = truth.get(pair_id)
+                expected = expected_row["value"] if expected_row else None
+                correct = (
+                    normalise.compare(pair.value_type, entry["value"], expected, concepts[pair.concept])
+                    if (pair and expected is not None)
+                    else None
+                )
+                with connect() as conn:
+                    conn.execute(
+                        text(
+                            "UPDATE observations SET value = :value, raw_value = :raw, correct = :correct "
+                            "WHERE run_id = :run_id AND pair_id = :pair_id"
+                        ),
+                        {"value": entry["value"], "raw": entry["raw"], "correct": correct,
+                         "run_id": run_id, "pair_id": pair_id},
+                    )
+                    conn.commit()
 
         # An age is as-of the visit, not as-of today. Once the diagnosis date is known,
         # re-anchor every age-derived birth year to it and keep the observation honest.

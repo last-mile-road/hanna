@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import openai
 from openai import OpenAI
 
 from . import settings
@@ -66,7 +67,18 @@ class OpenRouter:
         }
         if model_settings.get("top_p") is not None:
             kwargs["top_p"] = float(model_settings["top_p"])
-        response = self.client.chat.completions.create(**kwargs)
+        # A shared upstream pool rate-limits one model while another is healthy. One retry
+        # inside the SDK is not enough; back off here instead of failing the block.
+        response = None
+        for attempt in range(4):
+            try:
+                response = self.client.chat.completions.create(**kwargs)
+                break
+            except (openai.RateLimitError, openai.APITimeoutError,
+                    openai.APIConnectionError, openai.InternalServerError):
+                if attempt == 3:
+                    raise
+                time.sleep(2 ** (attempt + 1))
         latency_ms = int((time.monotonic() - started) * 1000)
         text = response.choices[0].message.content or ""
         usage = response.usage.model_dump() if response.usage else {}
