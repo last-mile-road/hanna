@@ -31,9 +31,103 @@ image = (
 # Weights, not cards. Safe to persist and expensive to fetch.
 models = modal.Volume.from_name("hanna-models", create_if_missing=True)
 
+# MinerU needs torch and OpenCV's system libraries. T4 is compute 7.5, which PyTorch
+# supports; PaddleOCR-VL does not (it needs >= 8.5), hence a separate image on an L4.
+image_mineru = (
+    modal.Image.debian_slim(python_version="3.12")
+    .apt_install("libgl1", "libglib2.0-0", "libgomp1", "poppler-utils")
+    .pip_install("mineru[torch]>=4.0,<5", "fastapi[standard]", "pillow")
+    .env({"MINERU_HOME": "/models/mineru"})
+)
+
 # One shared secret for the VPS -> Modal hop. Created with:
 #   modal secret create hanna-shared-key HANNA_KEY=<value>
 shared_key = modal.Secret.from_name("hanna-shared-key")
+
+
+@app.function(
+    image=image_mineru,
+    gpu="T4",
+    max_containers=1,
+    timeout=1800,
+    volumes={"/models": models},
+)
+def parse_mineru(image_bytes: bytes, tier: str = "standard") -> dict:
+    """One image in, MinerU's markdown and tables out. Nothing is stored.
+
+    First call on a cold volume downloads the model set (~2 GB) and is slow; the models
+    live on hanna-models and later calls skip that. The managed local parse server is
+    configured once and then reused.
+    """
+    import os
+    import subprocess
+    import tempfile
+    import time
+    from pathlib import Path as _Path
+
+    started = time.time()
+    # MinerU binds a Unix socket inside MINERU_HOME, and a Modal Volume cannot host one
+    # (OSError 95). Home lives on the container's local disk; the weights stay on the
+    # Volume and are reached through a symlink.
+    home = _Path("/tmp/mineru")
+    home.mkdir(parents=True, exist_ok=True)
+    persist = _Path("/models/mineru")
+    (persist / "models").mkdir(parents=True, exist_ok=True)
+    if not (home / "models").exists():
+        (home / "models").symlink_to(persist / "models")
+    env = {**os.environ, "MINERU_HOME": str(home)}
+    log: list[str] = []
+
+    def run(cmd, timeout=1500):
+        result = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=timeout)
+        log.append(f"{' '.join(cmd)} -> {result.returncode} "
+                   f"{(result.stderr or result.stdout or '')[-300:].strip()}")
+        return result
+
+    # Models and the managed server are idempotent; the volume makes them a one-off cost.
+    models_run = run(["mineru-kit", "models", "download", "--tier", tier], timeout=1500)
+    cfg1 = run(["mineru", "config", "set", "parse_server.local.managed_tier", tier])
+    cfg2 = run(["mineru", "config", "set", "parse_server.local.mode", "managed"])
+    start = run(["mineru", "server", "start"], timeout=300)
+    diagnostics = {
+        "models": [models_run.returncode, (models_run.stdout or "")[-400:], (models_run.stderr or "")[-400:]],
+        "config_tier": [cfg1.returncode, (cfg1.stderr or cfg1.stdout or "")[-300:]],
+        "config_mode": [cfg2.returncode, (cfg2.stderr or cfg2.stdout or "")[-300:]],
+        "server_start": [start.returncode, (start.stdout or "")[-600:], (start.stderr or "")[-600:]],
+    }
+    log_dir = _Path("/tmp/mineru/logs")
+    diagnostics["doclib_logs"] = {
+        name: (log_dir / name).read_text(errors="ignore")[-2500:]
+        for name in ("doclib.log", "doclib.stderr.log", "doclib.stdout.log")
+        if (log_dir / name).exists()
+    }
+    for _ in range(20):
+        status = run(["mineru", "server", "status", "--json"])
+        if '"running": true' in (status.stdout or "") or "'running': True" in (status.stdout or ""):
+            break
+        time.sleep(2)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        source = _Path(tmp) / "card.jpg"
+        source.write_bytes(image_bytes)
+        out = _Path(tmp) / "out"
+        parsed = run(["mineru", "parse", str(source), "--output", str(out),
+                      "--tier", tier, "--json"])
+        markdown = ""
+        for path in sorted(out.rglob("*.md")):
+            markdown += path.read_text(errors="ignore")
+        return {
+            "reader": "mineru",
+            "tier": tier,
+            "seconds": round(time.time() - started, 1),
+            "ok": parsed.returncode == 0 and bool(markdown),
+            "markdown": markdown[:200000],
+            "stdout_tail": (parsed.stdout or "")[-2000:],
+            "stderr_tail": (parsed.stderr or "")[-2000:],
+            "setup_log": log[:12],
+            "diagnostics": diagnostics,
+            "stored": False,
+        }
 
 
 @app.function(
@@ -75,6 +169,17 @@ def _authorise(key: str | None) -> None:
     expected = os.environ.get("HANNA_KEY")
     if not expected or key != expected:
         raise HTTPException(401, "chave inválida")
+
+
+@web.post("/parse/mineru")
+async def parse_mineru_route(
+    file: UploadFile = File(...),
+    tier: str = Query("standard"),
+    x_hanna_key: str | None = Header(default=None),
+):
+    _authorise(x_hanna_key)
+    data = await file.read()
+    return await parse_mineru.remote.aio(data, tier)
 
 
 @web.get("/healthz")
