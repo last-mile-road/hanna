@@ -36,7 +36,7 @@ models = modal.Volume.from_name("hanna-models", create_if_missing=True)
 image_mineru = (
     modal.Image.debian_slim(python_version="3.12")
     .apt_install("libgl1", "libglib2.0-0", "libgomp1", "poppler-utils")
-    .pip_install("mineru[torch]>=4.0,<5", "fastapi[standard]", "pillow")
+    .pip_install("mineru[full]>=4.0,<5", "fastapi[standard]", "pillow")
     .env({"MINERU_HOME": "/models/mineru"})
 )
 
@@ -81,6 +81,12 @@ def parse_mineru(image_bytes: bytes, tier: str = "standard") -> dict:
         log.append(f"{' '.join(cmd)} -> {result.returncode} "
                    f"{(result.stderr or result.stdout or '')[-200:].strip()}")
         return result
+
+    # The engine selector prefers vLLM only when it is installed; mineru[full] brings it.
+    # Without this the VLM step falls back to llama.cpp on CPU and a card takes ~9 minutes.
+    config_path = home / "config.yaml"
+    if "engine: vllm" not in (config_path.read_text() if config_path.exists() else ""):
+        config_path.write_text("model:\n  vlm:\n    engine: vllm\n")
 
     # Idempotent: the model set lives on the Volume, so only the first cold call pays.
     run(["mineru-kit", "models", "download", "--tier", tier], timeout=1500)

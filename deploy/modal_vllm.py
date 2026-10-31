@@ -25,6 +25,8 @@ app = modal.App("hanna-vllm")
 
 models = modal.Volume.from_name("hanna-models", create_if_missing=True)
 
+vllm_key = modal.Secret.from_name("hanna-vllm-key")
+
 vllm_image = (
     modal.Image.from_registry("nvidia/cuda:12.4.1-devel-ubuntu22.04", add_python="3.12")
     .pip_install("vllm>=0.11.0", "huggingface_hub[hf_transfer]", "fastapi[standard]")
@@ -37,10 +39,15 @@ MODELS = {
 }
 
 
+import os
+
+
 def _serve(repo: str) -> None:
+    api_key = os.environ.get("VLLM_API_KEY", "")
     subprocess.Popen(
         [
             "vllm", "serve", repo,
+            "--api-key", api_key,
             "--host", "0.0.0.0",
             "--port", "8000",
             "--max-model-len", "8192",
@@ -55,6 +62,7 @@ def _serve(repo: str) -> None:
     image=vllm_image,
     gpu="L4",
     volumes={"/models": models},
+    secrets=[vllm_key],
     max_containers=1,
     timeout=24 * 3600,
     scaledown_window=600,
@@ -68,6 +76,7 @@ def serve_8b():
     image=vllm_image,
     gpu="L4",
     volumes={"/models": models},
+    secrets=[vllm_key],
     max_containers=1,
     timeout=24 * 3600,
     scaledown_window=600,
