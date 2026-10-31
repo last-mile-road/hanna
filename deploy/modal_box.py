@@ -86,10 +86,11 @@ def box():
         "--gpu-memory-utilization", "0.18",
         "--disable-log-requests",
     ], **common)
-    subprocess.Popen([
-        "uvicorn", "deploy.modal_box:web",
-        "--host", "0.0.0.0", "--port", "8080",
-    ], **common)
+    # Run the proxy in this process. Spawning `uvicorn deploy.modal_box:web` cannot work:
+    # Modal mounts the app file on its own, so the module is not importable by that path.
+    import uvicorn
+
+    uvicorn.run(web, host="0.0.0.0", port=8080, log_level="info")
 
 
 # --- the proxy lives in the same module so the container can import it ---------------
