@@ -22,6 +22,6 @@ blocks:
   skin_patch: box-qwen35-9b-v1
   hand_feet_assessment: box-qwen35-9b-v1
   classification: box-qwen35-9b-v1
-  treatment_follow: mineru-standard
+  treatment_follow: box-qwen35-9b-v1
   def_exam: mineru-standard
   nerve_assessment: mineru-standard

@@ -30,13 +30,15 @@ from typing import Any
 
 from . import settings
 
-SUPPORTED_BLOCKS = {"def_exam", "nerve_assessment", "treatment_follow"}
+SUPPORTED_BLOCKS = {"def_exam", "nerve_assessment"}
 
-# Advanced (effort xhigh) is required for the treatment grid: at standard the layout
-# model labels the 30-day calendar a chart and returns a 30-character image embed.
-# Measured 2026-11-01 on the box: standard 30 chars / 0 tables, advanced 1,340 chars /
-# 1 table with Janeiro..Dezembro headers. The two other tables parse at either tier.
-READER_TIER = "advanced"
+# The treatment grid is deliberately NOT routed here. MinerU at tier=advanced returns
+# the grid as a table (standard returns an image), and `_treatment` below maps a clean
+# one — but measured on four cards the cells are unreliable: form21's single recorded
+# dose is absent from the parse, and form25's year lives in the header row. The 9B reads
+# treatment at 21/23, so it keeps that block.
+READER_TIERS = {"def_exam": "standard", "nerve_assessment": "standard",
+                "treatment_follow": "advanced"}
 
 
 @dataclass
@@ -220,8 +222,12 @@ def _treatment(markdown: str) -> dict[str, str]:
     """The 3×12 TMA grid: a day number per month, or F for a missed dose.
 
     Only available at tier=advanced; at standard the layout model calls this region a
-    chart. The grid is emitted in the shape `treatment.derive_treatment_grid` expects,
-    so the start date, dose count, month count and missed count are derived, not read.
+    chart. Each year occupies TWO printed rows — `Dia` carries the day of the dose and
+    `Rubrica/Faltou` the signature or a missed dose — and the year itself is often read
+    as `20.25` for 2025, so it is parsed digit by digit rather than matched.
+
+    The grid is emitted in the shape `treatment.derive_treatment_grid` expects, so the
+    start date, dose count, month count and missed count are derived, not read.
     """
     from .treatment import MONTHS
 
@@ -244,32 +250,58 @@ def _treatment(markdown: str) -> dict[str, str]:
     if not month_columns or header_row is None:
         return {}
 
-    rows: list[dict] = []
+    def year_of(row: list[str]) -> int | None:
+        for cell in row[:3]:
+            digits = re.sub(r"\D", "", cell or "")
+            if len(digits) == 4 and digits[:2] in {"19", "20"}:
+                return int(digits)
+            if len(digits) == 4 and digits[:2] in {"20", "19"}:
+                return int(digits)
+        return None
+
+    def day_of(cell: str) -> int | None:
+        match = re.match(r"\s*(\d{1,2})\b", cell or "")
+        return int(match.group(1)) if match else None
+
+    rows: dict[int | None, dict] = {}
+    current_year: int | None = None
     for row in grid[header_row + 1:]:
-        year = None
-        for cell in row:
-            text = (cell or "").strip()
-            if re.fullmatch(r"(19|20)\d{2}", text):
-                year = int(text)
-                break
-        doses, missed = [], []
+        row_year = year_of(row)
+        if row_year is not None:
+            current_year = row_year
+        label = " ".join(_fold(cell) for cell in row[1:2])
+        entry = rows.setdefault(current_year, {"year": current_year, "doses": [],
+                                               "missed_months": []})
+        is_missed_row = "falta" in label or "rubrica" in label
         for column, month in sorted(month_columns.items()):
             if column >= len(row):
                 continue
             cell = (row[column] or "").strip()
-            if re.fullmatch(r"\d{1,2}", cell):
-                doses.append({"month": month, "day": int(cell)})
-            elif _fold(cell) in {"f", "falta", "x"}:
-                missed.append(month)
-        if year is not None or doses or missed:
-            rows.append({"year": year, "doses": doses, "missed_months": missed})
-    if not rows:
+            if not cell:
+                continue
+            if is_missed_row:
+                if _fold(cell) in {"f", "falta", "faltou", "x"}:
+                    entry["missed_months"].append(month)
+                continue
+            day = day_of(cell)
+            if day is not None and not any(
+                dose["month"] == month for dose in entry["doses"]
+            ):
+                entry["doses"].append({"month": month, "day": day})
+
+    values = [entry for entry in rows.values()
+              if entry["doses"] or entry["missed_months"] or entry["year"]]
+    if not values:
         return {}
-    return {"treatment_grid": json.dumps({"rows": rows}, ensure_ascii=False)}
+    for entry in values:
+        entry["missed_months"] = sorted(set(entry["missed_months"]))
+    return {"treatment_grid": json.dumps({"rows": values}, ensure_ascii=False)}
 
 
 READERS = {"def_exam": _def_exam, "nerve_assessment": _nerve,
            "treatment_follow": _treatment}
+# `_treatment` stays callable and tested even though the block is routed to the 9B: it is
+# the only clean-grid mapper we have, and it works when MinerU's cells are right.
 
 
 # --- transport ----------------------------------------------------------------------
@@ -291,14 +323,15 @@ def _post_file(url: str, path: Path, key: str) -> dict:
 
 def read_block(image_path: Path, block_id: str) -> Reading:
     """One crop in, `{"pair_id": "value"}` out, in the shape the pipeline records."""
-    if block_id not in READERS:
+    if block_id not in SUPPORTED_BLOCKS:
         raise ValueError(f"no table reader for block {block_id!r}")
     url = settings.MINERU_URL
     if not url:
         raise RuntimeError("MINERU_URL is not set")
     separator = "&" if "?" in url else "?"
     started = time.monotonic()
-    payload = _post_file(f"{url}{separator}tier={READER_TIER}", image_path, settings.MINERU_KEY)
+    tier = READER_TIERS[block_id]
+    payload = _post_file(f"{url}{separator}tier={tier}", image_path, settings.MINERU_KEY)
     latency_ms = int((time.monotonic() - started) * 1000)
     markdown = payload.get("markdown") or ""
     values = READERS[block_id](markdown)

@@ -16,7 +16,7 @@ from core import readers, settings
 
 COUNTRY = settings.COUNTRIES_DIR / "mozambique"
 VISUAL_BLOCKS = {"hand_feet_assessment", "skin_patch"}
-TABLE_BLOCKS = {"def_exam", "nerve_assessment", "treatment_follow"}
+TABLE_BLOCKS = {"def_exam", "nerve_assessment"}
 
 
 def test_routing_sends_only_tables_to_mineru():
@@ -38,21 +38,33 @@ def test_supported_blocks_match_the_routing():
     assert readers.SUPPORTED_BLOCKS == TABLE_BLOCKS
 
 
+def test_treatment_is_routed_to_the_model_not_the_reader():
+    """MinerU sees the grid's structure at advanced but not its handwriting."""
+    routing = yaml.safe_load((COUNTRY / "routing-box.yaml").read_text())
+    assert routing["blocks"]["treatment_follow"] == "box-qwen35-9b-v1"
+    with pytest.raises(ValueError, match="no table reader"):
+        readers.read_block(Path("/dev/null"), "treatment_follow")
+
+
 def test_treatment_grid_maps_months_to_doses_and_misses():
-    """The advanced-tier TMA table, trimmed to the shape MinerU returns."""
+    """The real form16 advanced-tier shape: two printed rows per year, `20.25` for 2025."""
+    months = "".join(f"<td>{name}</td>" for name in
+                     ("Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho",
+                      "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"))
+    blanks = "<td></td>"
     markdown = (
         "<table>"
-        "<tr><td>ANO</td><td>Janeiro</td><td>Fevereiro</td><td>Março</td><td>Abril</td>"
-        "<td>Maio</td><td>Junho</td><td>Julho</td><td>Agosto</td><td>Setembro</td>"
-        "<td>Outubro</td><td>Novembro</td><td>Dezembro</td></tr>"
-        "<tr><td>2022</td><td></td><td>18</td><td>21</td><td></td><td></td><td></td>"
-        "<td></td><td>F</td><td></td><td></td><td></td><td></td></tr>"
+        '<tr><td rowspan="2">ANO</td><td rowspan="2"></td>'
+        '<td colspan="12">Doses mensais supervisados</td><td rowspan="2">dosesmeses</td></tr>'
+        f"<tr>{months}</tr>"
+        '<tr><td rowspan="2">20.25</td><td>Dia</td>'
+        f"{blanks * 4}<td>31/5Sa2</td>{blanks * 7}</tr>"
+        f'<tr><td>Rubrica/Faltou</td>{blanks * 12}</tr>'
         "</table>"
     )
     values = readers.READERS["treatment_follow"](markdown)
     grid = yaml.safe_load(values["treatment_grid"])
     row = grid["rows"][0]
-    assert row["year"] == 2022
-    assert {"month": 2, "day": 18} in row["doses"]
-    assert {"month": 3, "day": 21} in row["doses"]
-    assert row["missed_months"] == [8]
+    assert row["year"] == 2025
+    assert row["doses"] == [{"month": 5, "day": 31}]
+    assert row["missed_months"] == []
