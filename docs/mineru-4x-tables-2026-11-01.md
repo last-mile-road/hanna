@@ -100,3 +100,29 @@ with 6 GiB of KV the default 1024 sequences do not fit. Fixed with `--max-num-se
 which is more concurrency than the pipeline uses anyway. It had not bitten on the L40S
 because that card's KV arithmetic was different.
 
+
+## Why treatment went back to the 9B (same day)
+
+Advanced makes the grid a *table*, but not a *reading*. On the four cards:
+
+| card | what advanced returned | truth |
+|---|---|---|
+| form16 | 2025-05-31, 1 dose — correct | 2025-05-31, 1 dose |
+| form19 | table with no cells | 0 doses — right by accident |
+| form21 | table, but the one recorded dose is absent | 2022-05-21, 1 dose |
+| form25 | January 10 found, year sits in the header row | 2026-01-10 |
+
+Three structural facts the mapper has to fight: the body rows are offset two columns right
+of the month header (year and `Dia` labels occupy those columns); form21's header has only
+eleven month names (`Novembro` missing), so header positions cannot be trusted; and the year
+is printed as `20.25` for 2025, or in the header row for form25.
+
+`core/readers.py::_treatment` handles those (two rows per year, glyph-tolerant year, header
+scan), and it is unit-tested against the real form16 shape — but the handwriting that matters
+is simply not in MinerU's cells. The 9B reads treatment at 21/23, so `treatment_follow` is
+routed back to it, and the reader refuses the block. The mapper stays as a documented
+capability for a card whose grid parses cleanly.
+
+The lesson is worth keeping: **advanced answers "where are the cells", not "what is written in
+them"**. For a printed table that is enough (disability 14/14, nerve 12/12). For a
+hand-filled calendar it is not.
