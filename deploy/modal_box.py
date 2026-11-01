@@ -28,6 +28,20 @@ Layout (48 GB, fp16):
     last request, then back to zero. timeout 2 h is a cost backstop on a forgotten
     container, not a request limit.
 
+Two failures on the first boot (2026-11-01), both visible only because the logs are
+kept now:
+
+  - `torch` would not import: `undefined symbol: ncclCommWindowDeregister`. The GPU
+    Paddle wheel installs nvidia-nccl-cu12 2.25.1 next to torch's cu13 NCCL, at the
+    same site-packages path, and torch binds the older one. Paddle's layout stage
+    therefore runs on the CPU wheel; the VLM stage still runs on the GPU through
+    vLLM at :8001, so the accuracy-carrying half is unchanged.
+  - MinerU 4.1.3 dropped `--no-flash` and `--allow-local-source`, and its API moved
+    from local paths to a task-plus-upload protocol. The proxy now uses MinerU's own
+    client (`mineru.parser.api_client.MinerUApiParser`), which is the supported path
+    in 4.1.3 and avoids re-implementing the upload handshake.
+
+
 Deploy:
     MODAL_PROFILE=hanna ~/.local/share/hanna/modal-venv/bin/modal deploy deploy/modal_box.py
 
@@ -64,9 +78,11 @@ IMAGE = (
     .pip_install("vllm>=0.11.0", "fastapi[standard]", "httpx",
                  "huggingface_hub[hf_transfer]", "safetensors")
     .pip_install("mineru[full]>=4.0,<5")
-    .pip_install("paddleocr[doc-parser]>=3.4")
-    .pip_install("paddlepaddle-gpu==3.2.1",
-                 index_url="https://www.paddlepaddle.org.cn/packages/stable/cu126/")
+    # CPU wheel on purpose: the GPU wheel drags in nvidia-nccl-cu12 2.25.1, which
+    # shadows torch's cu13 NCCL and breaks `import torch` for every vLLM engine.
+    # Paddle's layout stage on CPU costs a second or two per crop; its VLM still
+    # runs on the GPU through vLLM at :8001.
+    .pip_install("paddleocr[doc-parser]>=3.4", "paddlepaddle==3.2.1")
     .env({
         "HF_HOME": "/models/hf",
         "HF_HUB_ENABLE_HF_TRANSFER": "1",
@@ -202,9 +218,8 @@ def box():
     _start("mineru", [
         "mineru-api",
         "--host", "127.0.0.1", "--port", str(PORTS["mineru"]),
-        "--tier", MINERU_TIER, "--no-flash",
+        "--tier", MINERU_TIER,
         "--preload-models",
-        "--allow-local-source",
         "--concurrency", "1",
         "--retention-seconds", "0",
         "--upload-dir", str(home / "uploads"),
@@ -356,30 +371,22 @@ def _run_paddle(image_bytes: bytes) -> dict:
 
 
 def _run_mineru(image_bytes: bytes, tier: str) -> dict:
-    """mineru-api, the same endpoint the local benchmark validated (/v1/file_parse)."""
-    import json
+    """MinerU 4.1.3 through its own client: task, upload, poll, result zip.
+
+    4.1.3 dropped `--allow-local-source` and moved /v1/file_parse onto a task
+    protocol. MinerUApiParser is the supported way in, and it returns the rendered
+    markdown from the same parser the local benchmark measured.
+    """
     import tempfile
-    import urllib.request
+
+    from mineru.parser.api_client import MinerUApiParser
 
     started = time.time()
     with tempfile.TemporaryDirectory() as tmp:
         source = Path(tmp) / "card.jpg"
         source.write_bytes(image_bytes)
-        payload = {
-            "files": [{"source": {"type": "local", "path": str(source)}}],
-            "tier": tier,
-            "output_formats": ["markdown"],
-        }
-        req = urllib.request.Request(
-            f"http://127.0.0.1:{PORTS['mineru']}/v1/file_parse?wait_timeout=900",
-            data=json.dumps(payload).encode(),
-            headers={"Content-Type": "application/json"},
-        )
-        with urllib.request.urlopen(req, timeout=1200) as response:
-            body = json.load(response)
-        markdown = ""
-        for entry in body.get("files", []):
-            markdown += (entry.get("content") or {}).get("markdown") or ""
+        parser = MinerUApiParser(api_url=f"http://127.0.0.1:{PORTS['mineru']}", tier=tier)
+        markdown = parser.parse(source).markdown()
     return {"reader": "mineru", "tier": tier,
             "seconds": round(time.time() - started, 1), "ok": bool(markdown),
             "markdown": markdown[:200000], "stored": False}
