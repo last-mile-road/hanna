@@ -79,6 +79,9 @@ LLM_MODEL = "Qwen/Qwen3.5-9B"
 LLM_SERVED = "hanna-9b"
 PADDLE_MODEL = "PaddlePaddle/PaddleOCR-VL-1.6"
 MINERU_TIER = "standard"
+# The MinerU VLM weights are on the volume already, in HF layout.
+MINERU_VLM_PATH = "/models/mineru/models/MinerU2.5-Pro-2605-1.2B"
+MINERU_VLM_SERVED = "mineru-vlm"
 
 IMAGE = (
     modal.Image.from_registry("nvidia/cuda:12.4.1-devel-ubuntu22.04", add_python="3.12")
@@ -106,7 +109,7 @@ IMAGE = (
     })
 )
 
-PORTS = {"llm": 8000, "paddle": 8001, "mineru": 8002}
+PORTS = {"llm": 8000, "paddle": 8001, "mineru": 8002, "mineru_vlm": 8003}
 LOGS = {name: deque(maxlen=200) for name in PORTS}
 PROCS: dict[str, subprocess.Popen] = {}
 READY_AT: dict[str, float | None] = {name: None for name in PORTS}
@@ -267,15 +270,35 @@ def box():
         ], env=paddle_env)
         _await("paddle", 300)
 
+        # MinerU's own engine computes its budget as ~0.13 of whatever is free, and
+        # that is not configurable — next to the 9B it reserves less than the model's
+        # weights and dies at engine init. So its VLM runs as a fourth server we size
+        # ourselves, and mineru-api talks to it over HTTP (--vlm-server-url), which is
+        # the path MinerU's hosted service uses.
+        keyless = {k: v for k, v in os.environ.items() if k != "VLLM_API_KEY"}
+        _start("mineru_vlm", [
+            "vllm", "serve", MINERU_VLM_PATH,
+            "--host", "127.0.0.1", "--port", str(PORTS["mineru_vlm"]),
+            "--served-model-name", MINERU_VLM_SERVED,
+            "--max-model-len", "8192",
+            "--gpu-memory-utilization", "0.30",
+            "--mm-processor-cache-gb", "0",
+            "--trust-remote-code",
+        ], env=keyless)
+        _await("mineru_vlm", 300)
+
         _start("mineru", [
             "mineru-api",
             "--host", "127.0.0.1", "--port", str(PORTS["mineru"]),
             "--tier", MINERU_TIER,
             "--preload-models",
+            "--vlm-server-url", f"http://127.0.0.1:{PORTS['mineru_vlm']}/v1",
+            "--vlm-model", MINERU_VLM_SERVED,
             "--concurrency", "1",
             "--retention-seconds", "0",
             "--upload-dir", "/tmp/mineru/uploads",
         ], env=env)
+        _await("mineru", 600)
 
     threading.Thread(target=boot, daemon=True).start()
 
