@@ -72,7 +72,7 @@ import modal
 app = modal.App("hanna-box")
 
 models = modal.Volume.from_name("hanna-models", create_if_missing=True)
-shared_key = modal.Secret.from_name("hanna-shared-key")
+shared_key = modal.Secret.from_name("hanna-box-key")
 vllm_key = modal.Secret.from_name("hanna-vllm-key")
 
 LLM_MODEL = "Qwen/Qwen3.5-9B"
