@@ -167,14 +167,47 @@ def _probe(name: str) -> bool:
 
     url = f"http://127.0.0.1:{PORTS[name]}{'/health' if name == 'mineru' else '/v1/models'}"
     req = urllib.request.Request(url)
+    # vLLM reads VLLM_API_KEY from the environment as well as --api-key, so a server
+    # we meant to leave keyless will still answer 401. Send the key either way; a
+    # server that does not want it ignores the header.
     key = os.environ.get("VLLM_API_KEY", "")
-    if key and name == "llm":
+    if key:
         req.add_header("Authorization", f"Bearer {key}")
     try:
         with urllib.request.urlopen(req, timeout=3) as response:
             return response.status == 200
     except Exception:  # noqa: BLE001 - not ready yet is the normal case
         return False
+
+
+def _await(name: str, timeout: int) -> bool:
+    """Wait in the boot thread until one engine answers, or it exits, or time runs out.
+
+    An engine that exits is not worth waiting for; the next one starts anyway so the
+    box comes up partially rather than not at all, and /ready shows which one is down.
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if _probe(name):
+            print(f"[box] {name} ready at {round(time.time() - (BOOTED_AT or time.time()), 1)}s",
+                  flush=True)
+            return True
+        if name in PROCS and PROCS[name].poll() is not None:
+            print(f"[box] {name} exited with code {PROCS[name].returncode}; "
+                  f"starting the next engine anyway", flush=True)
+            return False
+        time.sleep(5)
+    print(f"[box] {name} not ready after {timeout}s", flush=True)
+    return False
+
+
+def _degraded(name: str) -> str:
+    """mineru-api answers /health even when its VLM engine died at startup."""
+    if name != "mineru":
+        return ""
+    if any("Engine core initialization failed" in line for line in LOGS[name]):
+        return "VLM engine failed at startup; /health still answers but parsing will fail"
+    return ""
 
 
 # --- the container ------------------------------------------------------------------
@@ -191,55 +224,63 @@ def _probe(name: str) -> bool:
     scaledown_window=300,
 )
 @modal.concurrent(max_inputs=8)
-@modal.web_server(port=8080, startup_timeout=3600)
+@modal.asgi_app()
 def box():
     global BOOTED_AT
     BOOTED_AT = time.time()
 
     print(f"[box] gpu at boot: {_gpu_line()}", flush=True)
 
-    home = _mineru_home()
-    env = {**os.environ, "MINERU_HOME": str(home)}
+    env = {**os.environ, "MINERU_HOME": str(_mineru_home())}
 
-    # All three load in parallel: the slowest sets the cold start, and they are
-    # already weight-cached, so the wait is engine init rather than network.
-    _start("llm", [
-        "vllm", "serve", LLM_MODEL,
-        "--host", "127.0.0.1", "--port", str(PORTS["llm"]),
-        "--api-key", os.environ.get("VLLM_API_KEY", ""),
-        "--served-model-name", LLM_SERVED,
-        "--max-model-len", "32768",
-        "--gpu-memory-utilization", "0.55",
-        "--limit-mm-per-prompt", '{"image": 2}',
-        "--mm-processor-kwargs", '{"max_pixels": 2000000}',
-    ])
+    # The engines start in sequence, in a background thread, so the proxy answers
+    # /warm while they load. Sequence, not parallel: vLLM 0.30 reads
+    # gpu_memory_utilization as a fraction of *free* memory at engine init, so three
+    # engines racing for the card starve each other (0.10 of the memory left after the
+    # 9B was not enough for Paddle's cache blocks). Starting each one against the
+    # memory that is actually free makes the fractions meaningful.
+    def boot():
+        _start("llm", [
+            "vllm", "serve", LLM_MODEL,
+            "--host", "127.0.0.1", "--port", str(PORTS["llm"]),
+            "--api-key", os.environ.get("VLLM_API_KEY", ""),
+            "--served-model-name", LLM_SERVED,
+            "--max-model-len", "32768",
+            "--gpu-memory-utilization", "0.55",
+            "--limit-mm-per-prompt", '{"image": 2}',
+            "--mm-processor-kwargs", '{"max_pixels": 2000000}',
+        ])
+        _await("llm", 900)
 
-    _start("paddle", [
-        "vllm", "serve", PADDLE_MODEL,
-        "--host", "127.0.0.1", "--port", str(PORTS["paddle"]),
-        "--served-model-name", PADDLE_MODEL,
-        "--trust-remote-code",
-        "--max-num-batched-tokens", "16384",
-        "--no-enable-prefix-caching",
-        "--mm-processor-cache-gb", "0",
-        "--gpu-memory-utilization", "0.10",
-    ])
+        # No VLLM_API_KEY in this process: vLLM would otherwise require a bearer on
+        # the localhost port, and Paddle's client has no way to send one.
+        paddle_env = {k: v for k, v in os.environ.items() if k != "VLLM_API_KEY"}
+        _start("paddle", [
+            "vllm", "serve", PADDLE_MODEL,
+            "--host", "127.0.0.1", "--port", str(PORTS["paddle"]),
+            "--served-model-name", PADDLE_MODEL,
+            "--trust-remote-code",
+            "--max-num-batched-tokens", "8192",
+            "--no-enable-prefix-caching",
+            "--mm-processor-cache-gb", "0",
+            "--gpu-memory-utilization", "0.30",
+        ], env=paddle_env)
+        _await("paddle", 300)
 
-    _start("mineru", [
-        "mineru-api",
-        "--host", "127.0.0.1", "--port", str(PORTS["mineru"]),
-        "--tier", MINERU_TIER,
-        "--preload-models",
-        "--concurrency", "1",
-        "--retention-seconds", "0",
-        "--upload-dir", str(home / "uploads"),
-    ], env=env)
+        _start("mineru", [
+            "mineru-api",
+            "--host", "127.0.0.1", "--port", str(PORTS["mineru"]),
+            "--tier", MINERU_TIER,
+            "--preload-models",
+            "--concurrency", "1",
+            "--retention-seconds", "0",
+            "--upload-dir", "/tmp/mineru/uploads",
+        ], env=env)
 
-    import uvicorn
+    threading.Thread(target=boot, daemon=True).start()
 
-    # The proxy runs in this process. Spawning `uvicorn deploy.modal_box:web` cannot
-    # work: Modal mounts the app file on its own, so the module is not importable there.
-    uvicorn.run(web, host="0.0.0.0", port=8080, log_level="warning")
+    print("[box] proxy ready, engines booting", flush=True)
+    return web
 
 
 # --- the proxy ----------------------------------------------------------------------
@@ -284,12 +325,14 @@ def _state() -> dict:
     engines = {}
     for name in PORTS:
         ok = _probe(name)
-        if ok and READY_AT[name] is None:
+        problem = _degraded(name)
+        if ok and not problem and READY_AT[name] is None:
             READY_AT[name] = round(now - (BOOTED_AT or now), 1)
         engines[name] = {
-            "ready": ok,
+            "ready": ok and not problem,
             "port": PORTS[name],
             "ready_after_s": READY_AT[name],
+            "problem": problem,
             "tail": list(LOGS[name])[-15:],
         }
     return {
