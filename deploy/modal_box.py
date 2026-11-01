@@ -256,6 +256,10 @@ def box():
             "--api-key", os.environ.get("VLLM_API_KEY", ""),
             "--served-model-name", LLM_SERVED,
             "--max-model-len", "32768",
+            # Absolute KV budget. gpu_memory_utilization is a fraction of free memory
+            # and produced 24.4 GiB for a 9B, leaving the card almost full; this is
+            # 18.1 weights + 6 KV + graph memory, and it skips the fraction game.
+            "--kv-cache-memory-bytes", "6442450944",
             "--gpu-memory-utilization", "0.55",
             "--limit-mm-per-prompt", '{"image": 2}',
             "--mm-processor-kwargs", '{"max_pixels": 2000000}',
@@ -292,8 +296,10 @@ def box():
             "--host", "127.0.0.1", "--port", str(PORTS["mineru_vlm"]),
             "--served-model-name", MINERU_VLM_SERVED,
             "--max-model-len", "8192",
-            # 0.35 of the ~19 GiB left after the 9B: enough for a 1.2B model at 8k
-            # plus its graph memory. It used to ask 0.50, which is more than exists.
+            # 0.35 of the 19 GiB left asked for 15.6 GiB and handed 11.1 GiB of it to
+            # an idle KV cache for a 1.2B model at 8k. 2 GiB is ample and leaves the
+            # card 13 GiB of room for activations.
+            "--kv-cache-memory-bytes", "2147483648",
             "--gpu-memory-utilization", "0.35",
             "--mm-processor-cache-gb", "0",
             "--trust-remote-code",

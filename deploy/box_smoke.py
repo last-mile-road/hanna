@@ -159,6 +159,12 @@ def main() -> int:
         }
         print(f"{reader:9s} {status} {elapsed}s ok={results[reader]['ok']} "
               f"chars={len(markdown)} tables={results[reader]['tables']}")
+        if status != 200:
+            state = call(f"{base}/ready", headers={"X-HANNA-Key": args.key}, timeout=60)[1]
+            engine = (state.get("engines") or {}).get(reader) or {}
+            print(f"  problem: {engine.get('problem') or 'none reported'}")
+            for line in (engine.get("tail") or [])[-6:]:
+                print(f"  | {line[:200]}")
 
     results["box"] = call(f"{base}/ready", headers={"X-HANNA-Key": args.key}, timeout=60)[1]
     out = Path("/home/sam/tmp/opencode") / f"box-smoke-{card.stem}.json"
