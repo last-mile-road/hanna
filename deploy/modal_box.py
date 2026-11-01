@@ -41,6 +41,14 @@ kept now:
     client (`mineru.parser.api_client.MinerUApiParser`), which is the supported path
     in 4.1.3 and avoids re-implementing the upload handshake.
 
+Second boot: torch imported, MinerU came up on `vllm-async-engine` in 90 s, but both
+own vLLM servers died on `unrecognized arguments: --disable-log-requests` — that flag
+is gone from the vLLM CLI. The image had also resolved vLLM down to 0.22.1, because
+`mineru[full]` carries its own vLLM constraint. MinerU is now installed with the
+`[torch]` extra only, and vLLM is pinned last at 0.30.0, the version the 9B was
+verified on: MinerU's engine selector picks up the installed vLLM instead of dictating
+it, and all three engines share one version.
+
 
 Deploy:
     MODAL_PROFILE=hanna ~/.local/share/hanna/modal-venv/bin/modal deploy deploy/modal_box.py
@@ -75,14 +83,18 @@ MINERU_TIER = "standard"
 IMAGE = (
     modal.Image.from_registry("nvidia/cuda:12.4.1-devel-ubuntu22.04", add_python="3.12")
     .apt_install("libgl1", "libglib2.0-0", "libgomp1", "poppler-utils")
-    .pip_install("vllm>=0.11.0", "fastapi[standard]", "httpx",
+    .pip_install("vllm==0.30.0", "fastapi[standard]", "httpx",
                  "huggingface_hub[hf_transfer]", "safetensors")
-    .pip_install("mineru[full]>=4.0,<5")
+    # [torch], not [full]: [full] brings its own vLLM constraint and dragged the
+    # engine down to 0.22.1. MinerU's selector picks up whatever vLLM is installed.
+    .pip_install("mineru[torch]>=4.0,<5")
     # CPU wheel on purpose: the GPU wheel drags in nvidia-nccl-cu12 2.25.1, which
     # shadows torch's cu13 NCCL and breaks `import torch` for every vLLM engine.
     # Paddle's layout stage on CPU costs a second or two per crop; its VLM still
     # runs on the GPU through vLLM at :8001.
     .pip_install("paddleocr[doc-parser]>=3.4", "paddlepaddle==3.2.1")
+    # Last word on the engine version: every one of the three uses this vLLM.
+    .pip_install("vllm==0.30.0")
     .env({
         "HF_HOME": "/models/hf",
         "HF_HUB_ENABLE_HF_TRANSFER": "1",
@@ -200,7 +212,6 @@ def box():
         "--gpu-memory-utilization", "0.55",
         "--limit-mm-per-prompt", '{"image": 2}',
         "--mm-processor-kwargs", '{"max_pixels": 2000000}',
-        "--disable-log-requests",
     ])
 
     _start("paddle", [
@@ -212,7 +223,6 @@ def box():
         "--no-enable-prefix-caching",
         "--mm-processor-cache-gb", "0",
         "--gpu-memory-utilization", "0.10",
-        "--disable-log-requests",
     ])
 
     _start("mineru", [
