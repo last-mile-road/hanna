@@ -85,6 +85,17 @@ PROFILES = [
                  "thinking disabled — the accuracy comparison against the greedy run.",
     },
     {
+        "id": "mineru-standard",
+        "provider": "modal",
+        "model": "mineru-standard",
+        "settings": {"parallel": 2},
+        "prompt_version": "v1",
+        "crop_strategy": "block",
+        "notes": "Not a model: the table reader on the box (MinerU standard). run.py "
+                 "sends these blocks to core/readers.py instead of a VLM. Handles "
+                 "def_exam and nerve_assessment.",
+    },
+    {
         "id": "or-qwen38-27b-v1",
         "provider": "openrouter",
         "model": "qwen/qwen3.8-27b",

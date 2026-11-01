@@ -52,3 +52,8 @@ OPENROUTER_BASE_URL = os.environ.get(
     "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"
 )
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+
+# The table reader lives on the HANNA box: MINERU_URL is the full endpoint, e.g.
+# https://<workspace>--hanna-box-box.<region>.modal.run/parse/mineru
+MINERU_URL = os.environ.get("MINERU_URL", "")
+MINERU_KEY = os.environ.get("MINERU_KEY", "")

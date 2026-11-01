@@ -22,11 +22,15 @@ from .forms import Block, Pair
 from .inference import OpenRouter
 from .parse import parse_json_response
 from .prompts import build_prompt, prompt_hash
+from .readers import read_block as read_table_block
 from .treatment import derive_treatment_grid
 from .validate import validate_run
 from .schema import cards, forms, profiles, runs
 
 OCR_BLOCK_TYPES = {"value_pairs", "tick_grid", "annotated_table", "free_text"}
+
+# A profile id that is not a model: those blocks are read by MinerU on the box.
+MINERU_PROFILE = "mineru-standard"
 
 
 def _complete_with_fallback(client, prompt, image_paths, profile, fallback):
@@ -266,7 +270,7 @@ def run_card(
                 parsed = parse_json_response(
                     completion.text, [p.id for p in pairs_in_block]
                 )
-                if not parsed and pairs_in_block:
+                if not parsed and pairs_in_block and not item.get("reader"):
                     # An empty answer is not a result. One retry, then say so out loud:
                     # the 13:48 card lost its whole demographics block this way and looked
                     # like a completed run with every field blank.
@@ -368,6 +372,7 @@ def run_card(
 
         for items in groups.values():
             group_profile = items[0]["profile"]
+            is_reader = group_profile["id"] == MINERU_PROFILE
             workers = max(
                 1,
                 min(
@@ -376,17 +381,29 @@ def run_card(
                 ),
             )
             with ThreadPoolExecutor(max_workers=workers) as pool:
-                futures = {
-                    pool.submit(
-                        _complete_with_fallback,
-                        client,
-                        item["prompt"],
-                        item["image_paths"],
-                        group_profile,
-                        fallback_profile,
-                    ): item
-                    for item in items
-                }
+                if is_reader:
+                    for item in items:
+                        item["reader"] = True
+                    futures = {
+                        pool.submit(
+                            read_table_block,
+                            Path(item["image_paths"][0]),
+                            item["block"].id,
+                        ): item
+                        for item in items
+                    }
+                else:
+                    futures = {
+                        pool.submit(
+                            _complete_with_fallback,
+                            client,
+                            item["prompt"],
+                            item["image_paths"],
+                            group_profile,
+                            fallback_profile,
+                        ): item
+                        for item in items
+                    }
                 for future in as_completed(futures):
                     item = futures[future]
                     try:

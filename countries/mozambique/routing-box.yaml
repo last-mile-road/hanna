@@ -1,0 +1,22 @@
+# Box routing: the 9B on the Modal box for everything, MinerU for the two tables it
+# reads better than any VLM. Same shape as routing.yaml; pass with
+#     tools/run_card.py --routing --routing-file routing-box.yaml
+#
+# Evidence (2026-10-30, seven cards, cell by cell):
+#   disability table  MinerU 98/98   route 89/98
+#   nerve grid        MinerU 84/84   route 79/84
+# and on form16 the 9B took the left column for the right on all six disability grades
+# and two nerve boxes, which is exactly what MinerU's table gets right.
+strips: box-qwen35-9b-v1
+fallback: box-qwen35-9b-v1
+
+default: box-qwen35-9b-v1
+blocks:
+  general_demographic: box-qwen35-9b-v1
+  clinical_history: box-qwen35-9b-v1
+  skin_patch: box-qwen35-9b-v1
+  hand_feet_assessment: box-qwen35-9b-v1
+  classification: box-qwen35-9b-v1
+  treatment_follow: box-qwen35-9b-v1
+  def_exam: mineru-standard
+  nerve_assessment: mineru-standard
