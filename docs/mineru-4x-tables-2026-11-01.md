@@ -67,8 +67,36 @@ The disability and nerve tables we measured (98/98 and 84/84 cells) are exactly 
 strength. The treatment grid is a bordered 30-day calendar: a table to a human, a chart to
 the layout model.
 
-## Pending
+## Measured: advanced reads the treatment grid (2026-11-01)
 
-Whether `advanced` (xhigh, image analysis on) makes the treatment grid parseable, and
-whether it changes the disability and nerve output. Measured on the box; results appended
-below when they land.
+The same four crops through the box, `?tier=standard` against `?tier=advanced`:
+
+| crop | standard | advanced |
+|---|---|---|
+| treatment | 30 chars, 0 tables, 1 image, 3.4 s | **1,340 chars, 1 table, 0 images, 8.0 s** — `Janeiro … Dezembro` headers, one row per year |
+| def_exam | 871 chars, 1 table, 3.9 s | 871 chars, 1 table, 4.3 s (noughts come back as `O`; the mapper already handles that glyph) |
+| nerve | 385 chars, 1 table, 2.9 s | 385 chars, 1 table, 2.8 s |
+| whole card | — | 2,053 chars, 3 tables, 0 images, 15.7 s, but none of the printed labels (`Pestanejo`, `Grosso`) survive |
+
+So advanced is the missing configuration for the grid, and it costs nothing on the two
+tables that already worked. The whole-card parse is not a substitute for the crops: it
+returns tables without the row labels the mapping needs.
+
+Consequence: `core/readers.py` now requests `tier=advanced` for every reader block, and
+`treatment_follow` is routed to it. The start date, dose count, month count and missed
+count are still derived by `core/treatment.py` from the grid, not read separately.
+
+## A second thing this boot exposed
+
+The redeploy landed on an **RTX PRO 6000** (the ordered GPU fallback working as intended,
+96 GB, $3.03/h instead of the L40S at $1.95/h), and there the 9B refused to start:
+
+```
+ValueError: max_num_seqs (1024) exceeds available Mamba cache blocks (321)...
+```
+
+Qwen3.5 has Gated DeltaNet layers, so every decode sequence needs a Mamba cache block;
+with 6 GiB of KV the default 1024 sequences do not fit. Fixed with `--max-num-seqs 64`,
+which is more concurrency than the pipeline uses anyway. It had not bitten on the L40S
+because that card's KV arithmetic was different.
+
