@@ -175,7 +175,7 @@ def _probe(name: str) -> bool:
     """Readiness per engine, independent of the proxy."""
     import urllib.request
 
-    url = f"http://127.0.0.1:{PORTS[name]}{'/health' if name == 'mineru' else '/v1/models'}"
+    url = f"http://127.0.0.1:{PORTS[name]}{'/v1/health' if name == 'mineru' else '/v1/models'}"
     req = urllib.request.Request(url)
     # vLLM reads VLLM_API_KEY from the environment as well as --api-key, so a server
     # we meant to leave keyless will still answer 401. Send the key either way; a
