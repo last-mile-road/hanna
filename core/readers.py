@@ -30,7 +30,13 @@ from typing import Any
 
 from . import settings
 
-SUPPORTED_BLOCKS = {"def_exam", "nerve_assessment"}
+SUPPORTED_BLOCKS = {"def_exam", "nerve_assessment", "treatment_follow"}
+
+# Advanced (effort xhigh) is required for the treatment grid: at standard the layout
+# model labels the 30-day calendar a chart and returns a 30-character image embed.
+# Measured 2026-11-01 on the box: standard 30 chars / 0 tables, advanced 1,340 chars /
+# 1 table with Janeiro..Dezembro headers. The two other tables parse at either tier.
+READER_TIER = "advanced"
 
 
 @dataclass
@@ -210,7 +216,60 @@ def _nerve(markdown: str) -> dict[str, str]:
     return out
 
 
-READERS = {"def_exam": _def_exam, "nerve_assessment": _nerve}
+def _treatment(markdown: str) -> dict[str, str]:
+    """The 3×12 TMA grid: a day number per month, or F for a missed dose.
+
+    Only available at tier=advanced; at standard the layout model calls this region a
+    chart. The grid is emitted in the shape `treatment.derive_treatment_grid` expects,
+    so the start date, dose count, month count and missed count are derived, not read.
+    """
+    from .treatment import MONTHS
+
+    folded = {_fold(name): number for name, number in MONTHS.items()}
+    grid = table_matrix(markdown)
+    if not grid:
+        return {}
+
+    month_columns: dict[int, int] = {}
+    header_row = None
+    for index, row in enumerate(grid):
+        found = {}
+        for column, cell in enumerate(row):
+            number = folded.get(_fold(cell))
+            if number:
+                found[column] = number
+        if len(found) >= 6:
+            month_columns, header_row = found, index
+            break
+    if not month_columns or header_row is None:
+        return {}
+
+    rows: list[dict] = []
+    for row in grid[header_row + 1:]:
+        year = None
+        for cell in row:
+            text = (cell or "").strip()
+            if re.fullmatch(r"(19|20)\d{2}", text):
+                year = int(text)
+                break
+        doses, missed = [], []
+        for column, month in sorted(month_columns.items()):
+            if column >= len(row):
+                continue
+            cell = (row[column] or "").strip()
+            if re.fullmatch(r"\d{1,2}", cell):
+                doses.append({"month": month, "day": int(cell)})
+            elif _fold(cell) in {"f", "falta", "x"}:
+                missed.append(month)
+        if year is not None or doses or missed:
+            rows.append({"year": year, "doses": doses, "missed_months": missed})
+    if not rows:
+        return {}
+    return {"treatment_grid": json.dumps({"rows": rows}, ensure_ascii=False)}
+
+
+READERS = {"def_exam": _def_exam, "nerve_assessment": _nerve,
+           "treatment_follow": _treatment}
 
 
 # --- transport ----------------------------------------------------------------------
@@ -237,8 +296,9 @@ def read_block(image_path: Path, block_id: str) -> Reading:
     url = settings.MINERU_URL
     if not url:
         raise RuntimeError("MINERU_URL is not set")
+    separator = "&" if "?" in url else "?"
     started = time.monotonic()
-    payload = _post_file(url, image_path, settings.MINERU_KEY)
+    payload = _post_file(f"{url}{separator}tier={READER_TIER}", image_path, settings.MINERU_KEY)
     latency_ms = int((time.monotonic() - started) * 1000)
     markdown = payload.get("markdown") or ""
     values = READERS[block_id](markdown)

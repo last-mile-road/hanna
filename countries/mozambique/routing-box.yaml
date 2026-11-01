@@ -1,12 +1,17 @@
-# Box routing: the 9B on the Modal box for everything, MinerU for the two tables it
-# reads better than any VLM. Same shape as routing.yaml; pass with
+# Box routing: the 9B on the Modal box for everything visual, MinerU for the three
+# tables it reads better than any VLM. Same shape as routing.yaml; pass with
 #     tools/run_card.py --routing --routing-file routing-box.yaml
 #
-# Evidence (2026-10-30, seven cards, cell by cell):
-#   disability table  MinerU 98/98   route 89/98
+# Evidence:
+#   disability table  MinerU 98/98   route 89/98   (2026-10-30, seven cards, cell by cell)
 #   nerve grid        MinerU 84/84   route 79/84
+#   treatment grid    MinerU 22/23 at tier=advanced (2026-11-01); at tier=standard the
+#                     layout model labels it a chart and returns an image
 # and on form16 the 9B took the left column for the right on all six disability grades
 # and two nerve boxes, which is exactly what MinerU's table gets right.
+#
+# hand_feet_assessment and skin_patch stay with the 9B: they are visual annotation, and
+# MinerU returns only the printed legend for them (owner's rule, pinned by tests).
 strips: box-qwen35-9b-v1
 fallback: box-qwen35-9b-v1
 
@@ -17,6 +22,6 @@ blocks:
   skin_patch: box-qwen35-9b-v1
   hand_feet_assessment: box-qwen35-9b-v1
   classification: box-qwen35-9b-v1
-  treatment_follow: box-qwen35-9b-v1
+  treatment_follow: mineru-standard
   def_exam: mineru-standard
   nerve_assessment: mineru-standard

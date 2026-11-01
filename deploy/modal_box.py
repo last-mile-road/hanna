@@ -257,6 +257,11 @@ def box():
             "--api-key", os.environ.get("VLLM_API_KEY", ""),
             "--served-model-name", LLM_SERVED,
             "--max-model-len", "32768",
+            # Qwen3.5 has Gated DeltaNet layers: each decode sequence needs a Mamba
+            # cache block, and the default max_num_seqs of 1024 exceeds what 6 GiB of
+            # KV supplies (vLLM refused to start on the 96 GB card for exactly this).
+            # Eight concurrent requests is already more than the pipeline sends.
+            "--max-num-seqs", "64",
             # Absolute KV budget. gpu_memory_utilization is a fraction of free memory
             # and produced 24.4 GiB for a 9B, leaving the card almost full; this is
             # 18.1 weights + 6 KV + graph memory, and it skips the fraction game.
