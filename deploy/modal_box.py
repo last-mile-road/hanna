@@ -78,7 +78,8 @@ vllm_key = modal.Secret.from_name("hanna-vllm-key")
 LLM_MODEL = "Qwen/Qwen3.5-9B"
 LLM_SERVED = "hanna-9b"
 PADDLE_MODEL = "PaddlePaddle/PaddleOCR-VL-1.6"
-MINERU_TIER = "standard"
+MINERU_TIER = "advanced"      # server ceiling: standard cannot serve advanced requests
+MINERU_READER_TIER = "standard"  # what /parse/mineru asks for unless told otherwise
 # The MinerU VLM weights are on the volume already, in HF layout.
 MINERU_VLM_PATH = "/models/mineru/models/MinerU2.5-Pro-2605-1.2B"
 MINERU_VLM_SERVED = "mineru-vlm"
@@ -526,7 +527,7 @@ async def parse_paddle_route(request: Request, file: UploadFile = File(...),
 
 @web.post("/parse/mineru")
 async def parse_mineru_route(request: Request, file: UploadFile = File(...),
-                             tier: str = MINERU_TIER,
+                             tier: str = MINERU_READER_TIER,
                              x_hanna_key: str | None = Header(default=None)):
     _authorise(x_hanna_key, request)
     if not _probe("mineru"):
