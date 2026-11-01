@@ -292,7 +292,9 @@ def box():
             "--host", "127.0.0.1", "--port", str(PORTS["mineru_vlm"]),
             "--served-model-name", MINERU_VLM_SERVED,
             "--max-model-len", "8192",
-            "--gpu-memory-utilization", "0.50",
+            # 0.35 of the ~19 GiB left after the 9B: enough for a 1.2B model at 8k
+            # plus its graph memory. It used to ask 0.50, which is more than exists.
+            "--gpu-memory-utilization", "0.35",
             "--mm-processor-cache-gb", "0",
             "--trust-remote-code",
         ], env=keyless)
