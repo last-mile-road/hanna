@@ -413,6 +413,10 @@ async def llm_proxy(path: str, request: Request,
     _authorise(x_hanna_key, request)
     if not _probe("llm"):
         raise HTTPException(503, "modelo ainda a carregar")
+    # Accept /llm/chat/completions and /llm/v1/chat/completions alike: the OpenAI
+    # client is pointed at base_url="…/llm/v1" and appends /chat/completions itself.
+    if path.startswith("v1/"):
+        path = path[3:]
     body = await request.body()
     headers = {"Content-Type": request.headers.get("content-type", "application/json")}
     key = os.environ.get("VLLM_API_KEY", "")
