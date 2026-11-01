@@ -110,6 +110,13 @@ IMAGE = (
 )
 
 PORTS = {"llm": 8000, "paddle": 8001, "mineru": 8002, "mineru_vlm": 8003}
+
+# Paddle is off by default. On a 46 GiB L40S the 9B plus Paddle leave 5.7 GiB free,
+# and Paddle's only unique win is one cell on the treatment grid (22/23 against the
+# 9B's 21/23), while it is the weakest reader on the nerve grid (48/72 against
+# MinerU's 84/84). Set HANNA_BOX_PADDLE=1 on a 96 GB card to bring it back.
+PADDLE_ENABLED = os.environ.get("HANNA_BOX_PADDLE", "0") == "1"
+ACTIVE = tuple(name for name in PORTS if name != "paddle" or PADDLE_ENABLED)
 LOGS = {name: deque(maxlen=200) for name in PORTS}
 PROCS: dict[str, subprocess.Popen] = {}
 READY_AT: dict[str, float | None] = {name: None for name in PORTS}
@@ -252,23 +259,27 @@ def box():
             "--gpu-memory-utilization", "0.55",
             "--limit-mm-per-prompt", '{"image": 2}',
             "--mm-processor-kwargs", '{"max_pixels": 2000000}',
+            # The default 4 GiB image cache is dead weight here: every request brings
+            # a different crop, and that 4 GiB is a reader's worth of memory.
+            "--mm-processor-cache-gb", "0",
         ])
         _await("llm", 900)
 
         # No VLLM_API_KEY in this process: vLLM would otherwise require a bearer on
         # the localhost port, and Paddle's client has no way to send one.
         paddle_env = {k: v for k, v in os.environ.items() if k != "VLLM_API_KEY"}
-        _start("paddle", [
-            "vllm", "serve", PADDLE_MODEL,
-            "--host", "127.0.0.1", "--port", str(PORTS["paddle"]),
-            "--served-model-name", PADDLE_MODEL,
-            "--trust-remote-code",
-            "--max-num-batched-tokens", "8192",
-            "--no-enable-prefix-caching",
-            "--mm-processor-cache-gb", "0",
-            "--gpu-memory-utilization", "0.30",
-        ], env=paddle_env)
-        _await("paddle", 300)
+        if PADDLE_ENABLED:
+            _start("paddle", [
+                "vllm", "serve", PADDLE_MODEL,
+                "--host", "127.0.0.1", "--port", str(PORTS["paddle"]),
+                "--served-model-name", PADDLE_MODEL,
+                "--trust-remote-code",
+                "--max-num-batched-tokens", "8192",
+                "--no-enable-prefix-caching",
+                "--mm-processor-cache-gb", "0",
+                "--gpu-memory-utilization", "0.30",
+            ], env=paddle_env)
+            _await("paddle", 300)
 
         # MinerU's own engine computes its budget as ~0.13 of whatever is free, and
         # that is not configurable — next to the 9B it reserves less than the model's
@@ -281,7 +292,7 @@ def box():
             "--host", "127.0.0.1", "--port", str(PORTS["mineru_vlm"]),
             "--served-model-name", MINERU_VLM_SERVED,
             "--max-model-len", "8192",
-            "--gpu-memory-utilization", "0.30",
+            "--gpu-memory-utilization", "0.50",
             "--mm-processor-cache-gb", "0",
             "--trust-remote-code",
         ], env=keyless)
@@ -346,7 +357,7 @@ def _authorise(key: str | None, request: Request) -> None:
 def _state() -> dict:
     now = time.time()
     engines = {}
-    for name in PORTS:
+    for name in ACTIVE:
         ok = _probe(name)
         problem = _degraded(name)
         if ok and not problem and READY_AT[name] is None:
@@ -472,6 +483,9 @@ def _run_mineru(image_bytes: bytes, tier: str) -> dict:
 async def parse_paddle_route(request: Request, file: UploadFile = File(...),
                              x_hanna_key: str | None = Header(default=None)):
     _authorise(x_hanna_key, request)
+    if not PADDLE_ENABLED:
+        raise HTTPException(503, "PaddleOCR-VL está desligado nesta configuração "
+                                 "(HANNA_BOX_PADDLE=1 para ligar)")
     if not _probe("paddle"):
         raise HTTPException(503, "PaddleOCR-VL ainda a carregar")
     data = await file.read()
