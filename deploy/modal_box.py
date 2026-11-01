@@ -266,6 +266,14 @@ def box():
             # The default 4 GiB image cache is dead weight here: every request brings
             # a different crop, and that 4 GiB is a reader's worth of memory.
             "--mm-processor-cache-gb", "0",
+            # Model card for Qwen3.5: thinking is on by default and the parser splits
+            #  thinking...</think> from the answer. Thinking is switched off per request
+            # in the proxy; the parser is here so reasoning output stays parseable if
+            # a caller turns it back on.
+            "--reasoning-parser", "qwen3",
+            # Qwen3.5 ships MTP heads; the card recommends speculative decoding for
+            # latency. 2 draft tokens is its suggested setting for a single GPU.
+            "--speculative-config", '{"method":"qwen3_next_mtp","num_speculative_tokens":2}',
         ])
         _await("llm", 900)
 
@@ -424,6 +432,17 @@ async def llm_proxy(path: str, request: Request,
     if path.startswith("v1/"):
         path = path[3:]
     body = await request.body()
+    # Qwen3.5 thinks before answering unless told not to, and the model card's route
+    # for that is chat_template_kwargs. Thinking cost 575 tokens and 26 s to name a
+    # patient on one card; extraction wants the answer, not the deliberation. A caller
+    # that wants thinking can still send its own chat_template_kwargs.
+    if path.endswith("chat/completions") and body:
+        import json
+
+        payload = json.loads(body)
+        if isinstance(payload, dict) and "chat_template_kwargs" not in payload:
+            payload["chat_template_kwargs"] = {"enable_thinking": False}
+            body = json.dumps(payload).encode()
     headers = {"Content-Type": request.headers.get("content-type", "application/json")}
     key = os.environ.get("VLLM_API_KEY", "")
     if key:

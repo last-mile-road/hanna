@@ -30,9 +30,13 @@ class OpenRouter:
         key = api_key or settings.OPENROUTER_API_KEY
         if not key:
             raise RuntimeError("OPENROUTER_API_KEY is not set")
+        self.base_url = base_url or settings.OPENROUTER_BASE_URL
+        # A self-hosted OpenAI-compatible server (the Modal box) rejects or ignores
+        # OpenRouter's extension fields, and needs its own key name.
+        self.self_hosted = "openrouter" not in self.base_url
         self.client = OpenAI(
             api_key=key,
-            base_url=base_url or settings.OPENROUTER_BASE_URL,
+            base_url=self.base_url,
             timeout=120.0,
             max_retries=1,
         )
@@ -55,9 +59,14 @@ class OpenRouter:
         content += [self._image_part(path) for path in image_paths]
 
         started = time.monotonic()
-        extra_body: dict[str, Any] = {"usage": {"include": True}}
-        if model_settings.get("reasoning_effort"):
-            extra_body["reasoning"] = {"effort": model_settings["reasoning_effort"]}
+        if self.self_hosted:
+            # vLLM knows nothing about `usage.include` or OpenRouter's reasoning effort;
+            # it rejects unknown fields, so send only the standard body.
+            extra_body: dict[str, Any] = {}
+        else:
+            extra_body = {"usage": {"include": True}}
+            if model_settings.get("reasoning_effort"):
+                extra_body["reasoning"] = {"effort": model_settings["reasoning_effort"]}
         kwargs: dict[str, Any] = {
             "model": model,
             "messages": [{"role": "user", "content": content}],

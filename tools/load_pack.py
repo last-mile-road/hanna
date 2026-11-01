@@ -64,6 +64,27 @@ PROFILES = [
         "notes": "Qwen 3.5 family, 27B. Native multimodal.",
     },
     {
+        "id": "box-qwen35-9b-v1",
+        "provider": "modal",
+        "model": "hanna-9b",
+        "settings": {"temperature": 0, "max_tokens": 1500},
+        "prompt_version": "v1",
+        "crop_strategy": "block",
+        "notes": "Self-hosted Qwen3.5-9B on the Modal box. Thinking disabled at the "
+                 "proxy; point OPENROUTER_BASE_URL at <box>/llm/v1 and the key at the "
+                 "box secret.",
+    },
+    {
+        "id": "box-qwen35-9b-v1-tuned",
+        "provider": "modal",
+        "model": "hanna-9b",
+        "settings": {"temperature": 0.7, "top_p": 0.8, "max_tokens": 1500},
+        "prompt_version": "v1",
+        "crop_strategy": "block",
+        "notes": "The model card's instruct-mode sampling (temp 0.7 / top_p 0.8), "
+                 "thinking disabled — the accuracy comparison against the greedy run.",
+    },
+    {
         "id": "or-qwen38-27b-v1",
         "provider": "openrouter",
         "model": "qwen/qwen3.8-27b",
