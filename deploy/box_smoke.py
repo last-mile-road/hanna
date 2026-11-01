@@ -102,7 +102,9 @@ def main() -> int:
     parser.add_argument("--card", required=True)
     parser.add_argument("--key", default=os.environ.get("HANNA_KEY", ""))
     parser.add_argument("--wait", type=float, default=15, help="minutes to wait for a cold start")
-    parser.add_argument("--readers", default="llm,paddle,mineru")
+    parser.add_argument("--readers", default="llm,mineru",
+                        help="comma list of llm,paddle,mineru; paddle is off unless "
+                             "the box was deployed with HANNA_BOX_PADDLE=1")
     parser.add_argument("--prompt", default="What is the patient's name? Answer with the name only.")
     args = parser.parse_args()
 
