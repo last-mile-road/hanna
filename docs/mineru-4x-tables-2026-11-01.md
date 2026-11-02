@@ -126,3 +126,37 @@ capability for a card whose grid parses cleanly.
 The lesson is worth keeping: **advanced answers "where are the cells", not "what is written in
 them"**. For a printed table that is enough (disability 14/14, nerve 12/12). For a
 hand-filled calendar it is not.
+
+## The width hypothesis, tested (2026-11-02)
+
+Splitting the treatment crop at the midpoint (2,673×473, aspect 5.65 → two halves at 3.05)
+makes MinerU read it as a table at plain **standard**, no advanced tier: 2.3–4.3 s per half,
+a table from every half on all four cards.
+
+But the cells are the limit, not the layout:
+
+| card | halves at standard | truth |
+|---|---|---|
+| form16 | 2025-05-31, 1 dose — correct | 2025-05-31, 1 dose |
+| form19 | no cells | 0 doses — right by accident |
+| form21 | grid and year present, **no handwritten day at all** | 2022-05-21, 1 dose |
+| form25 | January 10 present, year is in the header row | 2026-01-10 |
+
+So the layout model does classify a 5.65 band as a chart, and halving it fixes that. What
+halving does not fix is that MinerU's cell pass does not see form21's ink. Treatment stays
+with the 9B; the split-crop idea is worth keeping for the card definition, because "this
+block must be read in strips" is a property of the block, not of the reader.
+
+## Demographics: MinerU against the 9B, field by field (7 cards, 37 judged fields)
+
+| | count |
+|---|---|
+| both right | 27 |
+| MinerU right, 9B wrong | 2 |
+| 9B right, MinerU wrong | 4 |
+| both wrong | 4 |
+
+The two MinerU wins are proper nouns (`Chefe da Aldeia` against the 9B's `Alera`; `Eiope`
+against `Etiope`). Its four losses are names and places (`patient_name`, `district`,
+`locality`). So the 9B stays the demographics reader at 31/37 against MinerU's 29/37, and
+MinerU's value here is a **disagreement flag on proper nouns**, not a second route.
