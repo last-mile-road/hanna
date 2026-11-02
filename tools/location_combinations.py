@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
 import pandas as pd
@@ -49,6 +50,7 @@ class Chain:
     lon: float | None
 
 
+@lru_cache(maxsize=1)
 def load_chains() -> list[Chain]:
     admin = pd.read_csv(ADMIN)
     facilities = pd.read_csv(FACILITIES)
@@ -119,11 +121,16 @@ def score_chain(chain: Chain, written: list[tuple[str, str]]):
     return round(final, 1), matches
 
 
+@lru_cache(maxsize=1)
+def _districts():
+    admin = pd.read_csv(ADMIN)
+    return admin[admin["level"] == 2]
+
+
 def best_district(value: str):
     if not value:
         return None
-    admin = pd.read_csv(ADMIN)
-    districts = admin[admin["level"] == 2]
+    districts = _districts()
     scored = [
         (row["name"], fuzz.ratio(key(value), key(row["name"])))
         for _, row in districts.iterrows()
