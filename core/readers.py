@@ -321,17 +321,45 @@ def _post_file(url: str, path: Path, key: str) -> dict:
         return json.load(response)
 
 
+def _post_local(base: str, path: Path, tier: str) -> dict:
+    """A local mineru-api: JSON body, local source path, markdown out.
+
+    The box proxy takes a multipart upload and answers {markdown}; the local API takes a
+    manifest and answers {files:[{content:{markdown}}]}. Same reader logic after that.
+    """
+    body = json.dumps({
+        "files": [{"source": {"type": "local", "path": str(path)}}],
+        "tier": tier,
+        "output_formats": ["markdown"],
+    }).encode()
+    request = urllib.request.Request(
+        f"{base}/v1/file_parse?wait_timeout=900",
+        data=body, method="POST",
+        headers={"Content-Type": "application/json"},
+    )
+    with urllib.request.urlopen(request, timeout=1200) as response:
+        payload = json.load(response)
+    markdown = "".join(
+        (entry.get("content") or {}).get("markdown") or ""
+        for entry in payload.get("files", [])
+    )
+    return {"markdown": markdown, "ok": bool(markdown)}
+
+
 def read_block(image_path: Path, block_id: str) -> Reading:
     """One crop in, `{"pair_id": "value"}` out, in the shape the pipeline records."""
     if block_id not in SUPPORTED_BLOCKS:
         raise ValueError(f"no table reader for block {block_id!r}")
     url = settings.MINERU_URL
-    if not url:
-        raise RuntimeError("MINERU_URL is not set")
-    separator = "&" if "?" in url else "?"
+    if not url and not settings.MINERU_LOCAL_BASE:
+        raise RuntimeError("MINERU_URL or MINERU_LOCAL_BASE is not set")
     started = time.monotonic()
     tier = READER_TIERS[block_id]
-    payload = _post_file(f"{url}{separator}tier={tier}", image_path, settings.MINERU_KEY)
+    if settings.MINERU_LOCAL_BASE:
+        payload = _post_local(settings.MINERU_LOCAL_BASE, image_path, tier)
+    else:
+        separator = "&" if "?" in url else "?"
+        payload = _post_file(f"{url}{separator}tier={tier}", image_path, settings.MINERU_KEY)
     latency_ms = int((time.monotonic() - started) * 1000)
     markdown = payload.get("markdown") or ""
     values = READERS[block_id](markdown)

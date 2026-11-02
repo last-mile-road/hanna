@@ -61,3 +61,11 @@ MINERU_KEY = os.environ.get("MINERU_KEY", "")
 # Tier 2 geocoding. Empty disables it, which is the default: a query carries a place
 # name, so it is opt-in per deployment. Local Nominatim: http://127.0.0.1:8080
 NOMINATIM_URL = os.environ.get("NOMINATIM_URL", "")
+
+# Which routing file a run uses. The box deployment points this at the box
+# routing; OpenRouter stays the default so a plain checkout behaves as before.
+ROUTING_FILE = os.environ.get("HANNA_ROUTING_FILE", "routing.yaml")
+
+# A local mineru-api (JSON + local source) instead of the box proxy (multipart). Set this
+# for local experimentation: MINERU_LOCAL_BASE=http://127.0.0.1:8001
+MINERU_LOCAL_BASE = os.environ.get("MINERU_LOCAL_BASE", "")

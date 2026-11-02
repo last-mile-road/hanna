@@ -24,7 +24,7 @@ from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
-from sqlalchemy import select, text
+from sqlalchemy import select, text, update
 
 from core import jobs, settings, store
 from core.forms import prompt_options
@@ -279,6 +279,38 @@ def run_image(run_id: str, kind: str, sig: str = Query(...)):
     return FileResponse(path, media_type="image/jpeg")
 
 
+@app.get("/api/runs/{run_id}/map.png")
+def run_map(run_id: str):
+    """The review map: a static PNG so the coordinate never reaches the phone's tile client."""
+    from core import mapimage
+
+    run_id = _uuid(run_id)
+    with connect() as conn:
+        location = conn.execute(
+            select(runs_t.c.location).where(runs_t.c.id == run_id)
+        ).scalar()
+    if not location or location.get("lat") is None or location.get("lon") is None:
+        raise HTTPException(404, "sem coordenadas para este cartão")
+
+    import hashlib
+
+    reviewed = (location.get("review") or {}).get("mode") == "chosen"
+    lat, lon = float(location["lat"]), float(location["lon"])
+    # The point moves when a reviewer corrects it, so the file name has to follow it;
+    # a single map.png would keep serving the old picture from cache.
+    digest = hashlib.sha256(f"{lat:.5f},{lon:.5f},{reviewed}".encode()).hexdigest()[:10]
+    out = settings.OUTPUT_DIR / "runs" / run_id / f"map-{digest}.png"
+    path = mapimage.compose(
+        lat=lat,
+        lon=lon,
+        radius_m=float(location.get("precision_m") or 1500),
+        out=out,
+        cache=settings.OUTPUT_DIR / "tiles",
+        reviewed=reviewed,
+    )
+    return FileResponse(path, media_type="image/png", headers={"Cache-Control": "no-store"})
+
+
 # --------------------------------------------------------------------------- review
 
 
@@ -290,6 +322,56 @@ class ReviewItem(BaseModel):
 
 class ReviewBody(BaseModel):
     reviews: list[ReviewItem]
+
+
+class LocationReview(BaseModel):
+    mode: str                       # accepted | chosen | unknown
+    lat: float | None = None
+    lon: float | None = None
+    name: str | None = None
+    pcode: str | None = None
+
+
+@app.post("/api/runs/{run_id}/location")
+def post_location(run_id: str, body: LocationReview):
+    """Record what the reviewer did with the location, inside the run's location record.
+
+    A correction is stored with the original decision intact, so the pair
+    (gazetteer answer, human answer) survives as evidence for the alias table later.
+    """
+    run_id = _uuid(run_id)
+    with connect() as conn:
+        location = conn.execute(
+            select(runs_t.c.location).where(runs_t.c.id == run_id)
+        ).scalar()
+        if not location:
+            raise HTTPException(404, "sem localização para este cartão")
+        from core.location import _km
+
+        location = dict(location)
+        previous = location.get("review") or {}
+        base_lat = previous.get("lat", location.get("lat"))
+        base_lon = previous.get("lon", location.get("lon"))
+        # Confirming is also a placement: the clinician is saying the pin as shown is the
+        # house, so the point is stored as reviewer-sourced either way. `changed` and
+        # `moved_m` are what let us measure later how far reviewers move pins.
+        lat = body.lat if body.lat is not None else base_lat
+        lon = body.lon if body.lon is not None else base_lon
+        moved = (_km(float(base_lat), float(base_lon), float(lat), float(lon))
+                 if base_lat is not None and base_lon is not None and lat is not None else 0.0)
+        location["review"] = {
+            "mode": body.mode,
+            "lat": lat,
+            "lon": lon,
+            "name": body.name,
+            "pcode": body.pcode,
+            "source": "revisor",
+            "changed": body.mode == "chosen",
+            "moved_m": round(moved, 1),
+        }
+        conn.execute(update(runs_t).where(runs_t.c.id == run_id).values(location=location))
+        conn.commit()
+    return {"ok": True, "review": location["review"]}
 
 
 _TEMPLATE_SIZE: dict[str, tuple[int, int]] = {}

@@ -39,3 +39,8 @@ node_modules/
 
 # OS / editor
 .DS_Store
+
+# Local MinerU service artefacts (started in this directory)
+blobs/
+.mineru-service.lock
+output/tiles/

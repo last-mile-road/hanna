@@ -34,6 +34,10 @@ $("dev-mode").addEventListener("change", (event) => {
   devMode = event.target.checked;
   localStorage.setItem("hanna.devMode", devMode ? "on" : "off");
   document.body.classList.toggle("show-dev", devMode);
+  // The location card keeps developer detail (score, service, reason), so it must be
+  // rebuilt when the toggle moves rather than only restyled.
+  const current = $("sections").querySelector(".location");
+  if (current && data) current.replaceWith(renderLocation() || document.createElement("div"));
   updateProgress();
 });
 
@@ -57,11 +61,255 @@ async function load() {
     document.querySelector(".has-issue")?.scrollIntoView({ behavior: "smooth", block: "center" }));
 }
 
+/* ---------- location card ---------- */
+
+const LEVEL_LABEL = {
+  facility: "unidade sanitária",
+  locality: "localidade",
+  administrative_post: "posto administrativo",
+  district: "distrito",
+  province: "província",
+  service: "serviço",
+};
+
+const LEVEL_ORDER = ["province", "district", "administrative_post", "locality", "facility"];
+
+/* The matched level plus one level up, which is the context a clinician needs to judge it:
+   "Balama › Impiri" for a facility match, "Cabo Delgado › Balama" for a district one. */
+function contextNames(chain, level) {
+  if (!chain) return { parent: null, matched: null };
+  const index = Math.max(0, LEVEL_ORDER.indexOf(level));
+  let matched = null;
+  let parent = null;
+  for (let i = Math.min(index, LEVEL_ORDER.length - 1); i >= 0; i -= 1) {
+    if (chain[LEVEL_ORDER[i]]) {
+      matched = { level: LEVEL_ORDER[i], name: chain[LEVEL_ORDER[i]] };
+      break;
+    }
+  }
+  const from = matched ? LEVEL_ORDER.indexOf(matched.level) - 1 : index - 1;
+  for (let i = from; i >= 0; i -= 1) {
+    if (chain[LEVEL_ORDER[i]]) {
+      parent = { level: LEVEL_ORDER[i], name: chain[LEVEL_ORDER[i]] };
+      break;
+    }
+  }
+  return { parent, matched };
+}
+
+function precisionText(metres) {
+  if (!metres) return "";
+  return metres >= 1000 ? `~${(metres / 1000).toFixed(0)} km de margem`
+                        : `~${metres} m de margem`;
+}
+
+async function postLocation(payload) {
+  const response = await fetch(`/api/runs/${runId}/location`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    flash("Não foi possível guardar a localização");
+    return null;
+  }
+  return response.json();
+}
+
+/* Interactive picker, loaded only when the clinician says the pin is wrong. The static
+   PNG stays the default so a weak connection still shows where the pin is. */
+function openPicker(location, onSaved) {
+  if (!window.L) {
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+    document.head.appendChild(css);
+    const script = document.createElement("script");
+    script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    script.onload = () => openPicker(location, onSaved);
+    document.head.appendChild(script);
+    return;
+  }
+
+  const overlay = document.createElement("div");
+  overlay.className = "picker";
+  const head = document.createElement("div");
+  head.className = "picker-head";
+  const title = document.createElement("strong");
+  title.textContent = "Arraste o alfinete até à casa do doente";
+  const cancel = document.createElement("button");
+  cancel.className = "link-button";
+  cancel.textContent = "Cancelar";
+  cancel.addEventListener("click", () => overlay.remove());
+  head.append(title, cancel);
+
+  const mapElement = document.createElement("div");
+  mapElement.className = "picker-map";
+  const footer = document.createElement("div");
+  footer.className = "picker-foot";
+  const hint = document.createElement("span");
+  hint.className = "hint";
+  hint.textContent = "Aproxime com dois dedos. O alfinete fica na casa.";
+  const save = document.createElement("button");
+  save.className = "mini accept";
+  save.textContent = "Guardar";
+  save.addEventListener("click", async () => {
+    const point = marker.getLatLng();
+    const result = await postLocation({
+      mode: "chosen", lat: point.lat, lon: point.lng, name: "ajustado no mapa",
+    });
+    if (result) {
+      overlay.remove();
+      onSaved(point.lat, point.lng);
+    }
+  });
+  footer.append(hint, save);
+  overlay.append(head, mapElement, footer);
+  document.body.appendChild(overlay);
+
+  const zoom = location.level === "facility" || location.level === "locality" ? 16 : 13;
+  const map = L.map(mapElement).setView([location.lat, location.lon], zoom);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap",
+    maxZoom: 19,
+  }).addTo(map);
+  const marker = L.marker([location.lat, location.lon], { draggable: true }).addTo(map);
+  setTimeout(() => map.invalidateSize(), 50);
+}
+
+function renderLocation() {
+  const loc = data.location;
+  if (!loc) return null;
+
+  const section = document.createElement("section");
+  section.className = "section location";
+
+  const head = document.createElement("div");
+  head.className = "section-head";
+  const title = document.createElement("h2");
+  title.textContent = "Onde fica a casa do doente?";
+  head.append(title);
+  if (loc.review?.mode === "accepted" || loc.review?.mode === "chosen") {
+    const done = document.createElement("span");
+    done.className = "loc-badge ok";
+    done.textContent = "confirmado";
+    head.append(done);
+  }
+  section.appendChild(head);
+
+  const context = contextNames(loc.chosen?.chain || {}, loc.level);
+  const chain = document.createElement("p");
+  chain.className = "chain";
+  chain.textContent = [context.parent?.name, context.matched?.name].filter(Boolean).join(" › ")
+                      || "sem correspondência no gazetteer";
+  section.appendChild(chain);
+
+  const hasPoint = loc.lat !== null && loc.lat !== undefined
+    && loc.lon !== null && loc.lon !== undefined;
+  if (hasPoint) {
+    const map = document.createElement("img");
+    map.className = "locmap";
+    map.alt = "Mapa da localização";
+    const point = `${loc.review?.lat ?? loc.lat},${loc.review?.lon ?? loc.lon}`;
+    map.src = `/api/runs/${runId}/map.png?v=${point}`;
+    section.appendChild(map);
+  }
+
+  const instruction = document.createElement("p");
+  instruction.className = "instruction";
+  instruction.textContent = loc.level === "district" || loc.level === "province"
+    ? "Só sabemos o distrito. Coloque o alfinete na casa ou, no mínimo, na aldeia do doente."
+    : "Confirme se o alfinete está na casa do doente. Se não estiver, coloque-o na casa ou, no mínimo, na aldeia.";
+  section.appendChild(instruction);
+
+  const meta = document.createElement("p");
+  meta.className = "locmeta";
+  meta.textContent = [
+    loc.review?.mode === "chosen"
+      ? "posição indicada pelo revisor"
+      : (context.matched ? (LEVEL_LABEL[context.matched.level] || context.matched.level) : ""),
+    loc.review?.mode === "chosen" ? "" : precisionText(loc.precision_m),
+    devMode && loc.score ? `confiança ${(loc.score / 100).toFixed(2)}` : "",
+    devMode && loc.service_used ? "serviço" : "",
+  ].filter(Boolean).join(" · ");
+  section.appendChild(meta);
+
+  const actions = document.createElement("div");
+  actions.className = "loc-actions";
+  const confirmed = loc.review?.mode === "accepted" || loc.review?.mode === "chosen";
+  const currentPoint = {
+    ...loc,
+    lat: loc.review?.lat ?? loc.lat,
+    lon: loc.review?.lon ?? loc.lon,
+  };
+  // The map is never a one-way door: a clinician can come back, look again and move the
+  // pin after confirming, because changing one's mind on the way out is normal.
+  const openMap = () => openPicker(currentPoint, (lat, lon) => {
+    loc.review = { mode: "chosen", lat, lon, changed: true };
+    loc.lat = lat;
+    loc.lon = lon;
+    section.replaceWith(renderLocation());
+  });
+
+  if (hasPoint && !confirmed) {
+    const accept = document.createElement("button");
+    accept.className = "mini accept";
+    accept.textContent = "Sim, é aqui";
+    accept.addEventListener("click", async () => {
+      const result = await postLocation({ mode: "accepted" });
+      if (result) {
+        loc.review = result.review;
+        section.replaceWith(renderLocation());
+      }
+    });
+    const correct = document.createElement("button");
+    correct.className = "mini";
+    correct.textContent = "Abrir mapa e mover o alfinete";
+    correct.addEventListener("click", openMap);
+    actions.append(accept, correct);
+  } else if (!hasPoint) {
+    const pick = document.createElement("button");
+    pick.className = "mini accept";
+    pick.textContent = "Marcar no mapa";
+    pick.addEventListener("click", () => {
+      const fallback = { ...loc, lat: -13.0, lon: 38.0 };
+      openPicker(fallback, (lat, lon) => {
+        loc.review = { mode: "chosen", lat, lon };
+        loc.lat = lat;
+        loc.lon = lon;
+        section.replaceWith(renderLocation());
+      });
+    });
+    actions.append(pick);
+  } else {
+    const done = document.createElement("span");
+    done.className = "hint";
+    done.textContent = loc.review?.mode === "chosen"
+      ? "posição corrigida pelo revisor" : "confirmado pelo revisor";
+    const again = document.createElement("button");
+    again.className = "mini";
+    again.textContent = "Abrir mapa e mover o alfinete";
+    again.addEventListener("click", openMap);
+    actions.append(done, again);
+  }
+  section.appendChild(actions);
+
+  if (devMode) {
+    const reason = document.createElement("p");
+    reason.className = "hint";
+    reason.textContent = loc.reason || "";
+    section.appendChild(reason);
+  }
+  return section;
+}
+
 /* ---------- render ---------- */
 
 function render() {
   const container = $("sections");
   container.innerHTML = "";
+  const location = renderLocation();
+  if (location) container.appendChild(location);
   data.blocks.forEach((block) => {
     const section = document.createElement("section");
     section.className = "section";

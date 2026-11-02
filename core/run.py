@@ -120,7 +120,7 @@ def run_card(
     routing: bool = False,
     card_id: int | None = None,
     run_id=None,
-    routing_file: str = "routing.yaml",
+    routing_file: str | None = None,
 ) -> dict[str, Any]:
     """Run one card. CLI benchmarks pass `form_name`; the worker passes `card_id` and a
     pre-created `run_id`, so the HTTP layer can hand out the id before the work starts."""
@@ -130,7 +130,7 @@ def run_card(
         profiles_by_id = _profiles(conn)
         profile = profiles_by_id[profile_id]
         routing_map = (
-            _routing(form, profile_id, routing_file)
+            _routing(form, profile_id, routing_file or settings.ROUTING_FILE)
             if routing
             else {"default": profile_id, "blocks": {}}
         )

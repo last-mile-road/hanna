@@ -20,7 +20,7 @@ def run_row(conn: Connection, run_id: str) -> dict[str, Any] | None:
             SELECT id, card_id, form_id, form_version, profile_id, status, purpose,
                    started_at, finished_at, alignment_ms, latency_ms,
                    input_tokens, output_tokens, cost_usd,
-                   validation, validation_status, error
+                   validation, validation_status, location, error
               FROM runs WHERE id = CAST(:run_id AS uuid)
             """
         ),

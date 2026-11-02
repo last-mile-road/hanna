@@ -89,3 +89,28 @@ body:not(.show-dev) .dev-row { display: none; }
   border: 1px solid var(--line); border-radius: .3rem; background: var(--bg); color: var(--ink);
 }
 .form-table select.month-cell.missed { color: var(--warn); font-weight: 700; }
+
+/* Location card: chain, static map, confidence, accept or pick an alternative. */
+.loc-badge { font-size: .7rem; font-weight: 700; padding: .18rem .45rem; border-radius: .3rem; }
+.loc-badge.ok { background: #e6efe8; color: var(--good); }
+.loc-badge.warn { background: #f6ece0; color: var(--warn); }
+.loc-badge.bad { background: #f1e4e4; color: var(--bad); }
+.chain { font-size: .92rem; margin: .2rem 0 .5rem; }
+.locmap { display: block; width: 100%; border: 1px solid var(--line); border-radius: .4rem; }
+.locmeta { font-size: .78rem; color: var(--muted); margin: .4rem 0 .2rem; }
+.loc-actions { display: flex; gap: .5rem; align-items: center; margin-top: .5rem; }
+.alt-list { margin-top: .5rem; border-top: 1px solid var(--line); }
+.alt { display: flex; gap: .5rem; align-items: baseline; padding: .4rem 0; border-bottom: 1px solid var(--line); }
+.alt:last-child { border-bottom: 0; }
+.alt-name { flex: 1; font-size: .88rem; font-weight: 600; }
+.alt-detail { font-size: .74rem; color: var(--muted); }
+.alt.picked { background: #e6efe8; }
+
+/* The card asks one question: is the pin on the patient's house. */
+.instruction { font-size: .9rem; margin: .55rem 0 .25rem; }
+.picker { position: fixed; inset: 0; background: var(--card); z-index: 50; display: flex; flex-direction: column; }
+.picker-head { display: flex; align-items: center; gap: .6rem; padding: .8rem 1rem; border-bottom: 1px solid var(--line); }
+.picker-head strong { flex: 1; font-size: .95rem; }
+.picker-map { flex: 1; min-height: 0; }
+.picker-foot { display: flex; align-items: center; gap: .6rem; padding: .7rem 1rem; border-top: 1px solid var(--line); }
+.picker-foot .hint { flex: 1; font-size: .75rem; }
