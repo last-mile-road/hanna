@@ -57,3 +57,7 @@ OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 # https://<workspace>--hanna-box-box.<region>.modal.run/parse/mineru
 MINERU_URL = os.environ.get("MINERU_URL", "")
 MINERU_KEY = os.environ.get("MINERU_KEY", "")
+
+# Tier 2 geocoding. Empty disables it, which is the default: a query carries a place
+# name, so it is opt-in per deployment. Local Nominatim: http://127.0.0.1:8080
+NOMINATIM_URL = os.environ.get("NOMINATIM_URL", "")
