@@ -413,6 +413,7 @@ def get_review(run_id: str):
         "run_id": run_id,
         "status": run["status"],
         "validation_status": run["validation_status"],
+        "location": run.get("location"),
         "issues": issues,
         "counts": counts,
         "image": {

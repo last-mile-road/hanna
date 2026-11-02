@@ -155,6 +155,8 @@ runs = Table(
     Column("finished_at", DateTime(timezone=True)),
     Column("validation", JSONB),
     Column("validation_status", String(16)),
+    # Tiered location resolution: decision, level, point, score, alternatives.
+    Column("location", JSONB),
     Column("latency_ms", Integer),
     Column("input_tokens", Integer),
     Column("output_tokens", Integer),

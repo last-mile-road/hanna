@@ -109,20 +109,32 @@ class Resolution:
         return data
 
 
+def _clean(value: Any) -> Any:
+    """pandas gives NaN for an empty cell, and NaN is not JSON. Normalise to None."""
+    if value is None:
+        return None
+    if isinstance(value, float) and math.isnan(value):
+        return None
+    if isinstance(value, str) and value.strip().lower() in {"nan", "none", ""}:
+        return None
+    return value
+
+
 def _candidate(score: float, chain, matches) -> Candidate:
+    name = _clean(chain.facility) or _clean(chain.locality) or _clean(chain.name) or ""
     return Candidate(
         score=score,
         level=chain.level,
-        name=chain.facility or chain.locality or chain.name,
-        lat=chain.lat,
-        lon=chain.lon,
-        chain={
+        name=str(name),
+        lat=_clean(chain.lat),
+        lon=_clean(chain.lon),
+        chain={key: _clean(value) for key, value in {
             "province": chain.province,
             "district": chain.district,
             "administrative_post": chain.admin_post,
             "locality": chain.locality,
             "facility": chain.facility,
-        },
+        }.items()},
         matches=[{"written": label, "matched": field_name, "score": round(value, 1)}
                  for label, field_name, value, _ in matches],
     )

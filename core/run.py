@@ -16,7 +16,7 @@ from typing import Any
 
 from sqlalchemy import select, text, update
 
-from . import align, normalise, settings, store, ticks
+from . import align, location, normalise, settings, store, ticks
 from .db import connect
 from .forms import Block, Pair
 from .inference import OpenRouter
@@ -516,6 +516,19 @@ def run_card(
             f"({validation['blocking']} blocking, {validation['info']} info)"
         )
 
+        # Location: gazetteer first, a bounded service second, a human third. Stored with the
+        # run so the review can show a map instead of three hidden text fields.
+        geo = location.resolve(
+            district=str(all_values.get("district") or ""),
+            locality=str(all_values.get("locality") or ""),
+            place=str(all_values.get("village_name") or ""),
+        )
+        result["location"] = geo.as_dict()
+        (run_dir / "location.json").write_text(
+            json.dumps(result["location"], indent=2, ensure_ascii=False)
+        )
+        print(f"  location: {location.summary(geo)}")
+
         status = "done" if not result["errors"] else "partial"
         run_hash = hashlib.sha256("".join(block_hashes).encode()).hexdigest()
         with connect() as conn:
@@ -531,6 +544,7 @@ def run_card(
                 cost_usd=result["cost_usd"] or None,
                 validation=validation,
                 validation_status=validation["status"],
+                location=result["location"],
                 error="; ".join(result["errors"]) or None,
             )
             conn.commit()
