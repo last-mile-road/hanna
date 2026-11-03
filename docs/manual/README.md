@@ -22,6 +22,8 @@ Every page has two layers:
 | `03-location.md` | The gazetteer, the geocoding cascade, the map picker and the alias table |
 | `04-review.md` | The review screen, corrections and what they teach |
 | `05-country-onboarding.md` | What a new country does to join |
+| `06-studio.md` | Studio: how a country defines its card |
+| `07-case-lifecycle.md` | The case lifecycle: notification → follow-ups → sync |
 
 ## The ritual
 
