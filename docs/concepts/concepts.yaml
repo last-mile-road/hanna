@@ -16,7 +16,6 @@ concepts:
   aliases:
   - patient_name
   - name
-  - nome
   - nome do doente
   note: Mozambique card has one name field; WHO splits into three. Treat as one string
     until a country needs the split.
@@ -364,8 +363,7 @@ concepts:
   tier: core
   aliases:
   - nerve_enlargement_cubital_right
-  - nervo cubital direito
-  - grosso
+  - nervo cubital direito grosso
 - id: nerve_enlargement_cubital_left
   who_name: Ulnar nerve enlargement, left
   value_type: tick_box
@@ -377,8 +375,7 @@ concepts:
   tier: core
   aliases:
   - nerve_enlargement_cubital_left
-  - nervo cubital esquerdo
-  - grosso
+  - nervo cubital esquerdo grosso
 - id: nerve_enlargement_radial_cutaneous_right
   who_name: Radial cutaneous nerve enlargement, right
   value_type: tick_box
@@ -390,8 +387,7 @@ concepts:
   tier: core
   aliases:
   - nerve_enlargement_radial_cutaneous_right
-  - nervo radial cutâneo direito
-  - grosso
+  - nervo radial cutâneo direito grosso
 - id: nerve_enlargement_radial_cutaneous_left
   who_name: Radial cutaneous nerve enlargement, left
   value_type: tick_box
@@ -403,8 +399,7 @@ concepts:
   tier: core
   aliases:
   - nerve_enlargement_radial_cutaneous_left
-  - nervo radial cutâneo esquerdo
-  - grosso
+  - nervo radial cutâneo esquerdo grosso
 - id: nerve_enlargement_popliteal_external_right
   who_name: Common peroneal nerve enlargement, right
   value_type: tick_box
@@ -416,8 +411,7 @@ concepts:
   tier: core
   aliases:
   - nerve_enlargement_popliteal_external_right
-  - nervo poplíteo externo direito
-  - grosso
+  - nervo poplíteo externo direito grosso
 - id: nerve_enlargement_popliteal_external_left
   who_name: Common peroneal nerve enlargement, left
   value_type: tick_box
@@ -429,8 +423,7 @@ concepts:
   tier: core
   aliases:
   - nerve_enlargement_popliteal_external_left
-  - nervo poplíteo externo esquerdo
-  - grosso
+  - nervo poplíteo externo esquerdo grosso
 - id: nerve_pain_cubital_right
   who_name: Ulnar nerve pain, right
   value_type: tick_box
@@ -442,8 +435,7 @@ concepts:
   tier: core
   aliases:
   - nerve_pain_cubital_right
-  - nervo cubital direito
-  - dor
+  - nervo cubital direito dor
 - id: nerve_pain_cubital_left
   who_name: Ulnar nerve pain, left
   value_type: tick_box
@@ -455,8 +447,7 @@ concepts:
   tier: core
   aliases:
   - nerve_pain_cubital_left
-  - nervo cubital esquerdo
-  - dor
+  - nervo cubital esquerdo dor
 - id: nerve_pain_radial_cutaneous_right
   who_name: Radial cutaneous nerve pain, right
   value_type: tick_box
@@ -468,8 +459,7 @@ concepts:
   tier: core
   aliases:
   - nerve_pain_radial_cutaneous_right
-  - nervo radial cutâneo direito
-  - dor
+  - nervo radial cutâneo direito dor
 - id: nerve_pain_radial_cutaneous_left
   who_name: Radial cutaneous nerve pain, left
   value_type: tick_box
@@ -481,8 +471,7 @@ concepts:
   tier: core
   aliases:
   - nerve_pain_radial_cutaneous_left
-  - nervo radial cutâneo esquerdo
-  - dor
+  - nervo radial cutâneo esquerdo dor
 - id: nerve_pain_popliteal_external_right
   who_name: Common peroneal nerve pain, right
   value_type: tick_box
@@ -494,8 +483,7 @@ concepts:
   tier: core
   aliases:
   - nerve_pain_popliteal_external_right
-  - nervo poplíteo externo direito
-  - dor
+  - nervo poplíteo externo direito dor
 - id: nerve_pain_popliteal_external_left
   who_name: Common peroneal nerve pain, left
   value_type: tick_box
@@ -507,8 +495,7 @@ concepts:
   tier: core
   aliases:
   - nerve_pain_popliteal_external_left
-  - nervo poplíteo externo esquerdo
-  - dor
+  - nervo poplíteo externo esquerdo dor
 - id: disability_grade_eye_right
   who_name: WHO disability grade, right eye
   value_type: integer
@@ -522,9 +509,8 @@ concepts:
   aliases:
   - ehf_right_eye
   - EHF_right_eye
-  - graus de deformidade
-  - olho direito
-  - ehf
+  - graus de deformidade olho direito
+  - ehf olho direito
   grade_meanings: 0 normal, 1 insensitive or weakness, 2 visible deformity or paralysis
   note: Record the clinician's own entry. Do not compute it from the eye tests.
 - id: disability_grade_eye_left
@@ -540,9 +526,8 @@ concepts:
   aliases:
   - ehf_left_eye
   - EHF_left_eye
-  - graus de deformidade
-  - olho esquerdo
-  - ehf
+  - graus de deformidade olho esquerdo
+  - ehf olho esquerdo
   grade_meanings: 0 normal, 1 insensitive or weakness, 2 visible deformity or paralysis
 - id: disability_grade_hand_right
   who_name: WHO disability grade, right hand
@@ -557,9 +542,8 @@ concepts:
   aliases:
   - ehf_right_hand
   - EHF_right_hand
-  - graus de deformidade
-  - mão direita
-  - ehf
+  - graus de deformidade mão direita
+  - ehf mão direita
   grade_meanings: 0 normal, 1 insensitive or weakness, 2 visible deformity, clawing,
     ulcer or amputation
 - id: disability_grade_hand_left
@@ -575,9 +559,8 @@ concepts:
   aliases:
   - ehf_left_hand
   - EHF_left_hand
-  - graus de deformidade
-  - mão esquerda
-  - ehf
+  - graus de deformidade mão esquerda
+  - ehf mão esquerda
   grade_meanings: 0 normal, 1 insensitive or weakness, 2 visible deformity, clawing,
     ulcer or amputation
 - id: disability_grade_foot_right
@@ -593,9 +576,8 @@ concepts:
   aliases:
   - ehf_right_foot
   - EHF_right_foot
-  - graus de deformidade
-  - pé direito
-  - ehf
+  - graus de deformidade pé direito
+  - ehf pé direito
   grade_meanings: 0 normal, 1 insensitive or weakness, 2 visible deformity, ulcer
     or amputation
 - id: disability_grade_foot_left
@@ -611,9 +593,8 @@ concepts:
   aliases:
   - ehf_left_foot
   - EHF_left_foot
-  - graus de deformidade
-  - pé esquerdo
-  - ehf
+  - graus de deformidade pé esquerdo
+  - ehf pé esquerdo
   grade_meanings: 0 normal, 1 insensitive or weakness, 2 visible deformity, ulcer
     or amputation
 - id: eye_blinking_right
@@ -627,8 +608,7 @@ concepts:
   tier: core
   aliases:
   - right_eye_blinking
-  - pestanejo direito
-  - olho direito
+  - pestanejo olho direito
   note: Observed without prompting the patient. A missing blink reflex suggests loss
     of sensation in the eye. Do not conflate with eye closure (eye_lagophthalmos_right).
 - id: eye_blinking_left
@@ -642,8 +622,7 @@ concepts:
   tier: core
   aliases:
   - left_eye_blinking
-  - pestanejo esquerdo
-  - olho esquerdo
+  - pestanejo olho esquerdo
   note: Observed without prompting. Absence suggests loss of sensation. Eye closure
     is a separate measurement.
 - id: eye_lagophthalmos_right
@@ -723,8 +702,7 @@ concepts:
   tier: core
   aliases:
   - right_foot_dorsiflex
-  - dorsi-flexão dos pés
-  - pé direito
+  - dorsi-flexão pé direito
   note: 'Card marks: N = Normal, F = Fraco (weak), A = Ausente (paralysed). Stored
     in English.'
 - id: foot_dorsiflex_left
@@ -743,8 +721,7 @@ concepts:
   tier: core
   aliases:
   - left_foot_dorsiflex
-  - dorsi-flexão dos pés
-  - pé esquerdo
+  - dorsi-flexão pé esquerdo
   note: 'Card marks: N = Normal, F = Fraco (weak), A = Ausente (paralysed). Stored
     in English.'
 - id: insensitive_points_right_hand
@@ -756,8 +733,7 @@ concepts:
   tier: core
   aliases:
   - insensitive_points_right_hand
-  - teste sensitivo das mãos e dos pés
-  - mão direita
+  - teste sensitivo mão direita
   note: Count of test points found insensitive, 0-8 on the standard examination. Raise
     sanity_max if a country examines more.
 - id: insensitive_points_left_hand
@@ -769,8 +745,7 @@ concepts:
   tier: core
   aliases:
   - insensitive_points_left_hand
-  - teste sensitivo das mãos e dos pés
-  - mão esquerda
+  - teste sensitivo mão esquerda
   note: Count of insensitive test points, 0-8 standard.
 - id: insensitive_points_right_foot
   who_name: Insensitive points, right foot
@@ -781,8 +756,7 @@ concepts:
   tier: core
   aliases:
   - insensitive_points_right_foot
-  - teste sensitivo das mãos e dos pés
-  - pé direito
+  - teste sensitivo pé direito
   note: Count of insensitive test points, 0-8 standard.
 - id: insensitive_points_left_foot
   who_name: Insensitive points, left foot
@@ -793,8 +767,7 @@ concepts:
   tier: core
   aliases:
   - insensitive_points_left_foot
-  - teste sensitivo das mãos e dos pés
-  - pé esquerdo
+  - teste sensitivo pé esquerdo
   note: Count of insensitive test points, 0-8 standard.
 - id: hand_foot_exam_notes
   who_name: Hand and foot examination notes
@@ -916,7 +889,6 @@ concepts:
   ground_truth: false
   aliases:
   - data da avaliação
-  - data
   note: 'Date of the follow-up examination written in each review block. Keys a visit:
     without it, two reviews of the same card cannot be told apart. Not on any current
     test card image, which is front only.'
@@ -971,8 +943,7 @@ concepts:
   note: Voluntary muscle test. Grade follows the card's legend (the disability table
     convention).
   aliases:
-  - abdução dos dedos mínimos
-  - direito
+  - abdução dedos mínimos direito
 - id: finger_abduction_left
   who_name: Little finger abduction, left
   value_type: choice_single
@@ -980,8 +951,7 @@ concepts:
   tier: core
   note: Voluntary muscle test. Grade follows the card's legend.
   aliases:
-  - abdução dos dedos mínimos
-  - esquerdo
+  - abdução dedos mínimos esquerdo
 - id: recorded_by
   who_name: Recorded by
   value_type: text
@@ -1005,8 +975,7 @@ concepts:
   tier: extended
   note: Card prints sim/não checkboxes.
   aliases:
-  - reacções
-  - reacoes
+  - reacções história clínica
 - id: lepra_reaction_type
   who_name: Lepra reaction type
   value_type: choice_single
@@ -1017,8 +986,7 @@ concepts:
   sensitivity: clinical
   tier: extended
   aliases:
-  - reacções
-  - reacoes
+  - reacções tipo de reacção
 - id: nerve_pain_spontaneous
   who_name: Spontaneous nerve pain (history)
   value_type: choice_single
@@ -1032,8 +1000,7 @@ concepts:
   tier: extended
   aliases:
   - dor_espontanea_dos_nervos
-  - reacções
-  - reacoes
+  - reacções dor espontânea dos nervos
 - id: recent_sensitivity_change
   who_name: Recent change in skin sensation
   value_type: choice_single
@@ -1047,8 +1014,7 @@ concepts:
   tier: extended
   aliases:
   - mudanca_recente_na_sensibilidade
-  - reacções
-  - reacoes
+  - reacções mudança na sensibilidade
 - id: recent_patch_change
   who_name: Recent change in skin patches
   value_type: choice_single
@@ -1062,8 +1028,7 @@ concepts:
   tier: extended
   aliases:
   - mudanca_recente_nas_manchas
-  - reacções
-  - reacoes
+  - reacções mudança nas manchas
 - id: painful_skin_lesions
   who_name: Tender or painful skin lesions
   value_type: choice_single
@@ -1077,8 +1042,7 @@ concepts:
   tier: extended
   aliases:
   - lesoes_cutaneas_dolorosas
-  - reacções
-  - reacoes
+  - reacções lesões dolorosas
 - id: infiltrated_skin_lesions
   who_name: Infiltrated skin lesions
   value_type: choice_single
@@ -1092,8 +1056,7 @@ concepts:
   tier: extended
   aliases:
   - lesoes_cutaneas_com_infiltracao
-  - reacções
-  - reacoes
+  - reacções lesões com infiltração
 - id: warm_skin_lesions
   who_name: Warm skin lesions
   value_type: choice_single
@@ -1107,8 +1070,7 @@ concepts:
   tier: extended
   aliases:
   - lesoes_cutaneas_quentes
-  - reacções
-  - reacoes
+  - reacções lesões quentes
 - id: red_skin_lesions
   who_name: Red skin lesions
   value_type: choice_single
@@ -1122,8 +1084,7 @@ concepts:
   tier: extended
   aliases:
   - lesoes_cutaneas_vermelhas
-  - reacções
-  - reacoes
+  - reacções lesões vermelhas
 - id: skin_lesion_ulcerated
   who_name: Ulceration of skin lesions
   value_type: choice_single
@@ -1138,8 +1099,7 @@ concepts:
   note: Reaction exam item; distinct from complication_ulcer, the chronic hand/foot
     ulcer.
   aliases:
-  - reacções
-  - reacoes
+  - reacções ulceração das lesões
 - id: nerve_tenderness_present
   who_name: Nerve pain or tenderness on examination
   value_type: choice_single
@@ -1154,8 +1114,7 @@ concepts:
   note: 'Card: Dor/engrossamento dos nervos? Exam-level; the per-nerve enlargement
     and pain cells are the nerve_enlargement_* / nerve_pain_* concepts.'
   aliases:
-  - reacções
-  - reacoes
+  - reacções dor ou engrossamento dos nervos
 - id: eye_redness_pain
   who_name: Red and painful eyes
   value_type: choice_single
@@ -1169,8 +1128,7 @@ concepts:
   tier: extended
   aliases:
   - olhos_vermelhos_e_dolorosos
-  - reacções
-  - reacoes
+  - reacções olhos vermelhos e dolorosos
 - id: prednisolone_table
   who_name: Prednisolone taper table
   value_type: dose_grid
@@ -1179,8 +1137,7 @@ concepts:
   note: 12 weekly rows; the card prints the dose (40,40,30,30,20,20,15,15,10,10,5,5
     mg) — read the date, dose and responsible columns; the dose is printed, not written.
   aliases:
-  - reacções
-  - reacoes
+  - reacções tratamento com prednisolona
 - id: outcome_released
   who_name: Released from treatment (alta de tratamento)
   value_type: choice_single
