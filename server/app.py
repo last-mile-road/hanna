@@ -17,6 +17,7 @@ immediately. Uploads are refused unless the caller attests the card is a dummy
 from __future__ import annotations
 
 import json
+import re
 import time
 from pathlib import Path
 
@@ -81,10 +82,19 @@ def _country(conn, code: str):
     return row
 
 
-def _form(conn):
-    return conn.execute(
-        select(forms_t).order_by(forms_t.c.version.desc()).limit(1)
-    ).mappings().first()
+def _form(conn, country_id: int | None = None, variant: str = "draft"):
+    """The latest published form for a country and variant.
+
+    The variant rides in the form definition (`definition->>'variant'`); rows
+    published before variants existed are the default 'draft'.
+    """
+    sql = "SELECT * FROM forms WHERE coalesce(definition->>'variant','draft') = :variant"
+    params: dict = {"variant": variant}
+    if country_id is not None:
+        sql += " AND country_id = :cid"
+        params["cid"] = country_id
+    sql += " ORDER BY version DESC LIMIT 1"
+    return conn.execute(text(sql), params).mappings().first()
 
 
 def _run_card_path(conn, run_id: str) -> tuple[Path, str]:
@@ -117,6 +127,7 @@ def healthz():
 async def create_run(
     file: UploadFile = File(...),
     country: str = Form("mozambique"),
+    variant: str = Form("draft"),
     attested_dummy: bool = Form(False),
     gate_blur: float | None = Form(None),
     gate_brightness: float | None = Form(None),
@@ -128,6 +139,8 @@ async def create_run(
             "É necessário confirmar que o cartão é um cartão de teste (não contém dados "
             "de um doente real).",
         )
+    if not re.fullmatch(r"[a-z0-9_]{1,24}", variant):
+        raise HTTPException(422, "variante inválida")
 
     data = await file.read()
     error = uploads.validate(file.filename, file.content_type, len(data))
@@ -146,9 +159,11 @@ async def create_run(
 
     with connect() as conn:
         country_row = _country(conn, country)
-        form = _form(conn)
+        form = _form(conn, country_row["id"], variant)
         if form is None:
-            raise HTTPException(503, "nenhum formulário carregado; corra tools/load_pack.py")
+            raise HTTPException(
+                503, f"nenhum formulário publicado para {country}/{variant}; publique-o no Studio"
+            )
         # The same bytes may already be a known card (a dummy card, or an earlier
         # upload). Never repoint or restyle an existing row: upsert_card updates on an
         # md5 conflict, which silently turned three ground-truth cards into uploads.

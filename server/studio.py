@@ -22,8 +22,10 @@ moderator moves a draft to form.draft.yaml deliberately.
 
 from __future__ import annotations
 
+import json
 import re
 import shutil
+import sys
 from pathlib import Path
 
 import cv2
@@ -32,9 +34,18 @@ import yaml
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from sqlalchemy import text
 
 from core import settings
+from core.db import connect
 from core.forms import load_concepts, load_form_pack
+from core import store
+
+TOOLS = Path(__file__).resolve().parents[1] / "tools"
+if str(TOOLS) not in sys.path:
+    sys.path.insert(0, str(TOOLS))
+
+from load_pack import PROFILES  # noqa: E402  (the profile registry lives with load_pack)
 
 router = APIRouter(prefix="/api/studio", tags=["studio"])
 
@@ -407,6 +418,7 @@ def create_form(country: str, body: dict):
         "form": {
             "id": f"{country}_{variant}_card",
             "country": country,
+            "variant": variant,
             "template": _template_name(variant),
             "status": "draft",
             "reference_year": None,
@@ -414,6 +426,66 @@ def create_form(country: str, body: dict):
         "blocks": [],
     }, allow_unicode=True, sort_keys=False))
     return {"ok": True, "variant": variant}
+
+
+@router.post("/{country}/publish")
+def publish_draft(country: str, variant: str = "draft"):
+    """Freeze the Studio draft as the live pack and load it into the ledger.
+
+    The published form is immutable (CONTRACTS §1): a change creates a new
+    version. Re-publishing the same draft bumps the version.
+    """
+    if not re.fullmatch(r"[a-z0-9_]{1,24}", variant):
+        raise HTTPException(422, "variante inválida")
+    directory = _country_dir(country)
+    studio_path = directory / _studio_file(variant)
+    if not studio_path.exists():
+        raise HTTPException(404, "nada para publicar — guarde primeiro o rascunho")
+
+    data, errors = _pack_with_errors(country, _studio_file(variant))
+    if errors:
+        raise HTTPException(422, {
+            "detail": "o rascunho tem problemas; corrija-os antes de publicar",
+            "errors": errors,
+        })
+
+    # freeze: the studio draft becomes the live pack; the previous live pack
+    # is kept as .bak so freezing is reversible at the file level
+    live_path = directory / _live_file(variant)
+    if live_path.exists():
+        shutil.copy(live_path, directory / f"{live_path.name}.bak")
+    shutil.copy(studio_path, live_path)
+
+    pack = load_form_pack(country, _live_file(variant))
+    definition = dict(pack.form)
+    definition["variant"] = variant  # what run creation matches on
+
+    with connect() as conn:
+        country_id = store.upsert_country(conn, country, country.title())
+        store.upsert_concepts(conn, pack.concepts)
+        current = conn.execute(
+            text("SELECT coalesce(max(version), 0) FROM forms WHERE form_key = :k"),
+            {"k": pack.form["id"]},
+        ).scalar()
+        version = int(current) + 1
+        form_id = store.upsert_form(conn, country_id, pack, version=version, status="published")
+        for profile in PROFILES:
+            store.upsert_profile(conn, profile)
+        # the stored definition must carry the variant for run matching
+        conn.execute(
+            text("UPDATE forms SET definition = definition || CAST(:v AS jsonb) WHERE id = :id"),
+            {"v": json.dumps({"variant": variant}), "id": form_id},
+        )
+        conn.commit()
+    return {
+        "ok": True,
+        "form_key": pack.form["id"],
+        "version": version,
+        "form_id": form_id,
+        "blocks": len(pack.blocks),
+        "pairs": len(pack.pairs),
+        "live_file": live_path.name,
+    }
 
 
 @router.post("/countries")

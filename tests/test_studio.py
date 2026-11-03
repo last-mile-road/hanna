@@ -158,6 +158,56 @@ def test_a_second_form_variant_keeps_its_own_template(studio_country):
     assert client.get(f"/api/studio/{country}/template").status_code == 200
 
 
+def test_publish_freezes_and_loads_the_ledger(studio_country):
+    """A1: the complete loop — draft validates, freezes as the live pack, and
+    appears in the ledger as a published version a run can select."""
+    country = studio_country
+    client.put(f"/api/studio/{country}/draft", json={
+        "form": {"id": f"{country}_card", "reference_year": 2026},
+        "pairs": [{
+            "id": "vp_001", "concept": "patient_name", "bbox": [20, 20, 900, 120],
+            "label_local": "Nome do doente",
+        }],
+    })
+    response = client.post(f"/api/studio/{country}/publish?variant=draft")
+    assert response.status_code == 200, response.json()
+    body = response.json()
+    assert body["form_key"] == f"{country}_card"
+    assert body["version"] == 1
+    assert (settings.COUNTRIES_DIR / country / "form.draft.yaml").exists()
+
+    # a draft with problems refuses to publish
+    client.put(f"/api/studio/{country}/draft", json={
+        "form": {"id": f"{country}_card", "reference_year": 2026},
+        "pairs": [{"id": "vp_bad", "concept": "", "bbox": [1, 1, 50, 50]}],
+    })
+    refused = client.post(f"/api/studio/{country}/publish?variant=draft")
+    assert refused.status_code == 422
+
+    # re-publishing the good draft bumps the version
+    client.put(f"/api/studio/{country}/draft", json={
+        "form": {"id": f"{country}_card", "reference_year": 2026},
+        "pairs": [{
+            "id": "vp_001", "concept": "patient_name", "bbox": [20, 20, 900, 120],
+            "label_local": "Nome do doente",
+        }],
+    })
+    again = client.post(f"/api/studio/{country}/publish?variant=draft").json()
+    assert again["version"] == 2
+
+    # run creation matches the published variant: a run for this country picks
+    # this form, not the global latest
+    from server.app import _form
+    from core.db import connect as _connect
+    from sqlalchemy import text as _text
+    with _connect() as conn:
+        cid = conn.execute(_text("select id from countries where code = :c"),
+                           {"c": country}).scalar()
+        row = _form(conn, cid, "draft")
+        assert row is not None and row["form_key"] == f"{country}_card"
+        assert row["version"] == 2
+
+
 def test_a_pair_with_no_concept_yet_is_an_error_not_a_500(studio_country):
     """The live bug the old server log caught: an unlinked pair reached the
     cardinality check and crashed it. A country draft mid-edit must save and

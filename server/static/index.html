@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
 <title>HANNA — testar cartão</title>
-<link rel="stylesheet" href="/static/bench.css?v=4">
+<link rel="stylesheet" href="/static/bench.css?v=5">
 </head>
 <body>
 <header>
@@ -39,6 +39,11 @@
       <select id="country">
         <option value="mozambique">Moçambique — Ficha clínica lepra</option>
       </select>
+      <label for="variant" style="margin-top:8px">Formulário</label>
+      <select id="variant">
+        <option value="draft">Frente — notificação</option>
+      </select>
+      <p class="hint" id="variant-note" style="margin-top:6px"></p>
     </div>
     <button id="country-next">Abrir câmara</button>
   </section>
@@ -101,6 +106,6 @@
 <footer>
   <span id="net"></span>
 </footer>
-<script src="/static/bench.js?v=4"></script>
+<script src="/static/bench.js?v=5"></script>
 </body>
 </html>

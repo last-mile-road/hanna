@@ -31,9 +31,35 @@ let runId = null;
 /* ---------- flow ---------- */
 
 $("consent").addEventListener("change", (e) => { $("consent-next").disabled = !e.target.checked; });
-$("consent-next").addEventListener("click", () => show("view-country"));
+$("consent-next").addEventListener("click", () => { loadVariants(); show("view-country"); });
 $("country-next").addEventListener("click", () => { show("view-capture"); startCamera(); });
 $("btn-again").addEventListener("click", () => { resetCapture(); show("view-capture"); });
+
+/* Form variants of the chosen country, published from Studio. */
+async function loadVariants() {
+  const select = $("variant");
+  select.innerHTML = "";
+  try {
+    const countries = await fetch("/api/studio/countries").then((r) => r.json());
+    const entry = countries.find((c) => c.country === $("country").value) || {};
+    const forms = (entry.forms || []).filter((f) => f.has_live);
+    for (const f of forms) {
+      const opt = document.createElement("option");
+      opt.value = f.variant;
+      opt.textContent = f.variant === "draft" ? "Frente — notificação"
+        : f.variant.charAt(0).toUpperCase() + f.variant.slice(1);
+      select.appendChild(opt);
+    }
+  } catch { /* offline studio endpoints: keep the default option */ }
+  if (!select.options.length) {
+    const opt = document.createElement("option");
+    opt.value = "draft";
+    opt.textContent = "Frente — notificação";
+    select.appendChild(opt);
+  }
+  $("variant-note").textContent = "";
+}
+$("country").addEventListener("change", loadVariants);
 
 if (/FBAN|FBAV|Instagram|Line\/|WhatsApp/i.test(navigator.userAgent)) {
   $("file-note").textContent = "Está a abrir dentro de outra aplicação. A câmara pode não funcionar: abra o link no Chrome ou Safari.";
@@ -210,6 +236,7 @@ async function upload() {
   const form = new FormData();
   form.append("file", shotBlob, "cartao.jpg");
   form.append("country", $("country").value);
+  form.append("variant", $("variant").value);
   form.append("attested_dummy", "true");
   if (gateResult) {
     form.append("gate_blur", String(Math.round(gateResult.blur)));
