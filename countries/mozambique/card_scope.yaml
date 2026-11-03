@@ -19,3 +19,51 @@ absent_concepts:
     Not printed. The card's case category distinguishes new, re-entry,
     re-infection and wrong classification, which is not WHO's relapse / loss to
     follow-up / other split.
+  finger_abduction_right: >
+    Back card only: voluntary muscle test, one cell per visit column.
+  finger_abduction_left: >
+    Back card only: voluntary muscle test, one cell per visit column.
+  recorded_by: >
+    Back card only: Preenchido por, one line per visit column.
+  lepra_reaction_present: >
+    Back card only: the REACÇÕES section.
+  lepra_reaction_type: >
+    Back card only: the REACÇÕES section.
+  nerve_pain_spontaneous: >
+    Back card only: REACÇÕES, história clínica.
+  recent_sensitivity_change: >
+    Back card only: REACÇÕES, história clínica.
+  recent_patch_change: >
+    Back card only: REACÇÕES, história clínica.
+  painful_skin_lesions: >
+    Back card only: REACÇÕES, exame clínico.
+  infiltrated_skin_lesions: >
+    Back card only: REACÇÕES, exame clínico.
+  warm_skin_lesions: >
+    Back card only: REACÇÕES, exame clínico.
+  red_skin_lesions: >
+    Back card only: REACÇÕES, exame clínico.
+  skin_lesion_ulcerated: >
+    Back card only: REACÇÕES, exame clínico.
+  nerve_tenderness_present: >
+    Back card only: REACÇÕES, exame clínico.
+  eye_redness_pain: >
+    Back card only: REACÇÕES, exame clínico.
+  prednisolone_table: >
+    Back card only: REACÇÕES, treatment grid (12 weeks, dose printed).
+  outcome_released: >
+    Back card only: tipo de doente saído.
+  outcome_ltfu: >
+    Back card only: tipo de doente saído.
+  outcome_died: >
+    Back card only: tipo de doente saído.
+  outcome_misclassification: >
+    Back card only: tipo de doente saído.
+  outcome_other: >
+    Back card only: tipo de doente saído.
+  transferred_to: >
+    Back card only: tipo de doente saído.
+  outcome_date: >
+    Back card only: tipo de doente saído.
+  self_care_group: >
+    Back card only: integrado num grupo de Auto Cuidados.
