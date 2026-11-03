@@ -229,16 +229,24 @@ function wirePanel() {
 function block() { return state.blocks[state.selected.b]; }
 function pair() { return state.pairs[state.selected.p]; }
 
+function normText(s) {
+  return (s || "").toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function conceptSearch() {
-  const query = $("p-concept-search").value.trim().toLowerCase();
+  const query = normText($("p-concept-search").value);
   const list = $("concept-list");
   list.innerHTML = "";
   const concepts = state.pack.concepts || [];
   const hits = concepts.filter((c) =>
     !query ||
-    c.id.toLowerCase().includes(query) ||
-    c.who_name.toLowerCase().includes(query) ||
-    (c.aliases || []).some((a) => a.toLowerCase().includes(query))
+    normText(c.id).includes(query) ||
+    normText(c.who_name).includes(query) ||
+    (c.aliases || []).some((a) => normText(a).includes(query))
   ).slice(0, 12);
   for (const c of hits) {
     const row = document.createElement("div");

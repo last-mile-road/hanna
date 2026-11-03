@@ -1,0 +1,67 @@
+form:
+  id: mozambique_back_card
+  country: mozambique
+  template: template.back.jpg
+  status: draft
+  reference_year: null
+  reference_year_note: REQUIRED, no silent default (CONSTRAINTS §1.6). Set the year
+    printed on the card.
+blocks:
+- id: auto_vp_001
+  block_type: value_pairs
+  bbox:
+  - 59
+  - 48
+  - 679
+  - 183
+  studio_auto: true
+  value_pairs: []
+- id: auto_vp_002
+  block_type: value_pairs
+  bbox:
+  - 59
+  - 170
+  - 679
+  - 244
+  studio_auto: true
+  value_pairs: []
+- id: auto_vp_003
+  block_type: value_pairs
+  bbox:
+  - 56
+  - 207
+  - 696
+  - 604
+  studio_auto: true
+  value_pairs: []
+- id: auto_vp_004
+  block_type: value_pairs
+  bbox:
+  - 49
+  - 567
+  - 679
+  - 1689
+  studio_auto: true
+  value_pairs: []
+- id: auto_vp_005
+  block_type: value_pairs
+  bbox:
+  - 42
+  - 1666
+  - 672
+  - 2384
+  studio_auto: true
+  value_pairs: []
+- id: auto_vp_001
+  block_type: value_pairs
+  bbox: &id001
+  - 5
+  - 50
+  - 607
+  - 118
+  studio_auto: true
+  value_pairs:
+  - id: vp_001
+    bbox: *id001
+    label_local: Data preenchido
+    description: Date form was fileld in or evaluation was done

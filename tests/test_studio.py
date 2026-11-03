@@ -22,7 +22,10 @@ client = TestClient(app)
 
 @pytest.fixture()
 def studio_country(tmp_path, monkeypatch):
-    """A scratch country with the mozambique template, no packs."""
+    """A scratch country with the mozambique template, no packs.
+
+    The publish test touches the real ledger (it loads a form), so the
+    teardown removes everything this fixture's country put there."""
     original = settings.COUNTRIES_DIR
     source = original / "mozambique"
     target = tmp_path / "zzstudio_test"
@@ -30,6 +33,20 @@ def studio_country(tmp_path, monkeypatch):
     shutil.copy(source / "template.jpg", target / "template.jpg")
     monkeypatch.setattr(settings, "COUNTRIES_DIR", tmp_path)
     yield "zzstudio_test"
+    # ledger cleanup: the scratch country's forms, its country row, and any
+    # runs that referenced its forms
+    from core.db import connect as _connect
+    from sqlalchemy import text as _text
+
+    with _connect() as conn:
+        conn.execute(_text(
+            "delete from runs where form_id in "
+            "  (select f.id from forms f join countries c on c.id = f.country_id "
+            "   where c.code = 'zzstudio_test')"
+        ))
+        conn.execute(_text("delete from forms where form_key like 'zzstudio%'"))
+        conn.execute(_text("delete from countries where code = 'zzstudio_test'"))
+        conn.commit()
 
 
 def test_pack_of_an_unknown_country_is_404():

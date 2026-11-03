@@ -1,0 +1,101 @@
+form:
+  id: mozambique_back_card
+  country: mozambique
+  template: template.back.jpg
+  status: draft
+  reference_year: null
+  reference_year_note: REQUIRED, no silent default (CONSTRAINTS §1.6). Set the year
+    printed on the card.
+blocks:
+- id: auto_vp_001
+  block_type: value_pairs
+  bbox:
+  - 59
+  - 48
+  - 679
+  - 183
+  studio_auto: true
+  value_pairs:
+  - id: vp_001
+    bbox:
+    - 59
+    - 48
+    - 679
+    - 183
+    label_local: Date filled
+    description: Date the evaluation done and card updated
+    sensitivity: administrative
+    required: true
+    required_hint: Data que foi preencida
+- id: auto_vp_002
+  block_type: value_pairs
+  bbox:
+  - 59
+  - 170
+  - 679
+  - 244
+  studio_auto: true
+  value_pairs:
+  - id: vp_002
+    bbox:
+    - 59
+    - 170
+    - 679
+    - 244
+    label_local: Quem preencheu
+    description: Who filled in the card
+    sensitivity: administrative
+- id: auto_vp_003
+  block_type: value_pairs
+  bbox:
+  - 56
+  - 207
+  - 696
+  - 604
+  studio_auto: true
+  value_pairs:
+  - id: vp_003
+    bbox:
+    - 56
+    - 207
+    - 696
+    - 604
+    label_local: Tabela Nervos
+    description: Nerve table indicating enlarged or painful nerves
+    required: true
+    required_hint: Preenche a tabala dos nervos
+- id: auto_vp_004
+  block_type: value_pairs
+  bbox:
+  - 49
+  - 567
+  - 679
+  - 1689
+  studio_auto: true
+  value_pairs:
+  - id: vp_004
+    bbox:
+    - 49
+    - 567
+    - 679
+    - 1689
+    label_local: Teste sensitivo Maos e Pes
+    description: The test for sensation loss in hands and feet plus other visible
+      issues
+    required: true
+    required_hint: Preenche os pontos sensiveis ou insensiveis na imagem.
+- id: auto_vp_005
+  block_type: value_pairs
+  bbox:
+  - 42
+  - 1666
+  - 672
+  - 2384
+  studio_auto: true
+  value_pairs:
+  - id: vp_005
+    bbox:
+    - 42
+    - 1666
+    - 672
+    - 2384
