@@ -17,11 +17,14 @@ working setup.
 ## The three steps on the screen
 
 1. **The blank card.** Upload a scan/photo of the empty card. On upload it is
-   automatically **deskewed** (rotation capped at ±10° — beyond that the tool
-   refuses and asks for a re-scan) and **contrast-normalised** (CLAHE). The
-   untouched original is kept as `template_original.jpg`. This matters because
-   a skew of 2° at the top of the card is a skew of 2° in every box drawn on
-   top of it. A previous upload is kept as `template.jpg.bak`.
+   automatically **perspective-corrected** (the card's outer border is found
+   and warped to a true rectangle — fixes keystone, where vertical lines lean
+   even though horizontal rules are level), **deskewed** (rotation capped at
+   ±10° — beyond that the tool refuses and asks for a re-scan) and
+   **contrast-normalised** (CLAHE). The untouched original is kept as
+   `template_original.jpg`. This matters because a skew of 2° at the top of
+   the card is a skew of 2° in every box drawn on top of it. A previous
+   upload is kept as `template.jpg.bak`.
 2. **Mark what the card asks (country team).** Draw a box around each value
    the card asks for. For each one: a **display name** (as the team calls it),
    a one-line **description** (for whoever reads the definition later), a link
@@ -152,12 +155,15 @@ measures extraction quality. The interim tool is `tools/gt_capture/`
 
 ## The WHO concept list and its limits
 
-The current index has 74 concepts — WHO §4.2 (registration) plus the 62 fields
-the v5 pipeline actually produced. The WHO DHIS2 guidance defines roughly
-**110+ elements across six sections**: registration (§4.2), clinical
-information and treatment initiation (§6.2), case management and follow-up
-including adverse-drug-reaction and drug-resistance fields (§7.2), contact
-tracing (§8.2), reaction management (§9.2) and treatment outcome (§10.2).
-Extending the index to the full WHO list is a curation pass (dedupe against
-existing concepts, value types, options, tiers), not a mechanical dump —
-tracked as an open task.
+The index held 74 concepts — WHO §4.2 (registration) plus the 62 fields the
+v5 pipeline actually produced. When the back card was onboarded (2026-11-03)
+the gap became concrete: nothing for the REACÇÕES section, the outcome block
+or the voluntary muscle test. The index now carries **98 concepts** after
+adding 24 sourced from WHO DHIS2 §6.2/§7.2/§9.2/§10.2: reaction history and
+exam items (sim/não), lepra reaction present/type, the prednisolone taper
+grid, treatment outcome (alta, abandono, falecido, outro, transferido,
+má classificação), self-care group, little-finger abduction, recorded by.
+The full WHO DHIS2 list is roughly **110+ elements**; the remaining gap
+(contact tracing §8.2 mostly) is a curation pass, not a mechanical dump.
+Concepts a card does not print are declared in `card_scope.yaml` so ground
+truth stays honest.
