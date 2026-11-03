@@ -103,6 +103,32 @@ country. Sensible default: block on what makes the record unusable (identity,
 classification), warn on an incomplete group (table anchor filled but three
 items unreadable).
 
+## More than one form per country
+
+A country has several cards: the registration card (front), the follow-up
+evaluation card (back), later others. Each is its own **form variant** in
+Studio — chosen in the header selector — with its own draft
+(`form.<v>.studio.yaml`), its own live pack (`form.<v>.yaml`) and its own
+template (`template.<v>.jpg`). The original front card keeps the legacy
+names (`form.draft.yaml`, `template.jpg`). A follow-up card reuses the same
+group templates (nerve table, disability table, hand/feet) across its visit
+columns and adds its own sections — on the Mozambique back card, reaction
+management: clinical-history and exam questions (sim/não), the prednisolone
+dose table (12 weeks), and the outcome checkboxes (WHO §9.2 maps to these).
+
+**Blank vs missing — one rule per group, not one rule for all.** The
+closed-world assumption is a property of the group template, declared per
+group. Nerve palpation is closed-world: any mark in the table means the table
+was worked through, so a cell without a mark is a "−" (negative finding) and
+the table counts as complete. The disability table and the voluntary muscle
+test are open-world: a blank block there can mean "not examined", and one side
+can be graded while the other is not — a blank side is "unknown", never "−".
+A value that is present but not in the vocabulary (not N, F or A) is a third
+case: unreadable, not blank — it goes to review flagged, and it blocks the
+*notification*, not the record: a human resolves it before the case goes out.
+Blocking lives in the validation rules per country; the default is to block
+on what makes the notification unsafe, warn on what is merely incomplete.
+
 ## The truth step (planned)
 
 Once the pairs (and blocks) are confirmed: the country uploads a filled card,
