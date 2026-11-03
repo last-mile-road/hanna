@@ -23,8 +23,10 @@ moderator moves a draft to form.draft.yaml deliberately.
 from __future__ import annotations
 
 import json
+import math
 import re
 import shutil
+import statistics
 import sys
 from pathlib import Path
 
@@ -336,8 +338,31 @@ def save_draft(country: str, draft: DraftIn, variant: str = "draft"):
 
 
 def _skew_angle(img) -> float:
-    """Skew in degrees, normalised to the long side of the text mass."""
+    """Skew in degrees, from the card's long horizontal rules when they exist.
+
+    The text-mass rectangle under-measures on ruled forms (sparse ink, dense
+    lines), and a residual skew of even half a degree is visible when drawing
+    boxes across a 3,300 px scan. Long horizontal lines are the form's own
+    straightedge: median angle of rule segments longer than a quarter of the
+    width, near-horizontal only. Falls back to the text-mass rectangle.
+    """
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 60, 180)
+    height, width = edges.shape
+    lines = cv2.HoughLinesP(
+        edges, 1, np.pi / 720, threshold=120,
+        minLineLength=int(width * 0.25), maxLineGap=12,
+    )
+    if lines is not None and len(lines) >= 5:
+        angles = []
+        for line in lines:
+            x1, y1, x2, y2 = line.ravel()
+            dx, dy = x2 - x1, y2 - y1
+            angle = math.degrees(math.atan2(dy, dx))
+            if abs(angle) <= 8:  # near-horizontal rules only
+                angles.append(angle)
+        if len(angles) >= 5:
+            return float(statistics.median(angles))
     thr = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
     coords = cv2.findNonZero(thr)
     if coords is None or len(coords) < 100:
@@ -346,6 +371,57 @@ def _skew_angle(img) -> float:
     if w < h:
         angle += 90
     return float(angle)
+
+
+def _perspective_correct(img):
+    """Straighten a keystone: the scan's horizontal rules were level but its
+    vertical lines leaned — photographed or fed through a scanner at a slight
+    angle. Rotation cannot fix that; a perspective warp of the card's outer
+    border can. Returns (image, applied: bool)."""
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    thr = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+    thr = cv2.morphologyEx(
+        thr, cv2.MORPH_CLOSE,
+        cv2.getStructuringElement(cv2.MORPH_RECT, (15, 15)),
+    )
+    contours, _ = cv2.findContours(thr, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return img, False
+    height, width = img.shape[:2]
+    page_area = height * width
+    best = None
+    for contour in sorted(contours, key=cv2.contourArea, reverse=True)[:5]:
+        area = cv2.contourArea(contour)
+        if area < page_area * 0.4:
+            break  # contours are sorted; nothing bigger remains
+        approx = cv2.approxPolyDP(contour, 0.02 * cv2.arcLength(contour, True), True)
+        if len(approx) == 4:
+            best = approx.reshape(4, 2).astype(np.float32)
+            break
+    if best is None:
+        return img, False
+
+    # order corners around the centroid, sweeping from the topmost corner:
+    # with y down, ascending atan2 angle runs top → right → bottom → left
+    center = best.mean(axis=0)
+    angles = np.arctan2(best[:, 1] - center[1], best[:, 0] - center[0])
+    top = np.lexsort((best[:, 0], best[:, 1]))[0]
+    rel = (angles - angles[top]) % (2 * np.pi)
+    src = best[np.argsort(rel)]
+    tl, tr, br, bl = src
+    top_width = np.linalg.norm(tr - tl)
+    bottom_width = np.linalg.norm(br - bl)
+    left_height = np.linalg.norm(bl - tl)
+    right_height = np.linalg.norm(br - tr)
+    out_w = int(round(max(top_width, bottom_width)))
+    out_h = int(round(max(left_height, right_height)))
+    if out_w < width * 0.5 or out_h < height * 0.5:
+        return img, False  # the quad is not the card; do not warp on a guess
+    dst = np.array([[0, 0], [out_w - 1, 0], [out_w - 1, out_h - 1], [0, out_h - 1]],
+                   dtype=np.float32)
+    matrix = cv2.getPerspectiveTransform(src, dst)
+    return cv2.warpPerspective(img, matrix, (out_w, out_h),
+                               flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE), True
 
 
 def _clean_template(img):
@@ -357,7 +433,9 @@ def _clean_template(img):
     that the scan is bad enough that a re-scan is the honest answer, and
     silently straightening a 30° photo produces a warped template.
     """
-    report = {"deskew_applied": 0.0, "contrast_applied": False, "skew_refused": None}
+    report = {"deskew_applied": 0.0, "perspective_applied": False,
+              "contrast_applied": False, "skew_refused": None}
+    img, report["perspective_applied"] = _perspective_correct(img)
     angle = _skew_angle(img)
     if abs(angle) > 10:
         report["skew_refused"] = round(angle, 2)

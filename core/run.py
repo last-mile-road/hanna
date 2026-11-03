@@ -81,7 +81,11 @@ def _apply_box_states(parsed: dict, pairs_in_block) -> None:
             parsed[pair.id] = _match_option(ticked[0], pair)
 
 
-def _find_form(conn):
+def _find_form(conn, form_id=None):
+    """The run's own form. Never the globally latest: a test publish must not
+    silently redirect a queued card to another form's blocks."""
+    if form_id is not None:
+        return conn.execute(select(forms).where(forms.c.id == form_id)).mappings().one()
     return conn.execute(select(forms).order_by(forms.c.version.desc()).limit(1)).mappings().one()
 
 
@@ -126,7 +130,11 @@ def run_card(
     pre-created `run_id`, so the HTTP layer can hand out the id before the work starts."""
     with connect() as conn:
         card = _find_card_by_id(conn, card_id) if card_id else _find_card(conn, form_name)
-        form = _find_form(conn)
+        if run_id is not None:
+            run_row = conn.execute(select(runs).where(runs.c.id == run_id)).mappings().one()
+            form = _find_form(conn, run_row["form_id"])
+        else:
+            form = _find_form(conn)
         profiles_by_id = _profiles(conn)
         profile = profiles_by_id[profile_id]
         routing_map = (

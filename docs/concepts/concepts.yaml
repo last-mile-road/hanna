@@ -436,3 +436,206 @@ concepts:
     sensitivity: clinical
     tier: local
     note: "Gangrene, a missing nail, a wound dressing, anything marked but none of the above."
+
+  # ------------------------------------------------------------ follow-up card
+  # The back side of the Mozambique card: four visit columns (nerve palpation,
+  # sensory test, eye exam, muscle test, disability grades — concepts already in
+  # this index) plus the REACÇÕES section and the outcome block, which are new.
+  # WHO source: DHIS2 guidance §6.2 (nerve function), §7.2 (case management,
+  # reaction), §9.2 (reaction treatment), §10.2 (treatment outcome).
+  # Added 2026-11-03 when the back card was onboarded in Studio.
+
+  - id: finger_abduction_right
+    who_name: "Little finger abduction, right"
+    value_type: choice_single
+    sensitivity: clinical
+    tier: core
+    note: "Voluntary muscle test. Grade follows the card's legend (the disability table convention)."
+
+  - id: finger_abduction_left
+    who_name: "Little finger abduction, left"
+    value_type: choice_single
+    sensitivity: clinical
+    tier: core
+    note: "Voluntary muscle test. Grade follows the card's legend."
+
+  - id: recorded_by
+    who_name: "Recorded by"
+    value_type: text
+    sensitivity: administrative
+    tier: extended
+    aliases: [preenchido_por, filled_by, recorded_by]
+
+  - id: lepra_reaction_present
+    who_name: "Lepra reaction present"
+    value_type: choice_single
+    options: [Yes, No]
+    observed: [sim, não]
+    sensitivity: clinical
+    tier: extended
+    note: "Card prints sim/não checkboxes."
+
+  - id: lepra_reaction_type
+    who_name: "Lepra reaction type"
+    value_type: choice_single
+    options: [Type 1 reversal, Type 2 ENL, Neuritis]
+    sensitivity: clinical
+    tier: extended
+
+  - id: nerve_pain_spontaneous
+    who_name: "Spontaneous nerve pain (history)"
+    value_type: choice_single
+    options: [Yes, No]
+    observed: [sim, não]
+    sensitivity: clinical
+    tier: extended
+    aliases: [dor_espontanea_dos_nervos]
+
+  - id: recent_sensitivity_change
+    who_name: "Recent change in skin sensation"
+    value_type: choice_single
+    options: [Yes, No]
+    observed: [sim, não]
+    sensitivity: clinical
+    tier: extended
+    aliases: [mudanca_recente_na_sensibilidade]
+
+  - id: recent_patch_change
+    who_name: "Recent change in skin patches"
+    value_type: choice_single
+    options: [Yes, No]
+    observed: [sim, não]
+    sensitivity: clinical
+    tier: extended
+    aliases: [mudanca_recente_nas_manchas]
+
+  - id: painful_skin_lesions
+    who_name: "Tender or painful skin lesions"
+    value_type: choice_single
+    options: [Yes, No]
+    observed: [sim, não]
+    sensitivity: clinical
+    tier: extended
+    aliases: [lesoes_cutaneas_dolorosas]
+
+  - id: infiltrated_skin_lesions
+    who_name: "Infiltrated skin lesions"
+    value_type: choice_single
+    options: [Yes, No]
+    observed: [sim, não]
+    sensitivity: clinical
+    tier: extended
+    aliases: [lesoes_cutaneas_com_infiltracao]
+
+  - id: warm_skin_lesions
+    who_name: "Warm skin lesions"
+    value_type: choice_single
+    options: [Yes, No]
+    observed: [sim, não]
+    sensitivity: clinical
+    tier: extended
+    aliases: [lesoes_cutaneas_quentes]
+
+  - id: red_skin_lesions
+    who_name: "Red skin lesions"
+    value_type: choice_single
+    options: [Yes, No]
+    observed: [sim, não]
+    sensitivity: clinical
+    tier: extended
+    aliases: [lesoes_cutaneas_vermelhas]
+
+  - id: skin_lesion_ulcerated
+    who_name: "Ulceration of skin lesions"
+    value_type: choice_single
+    options: [Yes, No]
+    observed: [sim, não]
+    sensitivity: clinical
+    tier: extended
+    note: "Reaction exam item; distinct from complication_ulcer, the chronic hand/foot ulcer."
+
+  - id: nerve_tenderness_present
+    who_name: "Nerve pain or tenderness on examination"
+    value_type: choice_single
+    options: [Yes, No]
+    observed: [sim, não]
+    sensitivity: clinical
+    tier: extended
+    note: "Card: Dor/engrossamento dos nervos? Exam-level; the per-nerve enlargement and pain cells are the nerve_enlargement_* / nerve_pain_* concepts."
+
+  - id: eye_redness_pain
+    who_name: "Red and painful eyes"
+    value_type: choice_single
+    options: [Yes, No]
+    observed: [sim, não]
+    sensitivity: clinical
+    tier: extended
+    aliases: [olhos_vermelhos_e_dolorosos]
+
+  - id: prednisolone_table
+    who_name: "Prednisolone taper table"
+    value_type: dose_grid
+    sensitivity: clinical
+    tier: extended
+    note: "12 weekly rows; the card prints the dose (40,40,30,30,20,20,15,15,10,10,5,5 mg) — read the date, dose and responsible columns; the dose is printed, not written."
+
+  - id: outcome_released
+    who_name: "Released from treatment (alta de tratamento)"
+    value_type: choice_single
+    options: [Yes, No]
+    observed: [sim, não]
+    sensitivity: administrative
+    tier: extended
+
+  - id: outcome_ltfu
+    who_name: "Loss to follow-up (abandono)"
+    value_type: choice_single
+    options: [Yes, No]
+    observed: [sim, não]
+    sensitivity: administrative
+    tier: extended
+
+  - id: outcome_died
+    who_name: "Died (falecido)"
+    value_type: choice_single
+    options: [Yes, No]
+    observed: [sim, não]
+    sensitivity: administrative
+    tier: extended
+
+  - id: outcome_misclassification
+    who_name: "Misclassification (má classificação)"
+    value_type: choice_single
+    options: [Yes, No]
+    observed: [sim, não]
+    sensitivity: administrative
+    tier: local
+    note: "On the card but not a WHO DHIS2 element; folded under Others there."
+
+  - id: outcome_other
+    who_name: "Other outcome"
+    value_type: choice_single
+    options: [Yes, No]
+    observed: [sim, não]
+    sensitivity: administrative
+    tier: extended
+
+  - id: transferred_to
+    who_name: "Transferred to"
+    value_type: text
+    sensitivity: administrative
+    tier: extended
+
+  - id: outcome_date
+    who_name: "Outcome date"
+    value_type: date
+    sensitivity: administrative
+    tier: extended
+
+  - id: self_care_group
+    who_name: "Member of a self-care group"
+    value_type: choice_single
+    options: [Yes, No]
+    sensitivity: administrative
+    tier: extended
+    note: "Card: Integrado num grupo de Auto Cuidados de: — a yes plus the group name."
