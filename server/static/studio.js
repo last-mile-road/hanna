@@ -339,9 +339,10 @@ function wireDrawing() {
 
 /* ---------- save ---------- */
 
-async function save() {
+async function save(publishAfter = false) {
   const button = $("save");
   button.disabled = true;
+  $("publish").disabled = true;
   $("save-state").textContent = "saving…";
   const payload = {
     form: state.pack.form || {},
@@ -374,6 +375,30 @@ async function save() {
   $("save-state").textContent = result.errors.length
     ? `saved with ${result.errors.length} problem(s)`
     : "saved — draft validates clean";
+  button.disabled = false;
+  $("publish").disabled = false;
+  if (publishAfter) await publish();
+  else await loadPack(state.country, state.variant, "studio");
+}
+
+async function publish() {
+  const button = $("publish");
+  button.disabled = true;
+  $("save-state").textContent = "publishing…";
+  const response = await fetch(
+    `/api/studio/${state.country}/publish?variant=${state.variant}`,
+    { method: "POST" });
+  const result = await response.json();
+  button.disabled = false;
+  if (!response.ok) {
+    const detail = typeof result.detail === "object"
+      ? (result.detail.errors || []).join(" · ") || result.detail.detail
+      : result.detail;
+    $("save-state").textContent = `publish refused: ${detail || "unknown error"}`;
+    return;
+  }
+  $("save-state").textContent =
+    `published ${result.form_key} v${result.version} — ${result.blocks} blocks, ${result.pairs} pairs live`;
   await loadPack(state.country, state.variant, "studio");
 }
 
@@ -468,7 +493,8 @@ $("delete").addEventListener("click", () => {
   state.dirty = true;
   render();
 });
-$("save").addEventListener("click", save);
+$("save").addEventListener("click", () => save(false));
+$("publish").addEventListener("click", () => save(true));
 wirePanel();
 wireDrawing();
 boot();

@@ -162,6 +162,13 @@ def test_publish_freezes_and_loads_the_ledger(studio_country):
     """A1: the complete loop — draft validates, freezes as the live pack, and
     appears in the ledger as a published version a run can select."""
     country = studio_country
+    from sqlalchemy import text as _text
+    from core.db import connect as _connect
+    with _connect() as conn:
+        base = conn.execute(
+            _text("SELECT coalesce(max(version), 0) FROM forms WHERE form_key = :k"),
+            {"k": f"{country}_card"},
+        ).scalar()
     client.put(f"/api/studio/{country}/draft", json={
         "form": {"id": f"{country}_card", "reference_year": 2026},
         "pairs": [{
@@ -173,7 +180,7 @@ def test_publish_freezes_and_loads_the_ledger(studio_country):
     assert response.status_code == 200, response.json()
     body = response.json()
     assert body["form_key"] == f"{country}_card"
-    assert body["version"] == 1
+    assert body["version"] == base + 1
     assert (settings.COUNTRIES_DIR / country / "form.draft.yaml").exists()
 
     # a draft with problems refuses to publish
@@ -193,19 +200,18 @@ def test_publish_freezes_and_loads_the_ledger(studio_country):
         }],
     })
     again = client.post(f"/api/studio/{country}/publish?variant=draft").json()
-    assert again["version"] == 2
+    assert again["version"] == base + 2
 
     # run creation matches the published variant: a run for this country picks
     # this form, not the global latest
     from server.app import _form
     from core.db import connect as _connect
-    from sqlalchemy import text as _text
     with _connect() as conn:
         cid = conn.execute(_text("select id from countries where code = :c"),
                            {"c": country}).scalar()
         row = _form(conn, cid, "draft")
         assert row is not None and row["form_key"] == f"{country}_card"
-        assert row["version"] == 2
+        assert row["version"] == base + 2
 
 
 def test_a_pair_with_no_concept_yet_is_an_error_not_a_500(studio_country):
