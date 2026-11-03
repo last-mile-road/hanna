@@ -318,10 +318,20 @@ def save_draft(country: str, draft: DraftIn, variant: str = "draft"):
     # is the extraction-strategy decision (the moderator's). Until that step,
     # every loose pair is wrapped in its own provisional block so the draft
     # loads; `studio_auto` marks them for the admin pass to merge or grow.
+    # Block ids are made unique against the blocks already in the draft: a pair
+    # redrawn after a template re-upload must not collide with the auto block
+    # of its earlier self.
     loose = [p for p in draft.pairs if p.bbox is not None]
+    taken = {b.id for b in draft.blocks}
     for pair in loose:
+        block_id = f"auto_{pair.id}"
+        suffix = 1
+        while block_id in taken:
+            suffix += 1
+            block_id = f"auto_{pair.id}_{suffix}"
+        taken.add(block_id)
         payload["blocks"].append({
-            "id": f"auto_{pair.id}",
+            "id": block_id,
             "block_type": "value_pairs",
             "bbox": pair.bbox,
             "studio_auto": True,

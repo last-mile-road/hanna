@@ -315,3 +315,32 @@ def test_template_upload_deskews_and_keeps_the_original(studio_country):
     angle = cv2.minAreaRect(coords)[-1]
     angle = -(90 + angle) if angle < -45 else -angle
     assert abs(angle) < 1.0, f"template still skewed by {angle:.2f} degrees"
+
+
+def test_redrawn_pairs_do_not_collide_with_earlier_auto_blocks(studio_country):
+    """Draw 5 pairs → save (auto blocks created) → redraw after a template
+    re-upload → save again. The second save's auto blocks must not collide
+    with the first save's (the duplicate auto_vp_001..005 the owner hit)."""
+    country = studio_country
+    pairs = [{"id": f"vp_{n:03d}", "concept": "patient_name",
+              "bbox": [10, n * 100, 300, n * 100 + 80]} for n in range(1, 6)]
+    client.put(f"/api/studio/{country}/draft", json={
+        "form": {"id": "zz_test_card", "reference_year": 2026}, "pairs": pairs})
+    # simulate a reload + redraw: the auto blocks come back as admin blocks,
+    # the new loose pairs reuse the same pair ids
+    draft = {
+        "form": {"id": "zz_test_card", "reference_year": 2026},
+        "blocks": [
+            {"id": f"auto_vp_{n:03d}", "block_type": "value_pairs",
+             "bbox": [10, n * 100, 300, n * 100 + 80],
+             "studio_auto": True,
+             "value_pairs": [dict(pairs[n - 1])]}
+            for n in range(1, 6)
+        ],
+        "pairs": [dict(p, bbox=[b[0] + 5 for b in [p["bbox"]]][0:1] + [p["bbox"][1] + 5,
+                       p["bbox"][2] + 5, p["bbox"][3] + 5]) for n, p in enumerate(pairs, 1)],
+    }
+    response = client.put(f"/api/studio/{country}/draft", json=draft)
+    assert response.status_code == 200
+    errors = response.json()["errors"]
+    assert not any("duplicate block id" in e for e in errors), errors

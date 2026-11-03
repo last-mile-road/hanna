@@ -15,18 +15,7 @@ blocks:
   - 679
   - 183
   studio_auto: true
-  value_pairs:
-  - id: vp_001
-    bbox:
-    - 59
-    - 48
-    - 679
-    - 183
-    label_local: Date filled
-    description: Date the evaluation done and card updated
-    sensitivity: administrative
-    required: true
-    required_hint: Data que foi preencida
+  value_pairs: []
 - id: auto_vp_002
   block_type: value_pairs
   bbox:
@@ -35,16 +24,7 @@ blocks:
   - 679
   - 244
   studio_auto: true
-  value_pairs:
-  - id: vp_002
-    bbox:
-    - 59
-    - 170
-    - 679
-    - 244
-    label_local: Quem preencheu
-    description: Who filled in the card
-    sensitivity: administrative
+  value_pairs: []
 - id: auto_vp_003
   block_type: value_pairs
   bbox:
@@ -53,17 +33,7 @@ blocks:
   - 696
   - 604
   studio_auto: true
-  value_pairs:
-  - id: vp_003
-    bbox:
-    - 56
-    - 207
-    - 696
-    - 604
-    label_local: Tabela Nervos
-    description: Nerve table indicating enlarged or painful nerves
-    required: true
-    required_hint: Preenche a tabala dos nervos
+  value_pairs: []
 - id: auto_vp_004
   block_type: value_pairs
   bbox:
@@ -72,18 +42,7 @@ blocks:
   - 679
   - 1689
   studio_auto: true
-  value_pairs:
-  - id: vp_004
-    bbox:
-    - 49
-    - 567
-    - 679
-    - 1689
-    label_local: Teste sensitivo Maos e Pes
-    description: The test for sensation loss in hands and feet plus other visible
-      issues
-    required: true
-    required_hint: Preenche os pontos sensiveis ou insensiveis na imagem.
+  value_pairs: []
 - id: auto_vp_005
   block_type: value_pairs
   bbox:
@@ -92,10 +51,130 @@ blocks:
   - 672
   - 2384
   studio_auto: true
+  value_pairs: []
+- id: auto_vp_001
+  block_type: value_pairs
+  bbox:
+  - 5
+  - 50
+  - 607
+  - 118
+  studio_auto: true
+  value_pairs:
+  - id: vp_001
+    concept: visit_date
+    value_type: date
+    bbox:
+    - 5
+    - 50
+    - 607
+    - 118
+    label_local: Data preenchido
+    description: Date form was fileld in or evaluation was done
+    sensitivity: administrative
+    required: true
+    required_hint: Data de visita
+- id: auto_vp_002
+  block_type: value_pairs
+  bbox:
+  - 0
+  - 111
+  - 607
+  - 163
+  studio_auto: true
+  value_pairs:
+  - id: vp_002
+    concept: recorded_by
+    value_type: text
+    bbox:
+    - 0
+    - 111
+    - 607
+    - 163
+    label_local: Preenchido por
+    description: Person that did the followup exam and filled the form
+    sensitivity: administrative
+    required_hint: Quem preencheu
+- id: auto_vp_003
+  block_type: value_pairs
+  bbox:
+  - 0
+  - 160
+  - 626
+  - 532
+  studio_auto: true
+  value_pairs:
+  - id: vp_003
+    concept: nerve_enlargement_cubital_right
+    value_type: tick_box
+    bbox:
+    - 0
+    - 160
+    - 626
+    - 532
+    label_local: Tabela Nervos
+    description: Nerve table with reference to enlarged or painful nerves.
+    sensitivity: clinical
+    required: true
+    required_hint: Resultado do exame dos nervos
+- id: auto_vp_004
+  block_type: value_pairs
+  bbox:
+  - 0
+  - 522
+  - 626
+  - 1619
+  studio_auto: true
+  value_pairs:
+  - id: vp_004
+    concept: insensitive_points_right_hand
+    value_type: integer
+    bbox:
+    - 0
+    - 522
+    - 626
+    - 1619
+    label_local: Test sensitivo Maos e Pes.
+    description: The sensation test of hands and feet
+    sensitivity: clinical
+    required: true
+    required_hint: Resultados do teste sensitivo
+- id: auto_vp_005
+  block_type: value_pairs
+  bbox:
+  - 0
+  - 1603
+  - 626
+  - 2298
+  studio_auto: true
   value_pairs:
   - id: vp_005
+    concept: eye_blinking_right
+    value_type: choice_single
     bbox:
-    - 42
-    - 1666
-    - 672
-    - 2384
+    - 0
+    - 1603
+    - 626
+    - 2298
+    label_local: disability table
+    description: Table with 3 aspects, Eye exam, muscle exam in hands and feet and
+      disability grading
+    sensitivity: clinical
+    required: true
+    required_hint: Motor tests and disability grade
+- id: auto_vp_006
+  block_type: value_pairs
+  bbox: &id001
+  - 2451
+  - 221
+  - 3218
+  - 975
+  studio_auto: true
+  value_pairs:
+  - id: vp_006
+    concept: lepra_reaction_present
+    value_type: choice_single
+    bbox: *id001
+    label_local: Reaction clinical history
+    description: questions that help to determine if patient has a reaction
+    sensitivity: clinical
