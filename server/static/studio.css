@@ -1,0 +1,65 @@
+/* Studio — deliberately plain. The screen is a workbench, not a product. */
+* { box-sizing: border-box; }
+body {
+  margin: 0; font: 14px/1.45 system-ui, sans-serif; color: #1c2b2b; background: #f4f6f5;
+}
+header {
+  display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+  background: #0e3b3b; color: #fff;
+}
+.brand { font-weight: 700; font-size: 16px; }
+.brand span { font-weight: 400; opacity: .75; }
+header select { margin-left: auto; }
+button, .file-btn {
+  font: inherit; padding: 6px 12px; border: 1px solid #b9c6c4; border-radius: 6px;
+  background: #fff; cursor: pointer; color: #1c2b2b;
+}
+button.primary { background: #0e6b5c; border-color: #0e6b5c; color: #fff; }
+button.danger { color: #a02020; }
+button.ghost { background: transparent; border-color: #4a7070; color: #cfe3e0; }
+button.tool.active { outline: 2px solid #0e6b5c; }
+button:disabled { opacity: .45; cursor: default; }
+.hint { color: #5b6b6a; font-size: 12.5px; }
+main { padding: 16px; max-width: 1400px; margin: 0 auto; }
+.step { background: #fff; border: 1px solid #dde5e3; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
+.step h2 { margin: 0 0 6px; font-size: 15px; color: #0e3b3b; }
+.row { display: flex; align-items: center; gap: 12px; }
+.toolbar { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+
+.editor { display: flex; gap: 14px; align-items: flex-start; }
+.canvas-wrap {
+  position: relative; overflow: auto; flex: 1; border: 1px solid #dde5e3;
+  background: #eceff0; max-height: 76vh; border-radius: 8px;
+}
+#template { display: block; width: 100%; }
+#overlay { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; }
+
+.block-rect { fill: rgba(14,107,92,.10); stroke: #0e6b5c; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.block-rect.selected { fill: rgba(14,107,92,.18); stroke-width: 3; }
+.pair-rect { fill: rgba(196,124,0,.12); stroke: #b56a00; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.pair-rect.selected { fill: rgba(196,124,0,.22); stroke-width: 2.5; }
+.rect-label {
+  font: 12px system-ui; fill: #0e3b3b; paint-order: stroke; stroke: #fff; stroke-width: 3px;
+  pointer-events: none;
+}
+.rubber { fill: rgba(14,59,59,.08); stroke: #0e3b3b; stroke-dasharray: 5 4; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+
+.panel { width: 320px; flex-shrink: 0; border: 1px solid #dde5e3; border-radius: 8px; padding: 12px; background: #fafcfb; }
+.panel h3 { margin: 0 0 8px; font-size: 13px; color: #0e3b3b; }
+.panel label { display: block; font-size: 12.5px; color: #5b6b6a; margin-bottom: 8px; }
+.panel input, .panel select, .panel textarea {
+  display: block; width: 100%; margin-top: 3px; padding: 5px 8px; font: inherit;
+  border: 1px solid #c5d1cf; border-radius: 5px; background: #fff;
+}
+.panel input:disabled { background: #eef1f0; }
+.concept-list {
+  max-height: 200px; overflow-y: auto; border: 1px solid #c5d1cf; border-radius: 5px;
+  background: #fff; margin-top: 3px;
+}
+.concept-list div { padding: 5px 8px; cursor: pointer; font-size: 12.5px; border-bottom: 1px solid #eef1f0; }
+.concept-list div:hover { background: #e8f2f0; }
+.concept-list .cid { color: #5b6b6a; font-size: 11.5px; }
+.concept-shown { margin-bottom: 8px; }
+.errors { margin-top: 10px; border: 1px solid #d8b0b0; background: #faf1f1; color: #7a2020; border-radius: 8px; padding: 10px 14px; }
+.errors ul { margin: 4px 0 0; padding-left: 18px; }
+.hidden { display: none !important; }

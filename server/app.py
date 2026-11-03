@@ -35,8 +35,10 @@ from core.schema import forms as forms_t
 from core.schema import runs as runs_t
 
 from . import events, signing, uploads
+from .studio import router as studio_router
 
 app = FastAPI(title="HANNA", version="0.1-phase1")
+app.include_router(studio_router)
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -52,6 +54,12 @@ def review_page():
 def index():
     """Bench screen 1: consent, capture, client gate, upload, live stream."""
     return FileResponse(STATIC_DIR / "index.html")
+
+
+@app.get("/studio", include_in_schema=False)
+def studio_page():
+    """Studio: the country team defines their card — upload, draw, link to WHO."""
+    return FileResponse(STATIC_DIR / "studio.html")
 
 TERMINAL = {"done", "partial", "failed"}
 

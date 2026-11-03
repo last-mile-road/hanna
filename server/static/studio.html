@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>HANNA Studio — define the card</title>
+<link rel="stylesheet" href="/static/studio.css?v=1">
+</head>
+<body>
+<header>
+  <div class="brand">HANNA <span>Studio</span></div>
+  <select id="country"></select>
+  <button id="new-country" class="ghost">+ New country</button>
+  <span id="save-state" class="hint"></span>
+</header>
+
+<main>
+  <!-- step 1: template -->
+  <section class="step" id="step-template">
+    <h2>1 · The blank card</h2>
+    <p class="hint">Upload a clear scan or photo of the blank clinic card. This is the
+    map every drawing below is measured on.</p>
+    <div class="row">
+      <label class="file-btn"><input type="file" id="template-file" accept="image/jpeg,image/png" hidden>Upload template</label>
+      <span id="template-info" class="hint"></span>
+    </div>
+  </section>
+
+  <!-- step 2: define -->
+  <section class="step" id="step-define">
+    <h2>2 · Draw what the card asks</h2>
+    <div class="toolbar">
+      <button id="mode-block" class="tool">Draw block</button>
+      <button id="mode-pair" class="tool" disabled>Draw value pair</button>
+      <button id="delete" class="tool danger" disabled>Delete selected</button>
+      <button id="save" class="tool primary">Save draft</button>
+      <span id="source-note" class="hint"></span>
+    </div>
+    <p class="hint" id="mode-hint">Draw a box around a <b>region</b> of the card (demographics,
+    treatment grid…). Then select it and draw smaller boxes for each value the card asks for.</p>
+
+    <div class="editor">
+      <div class="canvas-wrap" id="canvas-wrap">
+        <img id="template" alt="blank card template">
+        <svg id="overlay" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <aside class="panel" id="panel">
+        <div class="panel-empty hint" id="panel-empty">
+          Nothing selected. Click a block or a value pair on the card.
+        </div>
+        <div id="editor-block" class="hidden">
+          <h3>Block</h3>
+          <label>id <input id="b-id"></label>
+          <label>type
+            <select id="b-type">
+              <option>value_pairs</option>
+              <option>tick_grid</option>
+              <option>annotated_table</option>
+              <option>visual_annotation</option>
+              <option>dose_grid</option>
+              <option>free_text</option>
+              <option>sketch</option>
+            </select>
+          </label>
+          <label>hint for the model <textarea id="b-hint" rows="3"></textarea></label>
+        </div>
+        <div id="editor-pair" class="hidden">
+          <h3>Value pair</h3>
+          <label>id <input id="p-id"></label>
+          <label>printed label (card language) <input id="p-label"></label>
+          <label>WHO concept
+            <input id="p-concept-search" placeholder="search the concept index…">
+          </label>
+          <div id="concept-list" class="concept-list hidden"></div>
+          <div id="p-concept-shown" class="concept-shown hint"></div>
+          <label>value type <input id="p-type" disabled></label>
+          <label>sensitivity <input id="p-sens" disabled></label>
+        </div>
+      </aside>
+    </div>
+
+    <div id="errors" class="errors hidden"></div>
+  </section>
+
+  <!-- step 3: test cards -->
+  <section class="step" id="step-test">
+    <h2>3 · Test cards</h2>
+    <p class="hint">Next step, after the draft above is saved: upload around
+    <b>10 filled test cards</b> and verify what HANNA reads. That runs on the
+    <a href="/">test screen</a> today; the ground-truth capture tool is at
+    <a href="http://127.0.0.1:8765">port 8765</a>. This step will move into Studio
+    as the pipeline is set up for the country.</p>
+  </section>
+</main>
+
+<script src="/static/studio.js?v=1"></script>
+</body>
+</html>
