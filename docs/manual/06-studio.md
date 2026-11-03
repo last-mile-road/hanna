@@ -67,6 +67,42 @@ pass merges or grows them.
 - Fields the editor does not show (allowed values, derived flags, geometry
   sources) are preserved on save — a Studio round-trip strips nothing.
 
+## Tables and groups: draw the region, not the cells
+
+The nerve table, the disability table, the hand/feet diagrams and the dose
+grid are handled as **groups**. The country team draws **one box around the
+whole table** and names it ("Tabela de nervos"). Nobody draws 40 small cells.
+How the working Mozambique pack declares it:
+
+| Group | Block box drawn | Individual items declared |
+|---|---|---|
+| nerve_assessment | 1 | 12 pairs, **all boxless** |
+| def_exam (disability) | 1 | 14 pairs, only 1 boxed |
+| hand_feet_assessment | 1 | 12 pairs, all boxless |
+| treatment_follow | 1 | 5 pairs; the grid is read as one, totals derived |
+
+A pair without its own box is read from the block's crop (the block type —
+`annotated_table`, `tick_grid`, `dose_grid`, `visual_annotation` — selects how
+the model is prompted). So the grains are deliberately different:
+
+- **draw** at the grain the model reads (the table region);
+- **store** at the grain the report needs (each nerve, each grade);
+- **validate** at the grain the programme decides (rules, per country).
+
+For country #2 onward, the item lists of known groups (nerve table, disability
+table, hand/feet, dose grid) come from the concept index as **group
+templates** — the country confirms the items instead of drawing them. That is
+the structural-overlap suggestion layer (`hanna_next/STUDIO.md` M4).
+
+**Blank vs missing.** A blank cell among filled siblings is a *value* ("not
+filled / not assessed here"), not a failure — the hand/feet block needed an
+explicit `is_filled` signal before it scored 26/28, because "the model did not
+see it" and "the clinician left it blank" must not look the same. Blocking is
+never automatic: it belongs to the validation rules (`validation.yaml`), per
+country. Sensible default: block on what makes the record unusable (identity,
+classification), warn on an incomplete group (table anchor filled but three
+items unreadable).
+
 ## The truth step (planned)
 
 Once the pairs (and blocks) are confirmed: the country uploads a filled card,
