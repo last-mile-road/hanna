@@ -371,7 +371,62 @@ def post_location(run_id: str, body: LocationReview):
         }
         conn.execute(update(runs_t).where(runs_t.c.id == run_id).values(location=location))
         conn.commit()
+
+        # A confirmation or a candidate pick is a teaching moment: the spellings on the
+        # card now have a human-attested canonical unit. A free pin dragged on the map
+        # ("ajustado no mapa") corrects the house, not the name, so it writes no alias.
+        try:
+            written = {
+                row[0]: row[1]
+                for row in conn.execute(
+                    text("SELECT concept_id, value FROM observations "
+                         "WHERE run_id = CAST(:run_id AS uuid) AND value IS NOT NULL "
+                         "AND concept_id IN ('district', 'locality', 'village')"),
+                    {"run_id": run_id},
+                )
+            }
+            written = {"district": written.get("district") or "",
+                       "locality": written.get("locality") or "",
+                       "village": written.get("village") or ""}
+            if body.mode == "accepted":
+                chosen = location.get("chosen") or {}
+            elif body.pcode or (body.name and body.name != "ajustado no mapa"):
+                # The reviewer picked a candidate: prefer the full candidate from the
+                # resolution (chain, level, coordinates) over the bare name the card sent.
+                chosen = next(
+                    (c for c in location.get("candidates") or []
+                     if c.get("name") == body.name
+                     and (not body.pcode or c.get("pcode") == body.pcode)),
+                    {},
+                ) or {"name": body.name, "pcode": body.pcode}
+            else:
+                chosen = {}
+            if chosen and any(written.values()):
+                from core.aliases import record as record_aliases
+
+                written_rows = record_aliases(
+                    conn, form_country(conn, run_id), written, chosen, run_id
+                )
+                conn.commit()
+                if written_rows:
+                    location["review"]["aliases_recorded"] = written_rows
+                    conn.execute(
+                        update(runs_t).where(runs_t.c.id == run_id).values(location=location)
+                    )
+                    conn.commit()
+        except Exception:
+            conn.rollback()  # a failed alias write must not fail the review
     return {"ok": True, "review": location["review"]}
+
+
+def form_country(conn, run_id: str) -> str:
+    """The run's country, via its form definition."""
+    row = conn.execute(
+        text("SELECT form.definition->>'country' FROM forms form "
+             "JOIN runs run ON run.form_id = form.id WHERE run.id = CAST(:run_id AS uuid)"),
+        {"run_id": run_id},
+    ).scalar()
+    return row or "mozambique"
 
 
 _TEMPLATE_SIZE: dict[str, tuple[int, int]] = {}

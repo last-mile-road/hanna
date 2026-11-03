@@ -16,7 +16,7 @@ from typing import Any
 
 from sqlalchemy import select, text, update
 
-from . import align, location, normalise, settings, store, ticks
+from . import align, aliases, location, normalise, settings, store, ticks
 from .db import connect
 from .forms import Block, Pair
 from .inference import OpenRouter
@@ -517,13 +517,32 @@ def run_card(
         )
 
         # Location: gazetteer first, a bounded service second, a human third. Stored with the
-        # run so the review can show a map instead of three hidden text fields.
+        # run so the review can show a map instead of three hidden text fields. Before the
+        # gazetteer sees the names, the alias table is consulted: a spelling a reviewer has
+        # already resolved resolves exactly this time, with no fuzzy guess.
+        written_location = {
+            "district": str(all_values.get("district") or ""),
+            "locality": str(all_values.get("locality") or ""),
+            "village": str(all_values.get("village_name") or ""),
+        }
+        alias_hits = aliases.lookup(form["definition"].get("country", "mozambique"),
+                                    written_location)
+        if alias_hits:
+            for field, hit in alias_hits.items():
+                written_location[field] = hit["canonical"]
+            print(f"  location aliases applied: {', '.join(sorted(alias_hits))}")
         geo = location.resolve(
-            district=str(all_values.get("district") or ""),
-            locality=str(all_values.get("locality") or ""),
-            place=str(all_values.get("village_name") or ""),
+            district=written_location["district"],
+            locality=written_location["locality"],
+            place=written_location["village"],
         )
         result["location"] = geo.as_dict()
+        if alias_hits:
+            result["location"]["aliases_applied"] = {
+                field: {"canonical": hit["canonical"], "level": hit["level"],
+                        "pcode": hit["pcode"]}
+                for field, hit in alias_hits.items()
+            }
         (run_dir / "location.json").write_text(
             json.dumps(result["location"], indent=2, ensure_ascii=False)
         )

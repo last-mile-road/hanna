@@ -1,0 +1,28 @@
+site_name: HANNA manual
+site_description: How HANNA turns a photo of a patient card into a verified, located, notified case.
+docs_dir: manual
+site_dir: ../output/manual-site
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.tabs.link
+  palette:
+    - scheme: default
+      primary: teal
+
+markdown_extensions:
+  - tables
+  - admonition
+  - toc:
+      permalink: true
+
+nav:
+  - Start: README.md
+  - What HANNA does: 01-what-hanna-does.md
+  - Extraction: 02-extraction.md
+  - Location: 03-location.md
+  - Review: 04-review.md
+  - Country onboarding: 05-country-onboarding.md
