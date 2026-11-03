@@ -29,16 +29,20 @@
 
   <!-- step 2: define -->
   <section class="step" id="step-define">
-    <h2>2 · Draw what the card asks</h2>
+    <h2>2 · Mark what the card asks</h2>
     <div class="toolbar">
-      <button id="mode-block" class="tool">Draw block</button>
-      <button id="mode-pair" class="tool" disabled>Draw value pair</button>
+      <button id="mode-pair" class="tool">Draw value pair</button>
+      <button id="mode-block" class="tool admin hidden">Draw block</button>
       <button id="delete" class="tool danger" disabled>Delete selected</button>
       <button id="save" class="tool primary">Save draft</button>
+      <label class="admin-toggle hint" id="admin-toggle"><input type="checkbox" id="admin-mode"> Admin mode
+        (blocks &amp; extraction grouping — moderator step)</label>
       <span id="source-note" class="hint"></span>
     </div>
-    <p class="hint" id="mode-hint">Draw a box around a <b>region</b> of the card (demographics,
-    treatment grid…). Then select it and draw smaller boxes for each value the card asks for.</p>
+    <p class="hint" id="mode-hint">Draw a box around each value the card asks for —
+    a name line, a date, a tick column, a table. Give it a display name and say
+    what it means by picking from the WHO list. Blocks are set later by the
+    moderator, aligned to how the reading works.</p>
 
     <div class="editor">
       <div class="canvas-wrap" id="canvas-wrap">
@@ -47,10 +51,10 @@
       </div>
       <aside class="panel" id="panel">
         <div class="panel-empty hint" id="panel-empty">
-          Nothing selected. Click a block or a value pair on the card.
+          Nothing selected. Click a value pair on the card.
         </div>
         <div id="editor-block" class="hidden">
-          <h3>Block</h3>
+          <h3>Block (admin)</h3>
           <label>id <input id="b-id"></label>
           <label>type
             <select id="b-type">
@@ -64,18 +68,30 @@
             </select>
           </label>
           <label>hint for the model <textarea id="b-hint" rows="3"></textarea></label>
+          <p class="hint">Pairs whose centre lies inside this block are drawn into
+          it on save. A block should contain the printed header of its table or
+          column — the reader needs that context.</p>
         </div>
         <div id="editor-pair" class="hidden">
           <h3>Value pair</h3>
-          <label>id <input id="p-id"></label>
-          <label>printed label (card language) <input id="p-label"></label>
+          <label>display name (as your team calls it) <input id="p-label"></label>
+          <label>description — what is this value, for whoever reads it later
+            <textarea id="p-desc" rows="2"></textarea></label>
           <label>WHO concept
-            <input id="p-concept-search" placeholder="search the concept index…">
+            <input id="p-concept-search" placeholder="search the WHO concept list…">
           </label>
           <div id="concept-list" class="concept-list hidden"></div>
           <div id="p-concept-shown" class="concept-shown hint"></div>
-          <label>value type <input id="p-type" disabled></label>
-          <label>sensitivity <input id="p-sens" disabled></label>
+          <label>data type <input id="p-type" disabled></label>
+          <label class="checkline"><input type="checkbox" id="p-required"> required — the record is incomplete without it</label>
+          <label>hint shown when it was not filled <input id="p-hint"></label>
+          <label>sensitivity
+            <select id="p-sens">
+              <option value="identifying">identifying (points to the patient)</option>
+              <option value="clinical">clinical</option>
+              <option value="administrative">administrative</option>
+            </select>
+          </label>
         </div>
       </aside>
     </div>
@@ -94,6 +110,6 @@
   </section>
 </main>
 
-<script src="/static/studio.js?v=1"></script>
+<script src="/static/studio.js?v=2"></script>
 </body>
 </html>

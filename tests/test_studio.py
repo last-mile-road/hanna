@@ -58,27 +58,33 @@ def test_save_round_trips_and_the_live_pack_is_untouched(studio_country, monkeyp
 
     draft = {
         "form": {"id": "zz_test_card", "reference_year": 2026},
-        "blocks": [{
-            "id": "demographics", "block_type": "value_pairs",
-            "bbox": [10, 10, 1000, 400],
-            "value_pairs": [{
-                "id": "patient_name", "concept": "patient_name",
-                "bbox": [20, 20, 900, 120], "label_local": "Nome do doente",
-            }],
+        "pairs": [{
+            "id": "vp_001", "concept": "patient_name",
+            "bbox": [20, 20, 900, 120], "label_local": "Nome do doente",
+            "description": "Nome completo do doente no cartão",
+            "required": True, "required_hint": "Pergunte ao clínico se o nome está escrito",
         }],
     }
     response = client.put(f"/api/studio/{country}/draft", json=draft)
     assert response.status_code == 200
     assert response.json()["errors"] == []
 
-    # the saved draft loads through the real loader — the acceptance test
+    # the country drew pairs only; the server wrapped each in a provisional block
+    saved = yaml.safe_load((real_countries / country / "form.studio.yaml").read_text())
+    auto = saved["blocks"][0]
+    assert auto["id"] == "auto_vp_001"
+    assert auto["studio_auto"] is True
+    assert auto["value_pairs"][0]["label_local"] == "Nome do doente"
+    assert auto["value_pairs"][0]["required"] is True
+    assert auto["value_pairs"][0]["description"].startswith("Nome completo")
+
+    # and the wrapped draft loads through the real loader — the acceptance test
     from core.forms import load_form_pack
 
     pack = load_form_pack(country, "form.studio.yaml")
     assert pack.pairs[0].label_local == "Nome do doente"
 
     # Studio wrote its own draft only: no live pack anywhere
-    assert (real_countries / country / "form.studio.yaml").exists()
     assert not (real_countries / country / "form.draft.yaml").exists()
     assert donor_live.read_text() == live_before
 
@@ -117,6 +123,27 @@ def test_save_preserves_keys_the_editor_does_not_edit(studio_country):
     assert pair["geometry_source"] == "converted"
 
 
+def test_a_pair_with_no_concept_yet_is_an_error_not_a_500(studio_country):
+    """The live bug the old server log caught: an unlinked pair reached the
+    cardinality check and crashed it. A country draft mid-edit must save and
+    come back with the problem listed."""
+    country = studio_country
+    draft = {
+        "form": {"id": "zz_test_card", "reference_year": 2026},
+        "pairs": [{"id": "vp_001", "concept": "", "bbox": [10, 10, 300, 90]}],
+    }
+    response = client.put(f"/api/studio/{country}/draft", json=draft)
+    assert response.status_code == 200
+    errors = response.json()["errors"]
+    assert any("vp_001" in e for e in errors)
+
+    # two unlinked pairs must not trip the cardinality check either
+    draft["pairs"].append({"id": "vp_002", "concept": "", "bbox": [400, 10, 700, 90]})
+    response = client.put(f"/api/studio/{country}/draft", json=draft)
+    assert response.status_code == 200
+    assert response.json()["errors"]
+
+
 def test_a_draft_with_errors_returns_them_not_a_500(studio_country):
     country = studio_country
     draft = {
@@ -146,3 +173,37 @@ def test_template_upload_rejects_a_non_image(studio_country):
         files={"file": ("card.txt", b"not an image", "text/plain")},
     )
     assert response.status_code == 422
+
+
+def test_template_upload_deskews_and_keeps_the_original(studio_country):
+    """A 3° skew must come out straight — every block drawn on a skewed
+    template inherits the skew."""
+    import cv2
+    import numpy as np
+
+    card = np.full((500, 900, 3), 235, dtype=np.uint8)
+    cv2.putText(card, "FICHA CLINICA - TEST CARD", (40, 250),
+                cv2.FONT_HERSHEY_SIMPLEX, 2.2, (20, 20, 20), 6, cv2.LINE_AA)
+    matrix = cv2.getRotationMatrix2D((450, 250), 3.0, 1.0)
+    skewed = cv2.warpAffine(card, matrix, (900, 500), borderValue=(235, 235, 235))
+    ok, encoded = cv2.imencode(".jpg", skewed)
+    assert ok
+
+    response = client.post(
+        f"/api/studio/{studio_country}/template",
+        files={"file": ("card.jpg", encoded.tobytes(), "image/jpeg")},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["cleaning"]["deskew_applied"] != 0
+    assert abs(body["cleaning"]["deskew_applied"]) <= 10
+
+    saved = cv2.imread(str(settings.COUNTRIES_DIR / studio_country / "template.jpg"))
+    original = cv2.imread(str(settings.COUNTRIES_DIR / studio_country / "template_original.jpg"))
+    assert saved is not None and original is not None
+    # the straightened mask is horizontal again: min-area angle near 0 or 90
+    gray = cv2.cvtColor(saved, cv2.COLOR_BGR2GRAY)
+    coords = cv2.findNonZero(cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1])
+    angle = cv2.minAreaRect(coords)[-1]
+    angle = -(90 + angle) if angle < -45 else -angle
+    assert abs(angle) < 1.0, f"template still skewed by {angle:.2f} degrees"

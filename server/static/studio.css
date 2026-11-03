@@ -52,6 +52,10 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   border: 1px solid #c5d1cf; border-radius: 5px; background: #fff;
 }
 .panel input:disabled { background: #eef1f0; }
+.admin-toggle { display: flex; align-items: center; gap: 4px; margin-left: auto; cursor: pointer; }
+.admin-toggle input { accent-color: #0e6b5c; }
+.checkline { display: flex; align-items: center; gap: 6px; color: #1c2b2b !important; }
+.checkline input { width: auto !important; margin: 0 !important; accent-color: #0e6b5c; }
 .concept-list {
   max-height: 200px; overflow-y: auto; border: 1px solid #c5d1cf; border-radius: 5px;
   background: #fff; margin-top: 3px;

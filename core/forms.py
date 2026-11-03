@@ -87,14 +87,14 @@ def load_form_pack(
             hint=raw_block.get("hint"),
         )
         for p_ord, raw_pair in enumerate(raw_block.get("value_pairs", [])):
-            concept = concepts.get(raw_pair["concept"], {})
+            concept = concepts.get(raw_pair.get("concept", ""), {})
             options = raw_pair.get("allowed_values")
             if options is None:
                 options = concept.get("observed") or concept.get("options")
             pair = Pair(
                 id=raw_pair["id"],
                 block_id=block.id,
-                concept=raw_pair["concept"],
+                concept=raw_pair.get("concept", ""),
                 value_type=raw_pair.get("value_type") or concept.get("value_type", "text"),
                 bbox=raw_pair.get("bbox"),
                 options=options,
@@ -181,7 +181,7 @@ def validate(pack: FormPack) -> list[str]:
     for pair in pack.pairs:
         counts[pair.concept] = counts.get(pair.concept, 0) + 1
     for concept_id, n in counts.items():
-        if n > 1 and pack.concepts[concept_id].get("cardinality") != "many":
+        if n > 1 and pack.concepts.get(concept_id, {}).get("cardinality") != "many":
             errors.append(
                 f"concept {concept_id} is used by {n} pairs but is not declared cardinality: many"
             )
