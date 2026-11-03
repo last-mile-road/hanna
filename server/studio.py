@@ -77,6 +77,56 @@ def _pack_with_errors(country: str, form_file: str) -> tuple[dict | None, list[s
     return data, errors
 
 
+def _studio_file(variant: str) -> str:
+    """The editable draft file for a form variant.
+
+    A country has more than one form: the registration card (front), the
+    follow-up card (back), later others. Each variant keeps its own draft;
+    the default variant keeps its legacy filename (form.studio.yaml).
+    """
+    return "form.studio.yaml" if variant == "draft" else f"form.{variant}.studio.yaml"
+
+
+def _live_file(variant: str) -> str:
+    return "form.draft.yaml" if variant == "draft" else f"form.{variant}.yaml"
+
+
+def _template_name(variant: str) -> str:
+    return TEMPLATE if variant == "draft" else f"template.{variant}.jpg"
+
+
+def _list_forms(country: str) -> list[dict]:
+    directory = _country_dir(country)
+    variants: dict[str, dict] = {}
+    for path in sorted(directory.glob("form*.yaml")):
+        stem = path.stem
+        if stem == "form":
+            variant = "draft"
+        elif stem.endswith(".studio"):
+            variant = stem[len("form."):-len(".studio")] or "draft"
+        else:
+            variant = stem[len("form."):]
+        entry = variants.setdefault(variant, {"variant": variant, "has_live": False,
+                                              "has_studio": False})
+        if path.name == _studio_file(variant):
+            entry["has_studio"] = True
+        elif path.name == _live_file(variant):
+            entry["has_live"] = True
+    out = []
+    for variant, entry in variants.items():
+        template = directory / _template_name(variant) if variant != "draft" else directory / TEMPLATE
+        if variant != "draft" and not template.exists():
+            # a variant may name its template explicitly in the form header
+            data, _ = _pack_with_errors(country, _studio_file(variant))
+            if data and data.get("form", {}).get("template"):
+                template = directory / str(data["form"]["template"])
+        size = _template_size(template) if template.exists() else None
+        entry["has_template"] = template.exists()
+        entry["template_size"] = size
+        out.append(entry)
+    return out
+
+
 # --------------------------------------------------------------------- read
 
 
@@ -95,23 +145,25 @@ def list_countries():
             "template_size": size,
             "has_live_draft": (path / LIVE_DRAFT).exists(),
             "has_studio_draft": (path / STUDIO_DRAFT).exists(),
+            "forms": _list_forms(path.name),
         })
     return out
 
 
 @router.get("/{country}/pack")
-def get_pack(country: str, source: str = "studio"):
+def get_pack(country: str, source: str = "studio", variant: str = "draft"):
     """The draft the screen edits, the concepts it links to, and its errors."""
-    form_file = STUDIO_DRAFT if source == "studio" else LIVE_DRAFT
+    studio_file, live_file = _studio_file(variant), _live_file(variant)
+    form_file = studio_file if source == "studio" else live_file
     data, errors = _pack_with_errors(country, form_file)
     if data is None:
-        # fall back to the live draft so a country that has only been set up
+        # fall back to the live draft so a form that has only been set up
         # by hand still shows something on first open
-        if form_file == STUDIO_DRAFT:
-            data, errors = _pack_with_errors(country, LIVE_DRAFT)
-            form_file = LIVE_DRAFT
+        if source == "studio":
+            data, errors = _pack_with_errors(country, live_file)
+            form_file = live_file
         if data is None:
-            raise HTTPException(404, f"nenhum draft para {country}")
+            raise HTTPException(404, f"nenhum draft para {country}/{variant}")
 
     template = _country_dir(country) / str(data.get("form", {}).get("template", TEMPLATE))
     size = _template_size(template) if template.exists() else None
@@ -128,8 +180,9 @@ def get_pack(country: str, source: str = "studio"):
     ]
     return {
         "country": country,
+        "variant": variant,
         "source_file": form_file,
-        "editable": form_file == STUDIO_DRAFT,
+        "editable": form_file == studio_file,
         "form": data.get("form", {}),
         "blocks": data.get("blocks", []),
         "concepts": concepts,
@@ -139,10 +192,16 @@ def get_pack(country: str, source: str = "studio"):
 
 
 @router.get("/{country}/template")
-def get_template(country: str):
-    path = _country_dir(country) / TEMPLATE
+def get_template(country: str, variant: str = "draft"):
+    name = TEMPLATE if variant == "draft" else _template_name(variant)
+    path = _country_dir(country) / name
     if not path.exists():
-        raise HTTPException(404, "sem template — carregue primeiro o cartão em branco")
+        # fall back to the template named in the draft itself
+        data, _ = _pack_with_errors(country, _studio_file(variant)) or (None, None)
+        if data and data.get("form", {}).get("template"):
+            path = _country_dir(country) / str(data["form"]["template"])
+        if not path.exists():
+            raise HTTPException(404, "sem template — carregue primeiro o cartão em branco")
     return FileResponse(path, media_type="image/jpeg", headers={"Cache-Control": "no-store"})
 
 
@@ -219,18 +278,20 @@ def _dump_block(block: BlockIn) -> dict:
 
 
 @router.put("/{country}/draft")
-def save_draft(country: str, draft: DraftIn):
+def save_draft(country: str, draft: DraftIn, variant: str = "draft"):
     """Write the Studio draft and validate it against the real rules.
 
     Returns the errors list — empty means the draft would load. The live
     form.draft.yaml is never touched from here.
     """
+    if not re.fullmatch(r"[a-z0-9_]{1,24}", variant):
+        raise HTTPException(422, "variante inválida")
     directory = _country_dir(country)
     directory.mkdir(parents=True, exist_ok=True)
 
     form = dict(draft.form)
     form["country"] = country
-    form["template"] = str(form.get("template") or TEMPLATE)
+    form["template"] = str(form.get("template") or _template_name(variant))
     form["status"] = form.get("status", "draft")
     if form.get("reference_year") is None:
         # CONSTRAINTS §1.6: no silent default for the reference year.
@@ -253,8 +314,8 @@ def save_draft(country: str, draft: DraftIn):
             "studio_auto": True,
             "value_pairs": [_dump_pair(pair)],
         })
-    path = directory / STUDIO_DRAFT
-    backup = directory / f"{STUDIO_DRAFT}.bak"
+    path = directory / _studio_file(variant)
+    backup = directory / f"{path.name}.bak"
     if path.exists():
         shutil.copy(path, backup)  # one click of insurance, not versioning
     path.write_text(yaml.safe_dump(payload, allow_unicode=True, sort_keys=False))
@@ -302,12 +363,15 @@ def _clean_template(img):
 
 
 @router.post("/{country}/template")
-async def upload_template(country: str, file: UploadFile = File(...)):
+async def upload_template(country: str, file: UploadFile = File(...),
+                          variant: str = "draft"):
     """Step 1 of onboarding: the country's blank card becomes the template.
 
     The upload is deskewed and contrast-normalised; the untouched original is
-    kept beside it as template_original.jpg.
+    kept beside it as template_original.jpg (or template.<v>_original.jpg).
     """
+    if not re.fullmatch(r"[a-z0-9_]{1,24}", variant):
+        raise HTTPException(422, "variante inválida")
     directory = _country_dir(country)
     directory.mkdir(parents=True, exist_ok=True)
     raw = await file.read()
@@ -317,13 +381,39 @@ async def upload_template(country: str, file: UploadFile = File(...)):
     height, width = decoded.shape[:2]
     if width < 600 or height < 400:
         raise HTTPException(422, f"imagem demasiado pequena ({width}x{height}) — envie um scan ou foto nítida do cartão inteiro")
-    path = directory / TEMPLATE
+    path = directory / _template_name(variant)
     if path.exists():
-        shutil.copy(path, directory / "template.jpg.bak")
+        shutil.copy(path, directory / f"{path.stem}_previous.jpg")
     cleaned, report = _clean_template(decoded)
-    cv2.imwrite(str(directory / "template_original.jpg"), decoded)
+    cv2.imwrite(str(directory / f"{path.stem}_original.jpg"), decoded)
     cv2.imwrite(str(path), cleaned, [cv2.IMWRITE_JPEG_QUALITY, 92])
-    return {"ok": True, "size": [width, height], "cleaning": report, "saved": str(path)}
+    return {"ok": True, "size": [width, height], "template": path.name,
+            "cleaning": report, "saved": str(path)}
+
+
+@router.post("/{country}/forms")
+def create_form(country: str, body: dict):
+    """A new form variant for a country that already exists (front, back, …)."""
+    variant = str(body.get("variant") or "").strip().lower().replace(" ", "_").replace("-", "_")
+    if not re.fullmatch(r"[a-z0-9_]{1,24}", variant) or variant == "draft":
+        raise HTTPException(422, "variante: 1–24 caracteres a-z, 0-9, _ (não 'draft')")
+    directory = _country_dir(country)
+    studio_path = directory / _studio_file(variant)
+    if studio_path.exists():
+        raise HTTPException(422, f"formulário '{variant}' já existe")
+    if not directory.exists():
+        raise HTTPException(404, f"país desconhecido: {country}")
+    (directory / _studio_file(variant)).write_text(yaml.safe_dump({
+        "form": {
+            "id": f"{country}_{variant}_card",
+            "country": country,
+            "template": _template_name(variant),
+            "status": "draft",
+            "reference_year": None,
+        },
+        "blocks": [],
+    }, allow_unicode=True, sort_keys=False))
+    return {"ok": True, "variant": variant}
 
 
 @router.post("/countries")

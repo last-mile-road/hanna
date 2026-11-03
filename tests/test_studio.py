@@ -123,6 +123,41 @@ def test_save_preserves_keys_the_editor_does_not_edit(studio_country):
     assert pair["geometry_source"] == "converted"
 
 
+def test_a_second_form_variant_keeps_its_own_template(studio_country):
+    """The back side of a card is its own form: own draft, own template, no
+    bleed-through of the front's pairs. (Found when the back side was uploaded
+    over the front template and the front's bboxes drew on top of it.)"""
+    country = studio_country
+    client.post(f"/api/studio/{country}/forms", json={"variant": "back"})
+    pack = client.get(f"/api/studio/{country}/pack?variant=back").json()
+    assert pack["form"]["template"] == "template.back.jpg"
+    assert pack["blocks"] == []
+
+    # a save for the back variant writes form.back.studio.yaml only
+    response = client.put(f"/api/studio/{country}/draft?variant=back", json={
+        "form": {"id": "zz_back", "reference_year": 2026},
+        "pairs": [{"id": "vp_001", "concept": "patient_name", "bbox": [10, 10, 300, 90]}],
+    })
+    assert response.status_code == 200
+    import yaml
+    assert (settings.COUNTRIES_DIR / country / "form.back.studio.yaml").exists()
+    assert not (settings.COUNTRIES_DIR / country / "form.draft.yaml").exists()
+
+    # the template endpoint serves each variant's own image — after one exists
+    assert client.get(f"/api/studio/{country}/template?variant=back").status_code == 404
+    import cv2 as _cv
+    import numpy as _np
+
+    _ok, _jpg = _cv.imencode(".jpg", _np.full((600, 900, 3), 240, dtype=_np.uint8))
+    up = client.post(f"/api/studio/{country}/template?variant=back",
+                     files={"file": ("back.jpg", _jpg.tobytes(), "image/jpeg")})
+    assert up.status_code == 200
+    assert up.json()["template"] == "template.back.jpg"
+    assert client.get(f"/api/studio/{country}/template?variant=back").status_code == 200
+    # the front variant's template is untouched
+    assert client.get(f"/api/studio/{country}/template").status_code == 200
+
+
 def test_a_pair_with_no_concept_yet_is_an_error_not_a_500(studio_country):
     """The live bug the old server log caught: an unlinked pair reached the
     cardinality check and crashed it. A country draft mid-edit must save and

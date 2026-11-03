@@ -13,6 +13,8 @@
 const $ = (id) => document.getElementById(id);
 const state = {
   country: null,
+  variant: "draft",
+  countries: [],
   pack: null,
   pairs: [],           // flat: {id, label_local, description, concept, value_type, sensitivity, bbox, required, required_hint, block: index|null}
   blocks: [],          // admin blocks: {id, block_type, bbox, hint, ...extra}
@@ -26,10 +28,10 @@ const state = {
 /* ---------- loading ---------- */
 
 async function loadCountries() {
-  const countries = await fetch("/api/studio/countries").then((r) => r.json());
+  state.countries = await fetch("/api/studio/countries").then((r) => r.json());
   const sel = $("country");
   sel.innerHTML = "";
-  for (const c of countries) {
+  for (const c of state.countries) {
     const opt = document.createElement("option");
     opt.value = c.country;
     opt.textContent = c.country + (c.has_template ? "" : " — sem template");
@@ -37,11 +39,28 @@ async function loadCountries() {
   }
 }
 
-async function loadPack(country, source = "studio") {
-  const response = await fetch(`/api/studio/${country}/pack?source=${source}`);
+function loadFormOptions() {
+  const country = state.countries.find((c) => c.country === state.country) || {};
+  const forms = country.forms || [];
+  const sel = $("form");
+  sel.innerHTML = "";
+  for (const f of forms) {
+    const opt = document.createElement("option");
+    opt.value = f.variant;
+    opt.textContent = f.variant === "draft" ? "front (registration)" : f.variant
+      + (f.has_studio ? "" : " (no draft)");
+    sel.appendChild(opt);
+  }
+  sel.value = state.variant;
+}
+
+async function loadPack(country, variant, source = "studio") {
+  const response = await fetch(
+    `/api/studio/${country}/pack?source=${source}&variant=${variant}`);
   if (!response.ok) return null;
   const pack = await response.json();
   state.country = country;
+  state.variant = variant;
   state.pack = pack;
   state.blocks = (pack.blocks || []).map((b) => ({ ...b, value_pairs: undefined }));
   state.pairs = [];
@@ -115,7 +134,7 @@ function renderOverlay() {
   svg.setAttribute("preserveAspectRatio", "none");
   svg.innerHTML = "";
   if (!state.pack.template_size) { $("template").src = ""; return; }
-  $("template").src = `/api/studio/${state.country}/template`;
+  $("template").src = `/api/studio/${state.country}/template?variant=${state.variant}`;
 
   if (state.admin) {
     state.blocks.forEach((block, bi) => {
@@ -338,7 +357,8 @@ async function save() {
       .map(({ block, ...p }) => p);
   });
 
-  const response = await fetch(`/api/studio/${state.country}/draft`, {
+  const response = await fetch(
+    `/api/studio/${state.country}/draft?variant=${state.variant}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -354,20 +374,44 @@ async function save() {
   $("save-state").textContent = result.errors.length
     ? `saved with ${result.errors.length} problem(s)`
     : "saved — draft validates clean";
-  await loadPack(state.country, "studio");
+  await loadPack(state.country, state.variant, "studio");
 }
 
 /* ---------- boot ---------- */
 
 async function boot() {
   await loadCountries();
-  const initial = new URLSearchParams(location.search).get("country") || $("country").value;
-  $("country").value = initial;
-  await loadPack(initial, "studio");
+  const params = new URLSearchParams(location.search);
+  state.country = params.get("country") || $("country").value;
+  state.variant = params.get("v") || "draft";
+  $("country").value = state.country;
+  loadFormOptions();
+  await loadPack(state.country, state.variant, "studio");
 }
 
 $("country").addEventListener("change", (e) => {
-  location.search = `?country=${e.target.value}`;
+  const params = new URLSearchParams(location.search);
+  params.set("country", e.target.value);
+  params.delete("v");
+  location.search = params.toString();
+});
+$("form").addEventListener("change", (e) => {
+  const params = new URLSearchParams(location.search);
+  params.set("v", e.target.value);
+  location.search = params.toString();
+});
+$("new-form").addEventListener("click", async () => {
+  const variant = prompt(
+    "Form name (a-z), e.g. back — becomes its own card with its own template");
+  if (!variant) return;
+  const response = await fetch(`/api/studio/${state.country}/forms`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ variant }),
+  });
+  const result = await response.json();
+  if (!response.ok) { alert(result.detail); return; }
+  location.search = `?country=${state.country}&v=${result.variant}`;
 });
 $("new-country").addEventListener("click", async () => {
   const name = prompt("Country name (a-z, used as folder id), e.g. bangladesh");
@@ -392,15 +436,18 @@ $("template-file").addEventListener("change", async (e) => {
   if (!file) return;
   const body = new FormData();
   body.append("file", file);
-  const response = await fetch(`/api/studio/${state.country}/template`, { method: "POST", body });
+  const response = await fetch(
+    `/api/studio/${state.country}/template?variant=${state.variant}`,
+    { method: "POST", body });
   const result = await response.json();
   if (!response.ok) { alert(result.detail); return; }
   const c = result.cleaning || {};
   const skew = c.skew_refused
     ? ` — skew ${c.skew_refused}° too large, please re-scan`
     : c.deskew_applied ? ` — straightened ${c.deskew_applied}°` : "";
-  $("template-info").textContent = `template ${result.size[0]}×${result.size[1]} px uploaded${skew}`;
-  await loadPack(state.country, "studio");
+  $("template-info").textContent =
+    `template ${result.template} ${result.size[0]}×${result.size[1]} px uploaded${skew}`;
+  await loadPack(state.country, state.variant, "studio");
 });
 $("mode-block").addEventListener("click", () => {
   if (!state.admin) return;
