@@ -1,152 +1,239 @@
-# Validation contract for the Mozambique card.
-# Required fields, the Portuguese advice shown to the clinician, highlight boxes,
-# and the rules that are not simple presence checks.
-
 version: 1
 country: mozambique
-
 required:
   patient_name:
-    advice: "O nome do paciente é necessário para identificar corretamente o doente. Use letras claras e em negrito."
-    bbox: [73, 397, 1457, 513]
+    advice: O nome do paciente é necessário para identificar corretamente o doente.
+      Use letras claras e em negrito.
+    bbox:
+    - 73
+    - 397
+    - 1457
+    - 513
   birth_year:
-    advice: "O ano em que o paciente nasceu, por exemplo 2007."
-    bbox: [430, 505, 717, 583]
+    advice: O ano em que o paciente nasceu, por exemplo 2007.
+    bbox:
+    - 430
+    - 505
+    - 717
+    - 583
   gender:
-    advice: "Marque a caixa de Sexo com M ou F. Seja claro na sua marcação."
-    bbox: [1053, 505, 1455, 588]
+    advice: Marque a caixa de Sexo com M ou F. Seja claro na sua marcação.
+    bbox:
+    - 1053
+    - 505
+    - 1455
+    - 588
   district:
-    advice: "Escreva o Distrito onde o paciente vive. Use letras claras e em negrito."
-    bbox: [172, 574, 678, 682]
+    advice: Escreva o Distrito onde o paciente vive. Use letras claras e em negrito.
+    bbox:
+    - 172
+    - 574
+    - 678
+    - 682
   locality:
-    advice: "Em que área administrativa o paciente vive?"
-    bbox: [838, 587, 1461, 682]
+    advice: Em que área administrativa o paciente vive?
+    bbox:
+    - 838
+    - 587
+    - 1461
+    - 682
   patient_reference:
-    advice: "Quem na comunidade conheceria a pessoa?"
-    bbox: [362, 673, 1461, 774]
+    advice: Quem na comunidade conheceria a pessoa?
+    bbox:
+    - 362
+    - 673
+    - 1461
+    - 774
   village_name:
-    advice: "Em que aldeia a pessoa vive? Use letras claras e em negrito."
-    bbox: [414, 769, 1462, 853]
+    advice: Em que aldeia a pessoa vive? Use letras claras e em negrito.
+    bbox:
+    - 414
+    - 769
+    - 1462
+    - 853
   date_diagnosed:
-    advice: "A data em que o diagnóstico foi feito, por exemplo 20070417."
-    bbox: [64, 913, 672, 971]
+    advice: A data em que o diagnóstico foi feito, por exemplo 20070417.
+    bbox:
+    - 64
+    - 913
+    - 672
+    - 971
   admin_classification:
-    advice: "Marque apenas uma opção claramente: Caso Novo, Reentrado, Má classificação ou Recaída."
-    bbox: [63, 1008, 622, 1258]
+    advice: 'Marque apenas uma opção claramente: Caso Novo, Reentrado, Má classificação
+      ou Recaída.'
+    bbox:
+    - 63
+    - 1008
+    - 622
+    - 1258
   leprosy_classification:
-    advice: "O tipo de lepra, marque apenas uma opção claramente."
-    bbox: [65, 1406, 618, 1782]
+    advice: O tipo de lepra, marque apenas uma opção claramente.
+    bbox:
+    - 65
+    - 1406
+    - 618
+    - 1782
   skinpatch_itching:
-    advice: "A pessoa relata que as manchas na pele coçam frequentemente? Marque claramente SIM ou NÃO."
-    bbox: [686, 1207, 1405, 1307]
+    advice: A pessoa relata que as manchas na pele coçam frequentemente? Marque claramente
+      SIM ou NÃO.
+    bbox:
+    - 686
+    - 1207
+    - 1405
+    - 1307
   leprosy_contact:
-    advice: "Havia alguém na família que foi tratado anteriormente para lepra? Marque claramente SIM ou NÃO."
-    bbox: [688, 1355, 1418, 1498]
+    advice: Havia alguém na família que foi tratado anteriormente para lepra? Marque
+      claramente SIM ou NÃO.
+    bbox:
+    - 688
+    - 1355
+    - 1418
+    - 1498
   previous_leptreatment:
-    advice: "O paciente foi tratado anteriormente para lepra, mesmo que não tenha completado o tratamento? Marque claramente SIM ou NÃO."
-    bbox: [686, 1503, 1406, 1644]
+    advice: O paciente foi tratado anteriormente para lepra, mesmo que não tenha completado
+      o tratamento? Marque claramente SIM ou NÃO.
+    bbox:
+    - 686
+    - 1503
+    - 1406
+    - 1644
   who_referred:
-    advice: "Quem encaminhou o paciente ou como o paciente chegou à nossa atenção? Marque apenas uma opção claramente."
-    bbox: [688, 1654, 1401, 1937]
-
+    advice: Quem encaminhou o paciente ou como o paciente chegou à nossa atenção?
+      Marque apenas uma opção claramente.
+    bbox:
+    - 688
+    - 1654
+    - 1401
+    - 1937
 blocks:
   nerve_assessment:
     mode: all_filled
     highlight: block
-    advice: "Após examinar os nervos, há algum que esteja aumentado ou doloroso? Marque os aumentados ou dolorosos com um + claro ou - se normal."
+    advice: Após examinar os nervos, há algum que esteja aumentado ou doloroso? Marque
+      os aumentados ou dolorosos com um + claro ou - se normal.
+    severity: info
   hand_feet_assessment:
     mode: section_filled
     field: is_filled
     highlight: block
-    advice: "Após testar os pontos nas mãos e pés para sensibilidade, marque quaisquer pontos insensíveis com um X claro. Caso contrário, apenas um pequeno visto se normal."
+    advice: Após testar os pontos nas mãos e pés para sensibilidade, marque quaisquer
+      pontos insensíveis com um X claro. Caso contrário, apenas um pequeno visto se
+      normal.
+    severity: info
   def_exam:
     mode: all_filled
     highlight: pair
-    advice: "Após o exame clínico, indique o nível de complicações que o paciente pode ter de acordo com as instruções."
-
+    advice: Após o exame clínico, indique o nível de complicações que o paciente pode
+      ter de acordo com as instruções.
+    severity: info
 rules:
   disability_grade_*:
     kind: one_of
-    options: ["0", "1", "2"]
+    options:
+    - '0'
+    - '1'
+    - '2'
     severity: blocking
-    advice: "O grau de incapacidade deve ser 0, 1 ou 2. Corrija o grau na ficha."
+    advice: O grau de incapacidade deve ser 0, 1 ou 2. Corrija o grau na ficha.
   eye_lagophthalmos_*:
     kind: integer
     min: 0
     severity: blocking
-    advice: "A medida da lagoftalmia deve ser um número inteiro em mm; 0 significa fecho completo."
+    advice: A medida da lagoftalmia deve ser um número inteiro em mm; 0 significa
+      fecho completo.
   insensitive_points_*:
     kind: integer
     min: 0
     severity: blocking
-    advice: "O número de pontos insensíveis deve ser um número inteiro igual ou superior a 0."
+    advice: O número de pontos insensíveis deve ser um número inteiro igual ou superior
+      a 0.
   skin_patch_count:
     kind: integer
     min: 0
     severity: blocking
-    advice: "O número de manchas deve ser um número inteiro igual ou superior a 0."
+    advice: O número de manchas deve ser um número inteiro igual ou superior a 0.
   birth_year:
     kind: integer_range
     min: 1900
     max: 2026
     severity: blocking
-    advice: "O ano de nascimento deve ser um ano válido, por exemplo 2007."
+    advice: O ano de nascimento deve ser um ano válido, por exemplo 2007.
   date_diagnosed:
     kind: date
     not_future: true
     severity: blocking
-    advice: "A data do diagnóstico deve ser válida e não pode estar no futuro."
+    advice: A data do diagnóstico deve ser válida e não pode estar no futuro.
   treatment_start_date:
     kind: date
     not_future: true
     severity: blocking
-    advice: "A data de início do tratamento deve ser válida e não pode estar no futuro."
+    advice: A data de início do tratamento deve ser válida e não pode estar no futuro.
   total_treatment_times:
     kind: integer
     min: 0
     severity: blocking
-    advice: "O número de tratamentos deve ser um número inteiro igual ou superior a 0."
+    advice: O número de tratamentos deve ser um número inteiro igual ou superior a
+      0.
   treatment_missed:
     kind: integer
     min: 0
     severity: blocking
-    advice: "O número de tratamentos falhados deve ser um número inteiro igual ou superior a 0."
+    advice: O número de tratamentos falhados deve ser um número inteiro igual ou superior
+      a 0.
   treatment_months_total:
     kind: integer
     min: 0
     severity: blocking
-    advice: "O número de meses de tratamento deve ser um número inteiro igual ou superior a 0."
-
+    advice: O número de meses de tratamento deve ser um número inteiro igual ou superior
+      a 0.
 cross_checks:
-  - id: nil_missing
-    severity: info
-    audience: [system]
-    advice: "Sem NIL: pode ser a primeira notificação ou uma notificação anterior. O DHIS2 terá de reconciliar; na produção a HANNA emitirá um número de doente."
-  - id: no_cardinal_signs
-    severity: info
-    audience: [clinician, supervisor]
-    advice: "Não há sinais cardinais de lepra marcados. Considere esfregaço cutâneo ou outros exames; o supervisor distrital deve ser informado."
-  - id: grade_vs_signs
-    severity: info
-    audience: [clinician, supervisor]
-    advice: "O grau de incapacidade e os sinais clínicos não coincidem. Verifique com o supervisor."
-  - id: late_no_start
-    severity: info
-    audience: [clinician, supervisor]
-    advice: "Passaram mais de 2 meses desde o diagnóstico e não há tratamento registado. Confirme se está à espera dos medicamentos."
-  - id: late_insufficient
-    severity: info
-    audience: [clinician, supervisor]
-    advice: "Não impede a notificação. Passaram mais de 9 meses (PB) ou 18 meses (MB) e o número de doses é inferior a 6/12: confirme se o tratamento está incompleto ou não foi marcado."
-  - id: treatment_start_before_diagnosis
-    severity: blocking
-    audience: [clinician]
-    advice: "A data de início do tratamento não pode ser anterior à data do diagnóstico. Corrija a data na ficha."
-  - id: diagnosis_before_birth
-    severity: blocking
-    audience: [clinician]
-    advice: "A data do diagnóstico não pode ser anterior ao ano de nascimento. Verifique as datas na ficha."
-
+- id: nil_missing
+  severity: info
+  audience:
+  - system
+  advice: 'Sem NIL: pode ser a primeira notificação ou uma notificação anterior. O
+    DHIS2 terá de reconciliar; na produção a HANNA emitirá um número de doente.'
+- id: no_cardinal_signs
+  severity: info
+  audience:
+  - clinician
+  - supervisor
+  advice: Não há sinais cardinais de lepra marcados. Considere esfregaço cutâneo ou
+    outros exames; o supervisor distrital deve ser informado.
+- id: grade_vs_signs
+  severity: info
+  audience:
+  - clinician
+  - supervisor
+  advice: O grau de incapacidade e os sinais clínicos não coincidem. Verifique com
+    o supervisor.
+- id: late_no_start
+  severity: info
+  audience:
+  - clinician
+  - supervisor
+  advice: Passaram mais de 2 meses desde o diagnóstico e não há tratamento registado.
+    Confirme se está à espera dos medicamentos.
+- id: late_insufficient
+  severity: info
+  audience:
+  - clinician
+  - supervisor
+  advice: 'Não impede a notificação. Passaram mais de 9 meses (PB) ou 18 meses (MB)
+    e o número de doses é inferior a 6/12: confirme se o tratamento está incompleto
+    ou não foi marcado.'
+- id: treatment_start_before_diagnosis
+  severity: blocking
+  audience:
+  - clinician
+  advice: A data de início do tratamento não pode ser anterior à data do diagnóstico.
+    Corrija a data na ficha.
+- id: diagnosis_before_birth
+  severity: blocking
+  audience:
+  - clinician
+  advice: A data do diagnóstico não pode ser anterior ao ano de nascimento. Verifique
+    as datas na ficha.
 location:
-  unmatched: map_zoom        # no warning: open the map at a higher level
+  unmatched: map_zoom
   required_blank: blocking

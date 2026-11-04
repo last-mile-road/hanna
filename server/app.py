@@ -369,7 +369,7 @@ def post_location(run_id: str, body: LocationReview):
         ).scalar()
         if not location:
             raise HTTPException(404, "sem localização para este cartão")
-        from core.location import _km
+        from core.location import _km, reverse_admin
 
         location = dict(location)
         previous = location.get("review") or {}
@@ -382,6 +382,10 @@ def post_location(run_id: str, body: LocationReview):
         lon = body.lon if body.lon is not None else base_lon
         moved = (_km(float(base_lat), float(base_lon), float(lat), float(lon))
                  if base_lat is not None and base_lon is not None and lat is not None else 0.0)
+        # the human pin is the truth; the official ADM chain (COD-AB names and
+        # p-codes) is derived from it for the programme hand-off
+        adm = (reverse_admin(float(lat), float(lon))
+               if lat is not None and lon is not None else {})
         location["review"] = {
             "mode": body.mode,
             "lat": lat,
@@ -391,6 +395,7 @@ def post_location(run_id: str, body: LocationReview):
             "source": "revisor",
             "changed": body.mode == "chosen",
             "moved_m": round(moved, 1),
+            "adm": adm,
         }
         conn.execute(update(runs_t).where(runs_t.c.id == run_id).values(location=location))
         conn.commit()

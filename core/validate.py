@@ -141,6 +141,7 @@ def validate_run(
         block = block_by_id.get(block_id)
         if not block:
             continue
+        severity = cfg.get("severity", "blocking")
         mode = cfg.get("mode")
         if mode == "all_filled":
             missing = [
@@ -151,22 +152,26 @@ def validate_run(
                 if cfg.get("highlight") == "pair":
                     for pair in missing:
                         _issue(
-                            issues, "missing", "blocking", cfg.get("advice"),
+                            issues, "missing", severity, cfg.get("advice"),
                             pair=pair, block=block,
                         )
                 else:
                     _issue(
-                        issues, "missing", "blocking", cfg.get("advice"),
+                        issues, "missing", severity, cfg.get("advice"),
                         block=block,
                     )
         elif mode == "section_filled":
             field = cfg.get("field", "is_filled")
             if not _truthy(value(field)):
                 _issue(
-                    issues, "missing", "blocking", cfg.get("advice"), block=block
+                    issues, "missing", severity, cfg.get("advice"), block=block
                 )
 
     # 3. Choice values: allowed options and multiple selections.
+    # A value the model could not resolve (an empty cell read as the printed
+    # legend, "True / False") is a review item, not a reason to hold the
+    # notification — unless the field is contractually required.
+    required_ids = set((contract.get("required") or {}).keys())
     for pair in pairs:
         if pair.derived or _is_empty(value(pair.id)):
             continue
@@ -185,6 +190,9 @@ def validate_run(
         current = _key(value(pair.id))
         if current in allowed_keys:
             continue
+        severity = "blocking" if (
+            pair.id in required_ids or pair.concept in required_ids
+        ) else "info"
         tokens = [
             t for t in re.split(r"\s*(?:,|/|\band\b|\be\b)\s*", current)
             if t
@@ -192,13 +200,13 @@ def validate_run(
         matched = [t for t in tokens if t in allowed_keys]
         if len(matched) > 1:
             _issue(
-                issues, "multiple_options", "blocking",
+                issues, "multiple_options", severity,
                 f"Marque apenas uma opção: {' ou '.join(str(a) for a in allowed)}.",
                 pair=pair, block=block_by_id.get(pair.block_id),
             )
         else:
             _issue(
-                issues, "invalid_option", "blocking",
+                issues, "invalid_option", severity,
                 f"Valor fora das opções permitidas: {' / '.join(str(a) for a in allowed)}.",
                 pair=pair, block=block_by_id.get(pair.block_id),
             )

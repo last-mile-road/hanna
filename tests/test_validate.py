@@ -88,11 +88,13 @@ def test_multiple_gender_marks_block():
 
 
 def test_hand_feet_section_needs_a_mark():
+    # A visual section with no readable mark is a review item, not a hold:
+    # the reviewer sees it, the notification is not blocked on it.
     values = base_values()
     values["is_filled"] = "False"
     report = run(values)
     issue = next(i for i in report["issues"] if i["block_id"] == "hand_feet_assessment")
-    assert issue["severity"] == "blocking"
+    assert issue["severity"] == "info"
 
 
 def test_disability_grade_outside_scale_blocks():

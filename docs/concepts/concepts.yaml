@@ -364,6 +364,7 @@ concepts:
   aliases:
   - nerve_enlargement_cubital_right
   - nervo cubital direito grosso
+  cardinality: many
 - id: nerve_enlargement_cubital_left
   who_name: Ulnar nerve enlargement, left
   value_type: tick_box
@@ -376,6 +377,7 @@ concepts:
   aliases:
   - nerve_enlargement_cubital_left
   - nervo cubital esquerdo grosso
+  cardinality: many
 - id: nerve_enlargement_radial_cutaneous_right
   who_name: Radial cutaneous nerve enlargement, right
   value_type: tick_box
@@ -388,6 +390,7 @@ concepts:
   aliases:
   - nerve_enlargement_radial_cutaneous_right
   - nervo radial cutâneo direito grosso
+  cardinality: many
 - id: nerve_enlargement_radial_cutaneous_left
   who_name: Radial cutaneous nerve enlargement, left
   value_type: tick_box
@@ -400,6 +403,7 @@ concepts:
   aliases:
   - nerve_enlargement_radial_cutaneous_left
   - nervo radial cutâneo esquerdo grosso
+  cardinality: many
 - id: nerve_enlargement_popliteal_external_right
   who_name: Common peroneal nerve enlargement, right
   value_type: tick_box
@@ -412,6 +416,7 @@ concepts:
   aliases:
   - nerve_enlargement_popliteal_external_right
   - nervo poplíteo externo direito grosso
+  cardinality: many
 - id: nerve_enlargement_popliteal_external_left
   who_name: Common peroneal nerve enlargement, left
   value_type: tick_box
@@ -424,6 +429,7 @@ concepts:
   aliases:
   - nerve_enlargement_popliteal_external_left
   - nervo poplíteo externo esquerdo grosso
+  cardinality: many
 - id: nerve_pain_cubital_right
   who_name: Ulnar nerve pain, right
   value_type: tick_box
@@ -436,6 +442,7 @@ concepts:
   aliases:
   - nerve_pain_cubital_right
   - nervo cubital direito dor
+  cardinality: many
 - id: nerve_pain_cubital_left
   who_name: Ulnar nerve pain, left
   value_type: tick_box
@@ -448,6 +455,7 @@ concepts:
   aliases:
   - nerve_pain_cubital_left
   - nervo cubital esquerdo dor
+  cardinality: many
 - id: nerve_pain_radial_cutaneous_right
   who_name: Radial cutaneous nerve pain, right
   value_type: tick_box
@@ -460,6 +468,7 @@ concepts:
   aliases:
   - nerve_pain_radial_cutaneous_right
   - nervo radial cutâneo direito dor
+  cardinality: many
 - id: nerve_pain_radial_cutaneous_left
   who_name: Radial cutaneous nerve pain, left
   value_type: tick_box
@@ -472,6 +481,7 @@ concepts:
   aliases:
   - nerve_pain_radial_cutaneous_left
   - nervo radial cutâneo esquerdo dor
+  cardinality: many
 - id: nerve_pain_popliteal_external_right
   who_name: Common peroneal nerve pain, right
   value_type: tick_box
@@ -484,6 +494,7 @@ concepts:
   aliases:
   - nerve_pain_popliteal_external_right
   - nervo poplíteo externo direito dor
+  cardinality: many
 - id: nerve_pain_popliteal_external_left
   who_name: Common peroneal nerve pain, left
   value_type: tick_box
@@ -496,6 +507,7 @@ concepts:
   aliases:
   - nerve_pain_popliteal_external_left
   - nervo poplíteo externo esquerdo dor
+  cardinality: many
 - id: disability_grade_eye_right
   who_name: WHO disability grade, right eye
   value_type: integer
@@ -513,6 +525,7 @@ concepts:
   - ehf olho direito
   grade_meanings: 0 normal, 1 insensitive or weakness, 2 visible deformity or paralysis
   note: Record the clinician's own entry. Do not compute it from the eye tests.
+  cardinality: many
 - id: disability_grade_eye_left
   who_name: WHO disability grade, left eye
   value_type: integer
@@ -529,6 +542,7 @@ concepts:
   - graus de deformidade olho esquerdo
   - ehf olho esquerdo
   grade_meanings: 0 normal, 1 insensitive or weakness, 2 visible deformity or paralysis
+  cardinality: many
 - id: disability_grade_hand_right
   who_name: WHO disability grade, right hand
   value_type: integer
@@ -546,6 +560,7 @@ concepts:
   - ehf mão direita
   grade_meanings: 0 normal, 1 insensitive or weakness, 2 visible deformity, clawing,
     ulcer or amputation
+  cardinality: many
 - id: disability_grade_hand_left
   who_name: WHO disability grade, left hand
   value_type: integer
@@ -563,6 +578,7 @@ concepts:
   - ehf mão esquerda
   grade_meanings: 0 normal, 1 insensitive or weakness, 2 visible deformity, clawing,
     ulcer or amputation
+  cardinality: many
 - id: disability_grade_foot_right
   who_name: WHO disability grade, right foot
   value_type: integer
@@ -580,6 +596,7 @@ concepts:
   - ehf pé direito
   grade_meanings: 0 normal, 1 insensitive or weakness, 2 visible deformity, ulcer
     or amputation
+  cardinality: many
 - id: disability_grade_foot_left
   who_name: WHO disability grade, left foot
   value_type: integer
@@ -597,6 +614,7 @@ concepts:
   - ehf pé esquerdo
   grade_meanings: 0 normal, 1 insensitive or weakness, 2 visible deformity, ulcer
     or amputation
+  cardinality: many
 - id: eye_blinking_right
   who_name: Blinks spontaneously, right eye
   value_type: choice_single
@@ -611,6 +629,7 @@ concepts:
   - pestanejo olho direito
   note: Observed without prompting the patient. A missing blink reflex suggests loss
     of sensation in the eye. Do not conflate with eye closure (eye_lagophthalmos_right).
+  cardinality: many
 - id: eye_blinking_left
   who_name: Blinks spontaneously, left eye
   value_type: choice_single
@@ -625,6 +644,7 @@ concepts:
   - pestanejo olho esquerdo
   note: Observed without prompting. Absence suggests loss of sensation. Eye closure
     is a separate measurement.
+  cardinality: many
 - id: eye_lagophthalmos_right
   who_name: Lagophthalmos, right (eyelid gap)
   value_type: integer
@@ -637,6 +657,7 @@ concepts:
   note: After asking the patient to close the eyes, measure the gap between the eyelids
     in mm. 0 means full closure. A gap indicates muscle paralysis (orbicularis oculi).
     A negative sign is a misread; any number except 0 is a positive measurement.
+  cardinality: many
 - id: eye_lagophthalmos_left
   who_name: Lagophthalmos, left (eyelid gap)
   value_type: integer
@@ -649,6 +670,7 @@ concepts:
   note: After asking the patient to close the eyes, measure the gap between the eyelids
     in mm. 0 means full closure. A gap indicates muscle paralysis. A negative sign
     is a misread; any number except 0 is a positive measurement.
+  cardinality: many
 - id: hand_ulnar_right
   who_name: Hypothenar muscle strength (ulnar), right hand
   value_type: choice_single
@@ -705,6 +727,7 @@ concepts:
   - dorsi-flexão pé direito
   note: 'Card marks: N = Normal, F = Fraco (weak), A = Ausente (paralysed). Stored
     in English.'
+  cardinality: many
 - id: foot_dorsiflex_left
   who_name: Foot dorsiflexion strength, left
   value_type: choice_single
@@ -724,6 +747,7 @@ concepts:
   - dorsi-flexão pé esquerdo
   note: 'Card marks: N = Normal, F = Fraco (weak), A = Ausente (paralysed). Stored
     in English.'
+  cardinality: many
 - id: insensitive_points_right_hand
   who_name: Insensitive points, right hand
   value_type: integer
@@ -736,6 +760,7 @@ concepts:
   - teste sensitivo mão direita
   note: Count of test points found insensitive, 0-8 on the standard examination. Raise
     sanity_max if a country examines more.
+  cardinality: many
 - id: insensitive_points_left_hand
   who_name: Insensitive points, left hand
   value_type: integer
@@ -747,6 +772,7 @@ concepts:
   - insensitive_points_left_hand
   - teste sensitivo mão esquerda
   note: Count of insensitive test points, 0-8 standard.
+  cardinality: many
 - id: insensitive_points_right_foot
   who_name: Insensitive points, right foot
   value_type: integer
@@ -758,6 +784,7 @@ concepts:
   - insensitive_points_right_foot
   - teste sensitivo pé direito
   note: Count of insensitive test points, 0-8 standard.
+  cardinality: many
 - id: insensitive_points_left_foot
   who_name: Insensitive points, left foot
   value_type: integer
@@ -769,6 +796,7 @@ concepts:
   - insensitive_points_left_foot
   - teste sensitivo pé esquerdo
   note: Count of insensitive test points, 0-8 standard.
+  cardinality: many
 - id: hand_foot_exam_notes
   who_name: Hand and foot examination notes
   value_type: text
@@ -892,6 +920,7 @@ concepts:
   note: 'Date of the follow-up examination written in each review block. Keys a visit:
     without it, two reviews of the same card cannot be told apart. Not on any current
     test card image, which is front only.'
+  cardinality: many
 - id: complication_ulcer
   aliases:
   - complication_ulcer
@@ -903,6 +932,7 @@ concepts:
   sensitivity: clinical
   tier: core
   note: An open sore marked on the diagram. Report Yes even when the size is not written.
+  cardinality: many
 - id: complication_amputation
   aliases:
   - complication_amputation
@@ -913,6 +943,7 @@ concepts:
   - false
   sensitivity: clinical
   tier: core
+  cardinality: many
 - id: complication_contracture
   aliases:
   - complication_contracture
@@ -923,6 +954,7 @@ concepts:
   - false
   sensitivity: clinical
   tier: core
+  cardinality: many
 - id: complication_other
   aliases:
   - complication_other
@@ -935,6 +967,7 @@ concepts:
   tier: local
   note: Gangrene, a missing nail, a wound dressing, anything marked but none of the
     above.
+  cardinality: many
 - id: finger_abduction_right
   who_name: Little finger abduction, right
   value_type: choice_single
@@ -944,6 +977,7 @@ concepts:
     convention).
   aliases:
   - abdução dedos mínimos direito
+  cardinality: many
 - id: finger_abduction_left
   who_name: Little finger abduction, left
   value_type: choice_single
@@ -952,6 +986,7 @@ concepts:
   note: Voluntary muscle test. Grade follows the card's legend.
   aliases:
   - abdução dedos mínimos esquerdo
+  cardinality: many
 - id: recorded_by
   who_name: Recorded by
   value_type: text
@@ -962,6 +997,7 @@ concepts:
   - filled_by
   - recorded_by
   - preenchido por
+  cardinality: many
 - id: lepra_reaction_present
   who_name: Lepra reaction present
   value_type: choice_single
@@ -1001,6 +1037,7 @@ concepts:
   aliases:
   - dor_espontanea_dos_nervos
   - reacções dor espontânea dos nervos
+  cardinality: many
 - id: recent_sensitivity_change
   who_name: Recent change in skin sensation
   value_type: choice_single

@@ -531,6 +531,42 @@ def resolve(district: str = "", locality: str = "", place: str = "",
     return resolution
 
 
+def reverse_admin(lat: float, lon: float) -> dict:
+    """The official COD-AB chain that contains a point: names + p-codes.
+
+    Used after a reviewer confirms or drags the pin, so a corrected location
+    carries the official ADM values the programme reports on — the pin is the
+    human truth, the ADM chain is derived from it. Never raises.
+    """
+    global _OSM_ENGINE
+    try:
+        from sqlalchemy import create_engine, text as sql_text
+        from sqlalchemy.pool import NullPool
+
+        with _OSM_LOCK:
+            if _OSM_ENGINE is None:
+                dsn = settings.OSM_DATABASE_URL
+                if not dsn:
+                    return {}
+                _OSM_ENGINE = create_engine(dsn, poolclass=NullPool)
+            engine = _OSM_ENGINE
+        with engine.connect() as conn:
+            rows = conn.execute(sql_text("""
+                SELECT level, name, pcode FROM admin_boundaries
+                WHERE ST_Contains(geom, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326))
+                ORDER BY level
+            """), {"lat": lat, "lon": lon}).fetchall()
+    except Exception:
+        return {}
+    names = {1: "province", 2: "district", 3: "administrative_post", 4: "locality"}
+    chain: dict = {}
+    for level, name, pcode in rows:
+        key = names.get(int(level))
+        if key:
+            chain[key] = {"name": name, "pcode": pcode}
+    return chain
+
+
 def summary(resolution: Resolution) -> str:
     """One line for a log or a review header."""
     if resolution.decision == "auto" and resolution.chosen:
