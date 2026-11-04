@@ -59,6 +59,14 @@ SERVICE_INTERVAL = 1.0          # Nominatim's public policy: one request per sec
 _SERVICE_LOCK = threading.Lock()
 _last_service_call = 0.0
 
+# The local OSM gazetteer (osm2pgsql import of the country extract). This is the
+# tier-2 workhorse: no network, no rate limit, and it carries the village layer
+# (place=village/hamlet/locality) that admin boundaries do not.
+OSM_PLACE_TYPES = ("village", "hamlet", "town", "locality", "neighbourhood",
+                   "isolated_dwelling", "suburb", "quarter", "city")
+_OSM_ENGINE = None
+_OSM_LOCK = threading.Lock()
+
 # How precise the answer is at each level, used by the review map to size its ring.
 PRECISION_METRES = {
     "facility": 250,
@@ -382,10 +390,110 @@ def _gazetteer_resolve(district: str = "", locality: str = "", place: str = "",
     return resolution
 
 
+def _local_osm_search(names: dict[str, str], district: str, limit: int = 6,
+                      written_only: tuple[str, ...] = ("locality", "place")) -> list[Candidate]:
+    """Tier 2, local: find the written place names in the country's OSM extract.
+
+    The gazetteer has admin units and facilities; it does not have villages.
+    The OSM extract does — place=village/hamlet/locality points and polygons —
+    and the card's village field is exactly the layer that keeps escalateing.
+    Bounded to SERVICE_MAX_KM around the district centroid, scored with the
+    same fuzzy matching as everything else, returned as review-only candidates.
+    Never raises: a missing import or a down database leaves resolution as it was.
+
+    `written_only` excludes the district spelling by default: the district name
+    trivially matches the district's own town at 100, which locates the anchor,
+    not the patient. If neither a locality nor a place was written, the district
+    is used because it is all there is.
+    """
+    global _OSM_ENGINE
+    written = {label: value for label, value in names.items()
+               if label in written_only and (value or "").strip()}
+    if not written:
+        written = {label: value for label, value in names.items() if (value or "").strip()}
+    if not written or not district:
+        return []
+    centre = _centre(district)
+    if not centre:
+        return []
+    try:
+        from sqlalchemy import create_engine, text as sql_text
+        from sqlalchemy.pool import NullPool
+
+        with _OSM_LOCK:
+            if _OSM_ENGINE is None:
+                dsn = settings.OSM_DATABASE_URL
+                if not dsn:
+                    return []
+                _OSM_ENGINE = create_engine(dsn, poolclass=NullPool)
+            engine = _OSM_ENGINE
+        lat, lon = centre
+        dlat = SERVICE_MAX_KM / 111.0
+        dlon = SERVICE_MAX_KM / max(1e-6, 111.0 * math.cos(math.radians(lat)))
+        x1, y1, x2, y2 = lon - dlon, lat - dlat, lon + dlon, lat + dlat
+        sql = sql_text("""
+            SELECT name, place, lat, lon FROM (
+              SELECT name, place,
+                     ST_Y(ST_Transform(way, 4326)) AS lat,
+                     ST_X(ST_Transform(way, 4326)) AS lon
+              FROM planet_osm_point
+              WHERE place = ANY(:places) AND name IS NOT NULL
+                AND way && ST_Transform(ST_MakeEnvelope(:x1, :y1, :x2, :y2, 4326), 3857)
+              UNION ALL
+              SELECT name, place,
+                     ST_Y(ST_Centroid(ST_Transform(way, 4326))) AS lat,
+                     ST_X(ST_Centroid(ST_Transform(way, 4326))) AS lon
+              FROM planet_osm_polygon
+              WHERE place = ANY(:places) AND name IS NOT NULL
+                AND way && ST_Transform(ST_MakeEnvelope(:x1, :y1, :x2, :y2, 4326), 3857)
+            ) places
+            LIMIT 800
+        """)
+        with engine.connect() as conn:
+            rows = conn.execute(sql, {
+                "places": list(OSM_PLACE_TYPES),
+                "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+            }).fetchall()
+    except Exception:
+        return []
+
+    hits: list[Candidate] = []
+    for name, place, row_lat, row_lon in rows:
+        row_lat, row_lon = float(row_lat), float(row_lon)
+        distance = _km(lat, lon, row_lat, row_lon)
+        if distance > SERVICE_MAX_KM:
+            continue
+        best_score, best_written = 0.0, None
+        for label, value in written.items():
+            score = fuzz.ratio(combos.key(value), combos.key(str(name)))
+            if score > best_score:
+                best_score, best_written = score, label
+        if best_score < 70:
+            continue
+        hits.append(Candidate(
+            score=round(best_score, 1),
+            level="village",
+            name=str(name),
+            lat=row_lat,
+            lon=row_lon,
+            chain={"display_name": f"{name} ({place})", "type": place,
+                   "district": district},
+            matches=[{"written": best_written, "matched": "village",
+                      "score": round(best_score, 1)}],
+            source="local_osm",
+            distance_km=round(distance, 1),
+        ))
+    # score first, then the village layers the card actually means
+    order = {"village": 5, "hamlet": 4, "locality": 3, "isolated_dwelling": 2,
+             "neighbourhood": 1, "suburb": 1, "quarter": 1, "town": 0, "city": 0}
+    hits.sort(key=lambda c: (c.score, order.get(str(c.chain.get("type")), 0)), reverse=True)
+    return hits[:limit]
+
+
 def resolve(district: str = "", locality: str = "", place: str = "",
             province: str | None = None, top: int = 5,
             service_url: str | None = None) -> Resolution:
-    """The cascade: gazetteer first, then a bounded service query, and no auto from a service.
+    """The cascade: gazetteer first, then the place service, and no auto from a service.
 
     A service hit is evidence that a place with that name exists near the district, not
     that it is the place written on the card, so the decision it can reach is `review`.
@@ -394,20 +502,30 @@ def resolve(district: str = "", locality: str = "", place: str = "",
     if resolution.decision != "escalate":
         return resolution
 
-    hits = service_search(
-        {"district": district, "locality": locality, "place": place},
-        district,
-        province,
-        url=service_url,
-    )
+    names = {"district": district, "locality": locality, "place": place}
+    hits = _local_osm_search(names, district)
+    source_label = "local OSM"
+    if not hits:
+        hits = service_search(names, district, province, url=service_url)
+        source_label = "service"
     if not hits:
         return resolution
 
-    resolution.candidates.extend(hits)
+    resolution.candidates = _order(resolution.candidates + hits)
     resolution.service_used = True
     resolution.decision = "review"
+    # Move the map's pin onto a service candidate only when it strongly matches
+    # what was written for the locality or the village (>= 85). A weak hit is
+    # listed behind the gazetteer answer, never placed.
+    best = hits[0]
+    if best.score >= AUTO_SCORE:
+        resolution.level = best.level
+        resolution.lat = best.lat
+        resolution.lon = best.lon
+        resolution.precision_m = PRECISION_METRES.get(best.level, 500)
+        resolution.chosen = best
     resolution.reason = (
-        f"gazetteer: {resolution.reason}; {len(hits)} service candidate(s) "
+        f"gazetteer: {resolution.reason}; {len(hits)} {source_label} candidate(s) "
         f"inside {resolution.district_anchor or district or 'the area'} to confirm on the map"
     )
     return resolution

@@ -44,3 +44,4 @@ node_modules/
 blobs/
 .mineru-service.lock
 output/tiles/
+data/osm/*.pbf

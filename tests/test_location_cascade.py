@@ -32,9 +32,16 @@ def test_locality_chain_is_accepted_and_names_the_whole_chain():
 
 def test_a_province_written_in_the_locality_field_does_not_break_the_chain():
     result = resolve(district="Mocuba", locality="Zambezia", place="Muinamba")
-    assert result.decision == "escalate"
+    # the chain itself stays below the floor: the province is a constraint, not a locality
     assert result.score < 70
-    assert any(match["matched"] == "province" for match in result.candidates[0].matches)
+    assert any(
+        match["matched"] == "province"
+        for candidate in result.candidates
+        if candidate.source == "gazetteer"
+        for match in candidate.matches
+    )
+    # service candidates (local OSM) may lift the decision to review — that is
+    # the cascade doing its job; the gazetteer still refuses to place it
 
 
 def test_a_tie_is_review_even_when_the_score_is_high():

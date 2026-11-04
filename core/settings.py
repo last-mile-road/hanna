@@ -62,6 +62,12 @@ MINERU_KEY = os.environ.get("MINERU_KEY", "")
 # name, so it is opt-in per deployment. Local Nominatim: http://127.0.0.1:8080
 NOMINATIM_URL = os.environ.get("NOMINATIM_URL", "")
 
+# The local OSM import (osm2pgsql of the country extract) — tier 2's workhorse.
+# Separate database from the ledger; see tools/build_osm_extract.sh.
+OSM_DATABASE_URL = os.environ.get(
+    "OSM_DATABASE_URL", "postgresql+pg8000://sam@127.0.0.1:55432/hanna_osm"
+)
+
 # Which routing file a run uses. The box deployment points this at the box
 # routing; OpenRouter stays the default so a plain checkout behaves as before.
 ROUTING_FILE = os.environ.get("HANNA_ROUTING_FILE", "routing.yaml")
