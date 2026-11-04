@@ -85,6 +85,24 @@ Villages are also the tier-3 answer: several card places (`Nanili`, `Eiope`,
 `Muinamba`) are in no public data at all. The map picker is the correct
 fallback for them, not a failure.
 
+## 4b. Tier 2 is local: the OSM place gazetteer
+
+The admin gazetteer has no villages; the OSM extract does. `tools/build_osm_extract.sh
+<country>` downloads the Geofabrik extract and imports it with osm2pgsql into
+a separate database (`hanna_osm`) — place=village/hamlet/locality points and
+polygons, the layer the card's village field needs. No Nominatim install and
+no network at query time.
+
+On an escalate, `core/location._local_osm_search` looks for the written
+locality and village names within 80 km of the district centroid, scores them
+with the same fuzzy matching, and returns review-only candidates. The review
+pin moves onto a candidate **only at score ≥ 85** — the district spelling is
+excluded from the search because it trivially matches the district's own town
+(Montepuez city scores 100 for the word "Montepuez", which locates the anchor,
+not the patient). Verified on the card set: form22's Eiope pins at the village
+(100.0 vs the gazetteer's 59.1); Muiquite and Muinamba keep the gazetteer pin
+and list their weak candidates (83.3 / 75.0).
+
 ## 5. The alias table — a reviewer's click teaches the resolver
 
 **In plain language:** when a reviewer confirms a place or picks one from the
