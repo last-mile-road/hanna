@@ -67,9 +67,12 @@ def test_an_alias_hit_resolves_where_the_gazetteer_escalated():
 def test_record_updates_an_existing_spelling_without_duplicating():
     written = {"village": TEST_KEY + "update"}
     with connect() as conn:
-        record(conn, "mozambique", written, {"name": "First", "level": "facility"})
+        record(conn, "mozambique", written, {"name": "First", "level": "facility"}, "run-a")
         conn.commit()
-        record(conn, "mozambique", written, {"name": "Second", "level": "locality"})
+        record(conn, "mozambique", written, {"name": "Second", "level": "locality"}, "run-b")
+        conn.commit()
+        # a repeated post from the same review is not a second attestation
+        record(conn, "mozambique", written, {"name": "Second", "level": "locality"}, "run-b")
         conn.commit()
     hits = lookup("mozambique", written)
     assert hits["village"]["canonical"] == "Second"

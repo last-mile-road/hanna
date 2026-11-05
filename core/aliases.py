@@ -112,7 +112,11 @@ def record(conn: Connection, country: str, written: dict[str, str],
                 "  pcode = EXCLUDED.pcode, district = EXCLUDED.district, "
                 "  province = EXCLUDED.province, lat = EXCLUDED.lat, lon = EXCLUDED.lon, "
                 "  run_id = EXCLUDED.run_id, updated_at = now(), "
-                "  times_used = location_aliases.times_used + 1"
+                # count attestations, not HTTP posts: a reviewer confirming the
+                # same card repeatedly (pin drags) must not inflate the usage
+                "  times_used = CASE WHEN location_aliases.run_id IS DISTINCT FROM EXCLUDED.run_id "
+                "                     THEN location_aliases.times_used + 1 "
+                "                     ELSE location_aliases.times_used END"
             ),
             {
                 "country": country,
