@@ -225,7 +225,7 @@ def _degraded(name: str) -> str:
 
 @app.function(
     image=IMAGE,
-    gpu=["L40S", "RTX-PRO-6000", "A100-80GB"],
+    gpu="L40S",
     cpu=8,
     memory=32768,
     volumes={"/models": models},
