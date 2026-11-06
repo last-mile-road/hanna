@@ -449,6 +449,22 @@ def run_card(
                         item["completion"] = future.result()
                     except Exception as exc:
                         item["error"] = str(exc)
+                        # A table reader that failed or returned the wrong
+                        # vocabulary must not cost the card: fall back to the
+                        # VLM for that block and record why.
+                        if item.get("reader") and fallback_profile is not None:
+                            try:
+                                item["completion"] = _complete_with_fallback(
+                                    client,
+                                    item["prompt"],
+                                    item["image_paths"],
+                                    fallback_profile,
+                                    fallback_profile,
+                                )
+                                item["reader_fallback"] = str(exc)[:240]
+                                item.pop("error", None)
+                            except Exception as retry_exc:
+                                item["error"] = f"reader: {exc}; fallback: {retry_exc}"
                     # Persist as each block lands: SSE reads block_runs, so a late
                     # write would turn progress into one batch at the end.
                     record(item)

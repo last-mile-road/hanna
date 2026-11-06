@@ -306,6 +306,37 @@ READERS = {"def_exam": _def_exam, "nerve_assessment": _nerve,
 
 # --- transport ----------------------------------------------------------------------
 
+def _box_wait(base: str, key: str, timeout: float = 420.0) -> None:
+    """Wait for the box to warm when it answers 503 (scale-to-zero cold start).
+
+    The box boots three engines and takes ~5–6 minutes from zero. A queued run
+    can afford to wait once; failing it immediately wastes the whole card.
+    """
+    import urllib.parse
+
+    parsed = urllib.parse.urlparse(base)
+    root = f"{parsed.scheme}://{parsed.netloc}"
+    headers = {"X-HANNA-Key": key} if key else {}
+    ready_url = f"{root}/ready"
+    warm_url = f"{root}/warm"
+    started = time.monotonic()
+    try:
+        urllib.request.urlopen(urllib.request.Request(warm_url, headers=headers), timeout=60)
+    except (urllib.error.URLError, OSError, ValueError):
+        pass  # /warm may itself report not-ready; /ready is the authority
+    while time.monotonic() - started < timeout:
+        try:
+            with urllib.request.urlopen(
+                urllib.request.Request(ready_url, headers=headers), timeout=60
+            ) as response:
+                payload = json.load(response)
+            if payload.get("ready"):
+                return
+        except (urllib.error.URLError, OSError, ValueError, json.JSONDecodeError):
+            pass
+        time.sleep(15)
+
+
 def _post_file(url: str, path: Path, key: str) -> dict:
     boundary = uuid.uuid4().hex
     head = (f"--{boundary}\r\n"
@@ -317,8 +348,20 @@ def _post_file(url: str, path: Path, key: str) -> dict:
         headers={"Content-Type": f"multipart/form-data; boundary={boundary}",
                  **({"X-HANNA-Key": key} if key else {})},
     )
-    with urllib.request.urlopen(request, timeout=900) as response:
-        return json.load(response)
+    try:
+        with urllib.request.urlopen(request, timeout=900) as response:
+            return json.load(response)
+    except urllib.error.HTTPError as error:
+        if error.code != 503:
+            raise
+        _box_wait(url, key)
+        request = urllib.request.Request(
+            url, data=body, method="POST",
+            headers={"Content-Type": f"multipart/form-data; boundary={boundary}",
+                     **({"X-HANNA-Key": key} if key else {})},
+        )
+        with urllib.request.urlopen(request, timeout=900) as response:
+            return json.load(response)
 
 
 def _post_local(base: str, path: Path, tier: str) -> dict:
@@ -368,6 +411,18 @@ def read_block(image_path: Path, block_id: str) -> Reading:
             f"{block_id}: MinerU returned no table "
             f"({len(markdown)} chars; first 120: {markdown[:120]!r})"
         )
+    # A table read that returns the wrong vocabulary is worse than a failed
+    # read: it stores a confident nonsense value. Grades are 0/1/2 and nerve
+    # marks are +/-, nothing else. Anything else means the parser took a header
+    # row (D/E) or shifted a column — refuse it so the block falls back.
+    if block_id == "def_exam":
+        bad = {k: v for k, v in values.items() if str(v).strip() not in {"0", "1", "2"}}
+        if bad:
+            raise RuntimeError(f"def_exam: reader returned non-grades {bad}")
+    if block_id == "nerve_assessment":
+        bad = {k: v for k, v in values.items() if str(v).strip() not in {"+", "-"}}
+        if bad:
+            raise RuntimeError(f"nerve_assessment: reader returned non-marks {bad}")
     return Reading(
         text=json.dumps(values, ensure_ascii=False),
         latency_ms=latency_ms,
