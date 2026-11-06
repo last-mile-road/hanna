@@ -117,6 +117,7 @@ PORTS = {"llm": 8000, "paddle": 8001, "mineru": 8002, "mineru_vlm": 8003}
 # 9B's 21/23), while it is the weakest reader on the nerve grid (48/72 against
 # MinerU's 84/84). Set HANNA_BOX_PADDLE=1 on a 96 GB card to bring it back.
 PADDLE_ENABLED = os.environ.get("HANNA_BOX_PADDLE", "0") == "1"
+SCALEDOWN_S = int(os.environ.get("HANNA_BOX_SCALEDOWN", "300"))
 ACTIVE = tuple(name for name in PORTS if name != "paddle" or PADDLE_ENABLED)
 LOGS = {name: deque(maxlen=200) for name in PORTS}
 PROCS: dict[str, subprocess.Popen] = {}
@@ -232,7 +233,7 @@ def _degraded(name: str) -> str:
     secrets=[shared_key, vllm_key],
     max_containers=1,
     timeout=2 * 3600,
-    scaledown_window=300,
+    scaledown_window=SCALEDOWN_S,
 )
 @modal.concurrent(max_inputs=8)
 @modal.asgi_app()
@@ -251,6 +252,35 @@ def box():
     # 9B was not enough for Paddle's cache blocks). Starting each one against the
     # memory that is actually free makes the fractions meaningful.
     def boot():
+        keyless = {k: v for k, v in os.environ.items() if k != "VLLM_API_KEY"}
+        _start("mineru_vlm", [
+            "vllm", "serve", MINERU_VLM_PATH,
+            "--host", "127.0.0.1", "--port", str(PORTS["mineru_vlm"]),
+            "--served-model-name", MINERU_VLM_SERVED,
+            "--max-model-len", "8192",
+            # 0.35 of the 19 GiB left asked for 15.6 GiB and handed 11.1 GiB of it to
+            # an idle KV cache for a 1.2B model at 8k. 2 GiB is ample and leaves the
+            # card 13 GiB of room for activations.
+            "--kv-cache-memory-bytes", "2147483648",
+            "--gpu-memory-utilization", "0.35",
+            "--mm-processor-cache-gb", "0",
+            "--trust-remote-code",
+        ], env=keyless)
+        _await("mineru_vlm", 300)
+
+        _start("mineru", [
+            "mineru-api",
+            "--host", "127.0.0.1", "--port", str(PORTS["mineru"]),
+            "--tier", MINERU_TIER,
+            "--preload-models",
+            "--vlm-server-url", f"http://127.0.0.1:{PORTS['mineru_vlm']}/v1",
+            "--vlm-model", MINERU_VLM_SERVED,
+            "--concurrency", "1",
+            "--retention-seconds", "0",
+            "--upload-dir", "/tmp/mineru/uploads",
+        ], env=env)
+        _await("mineru", 600)
+
         _start("llm", [
             "vllm", "serve", LLM_MODEL,
             "--host", "127.0.0.1", "--port", str(PORTS["llm"]),
@@ -304,34 +334,6 @@ def box():
         # weights and dies at engine init. So its VLM runs as a fourth server we size
         # ourselves, and mineru-api talks to it over HTTP (--vlm-server-url), which is
         # the path MinerU's hosted service uses.
-        keyless = {k: v for k, v in os.environ.items() if k != "VLLM_API_KEY"}
-        _start("mineru_vlm", [
-            "vllm", "serve", MINERU_VLM_PATH,
-            "--host", "127.0.0.1", "--port", str(PORTS["mineru_vlm"]),
-            "--served-model-name", MINERU_VLM_SERVED,
-            "--max-model-len", "8192",
-            # 0.35 of the 19 GiB left asked for 15.6 GiB and handed 11.1 GiB of it to
-            # an idle KV cache for a 1.2B model at 8k. 2 GiB is ample and leaves the
-            # card 13 GiB of room for activations.
-            "--kv-cache-memory-bytes", "2147483648",
-            "--gpu-memory-utilization", "0.35",
-            "--mm-processor-cache-gb", "0",
-            "--trust-remote-code",
-        ], env=keyless)
-        _await("mineru_vlm", 300)
-
-        _start("mineru", [
-            "mineru-api",
-            "--host", "127.0.0.1", "--port", str(PORTS["mineru"]),
-            "--tier", MINERU_TIER,
-            "--preload-models",
-            "--vlm-server-url", f"http://127.0.0.1:{PORTS['mineru_vlm']}/v1",
-            "--vlm-model", MINERU_VLM_SERVED,
-            "--concurrency", "1",
-            "--retention-seconds", "0",
-            "--upload-dir", "/tmp/mineru/uploads",
-        ], env=env)
-        _await("mineru", 600)
 
     threading.Thread(target=boot, daemon=True).start()
 
