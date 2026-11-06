@@ -927,8 +927,8 @@ concepts:
   who_name: Ulcer on hand or foot
   value_type: choice_single
   options:
-  - true
-  - false
+  - 'Yes'
+  - 'No'
   sensitivity: clinical
   tier: core
   note: An open sore marked on the diagram. Report Yes even when the size is not written.
@@ -939,8 +939,8 @@ concepts:
   who_name: Amputation of a digit or limb
   value_type: choice_single
   options:
-  - true
-  - false
+  - 'Yes'
+  - 'No'
   sensitivity: clinical
   tier: core
   cardinality: many
@@ -950,8 +950,8 @@ concepts:
   who_name: Contracture or claw hand
   value_type: choice_single
   options:
-  - true
-  - false
+  - 'Yes'
+  - 'No'
   sensitivity: clinical
   tier: core
   cardinality: many
@@ -961,8 +961,8 @@ concepts:
   who_name: Other hand or foot complication
   value_type: choice_single
   options:
-  - true
-  - false
+  - 'Yes'
+  - 'No'
   sensitivity: clinical
   tier: local
   note: Gangrene, a missing nail, a wound dressing, anything marked but none of the

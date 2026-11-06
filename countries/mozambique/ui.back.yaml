@@ -1,21 +1,51 @@
-# Review layout — back (follow-up) card.
-# Presentation only. The back card carries no location: the patient is known
-# from the HANNA number, so no map is shown.
+# Review layout — back (follow-up) card. Presentation only.
 show_location: false
-
 hidden: []
-
 dev_only:
-  - recorded_by
-
-# Section titles, mirroring the printed card's blocks.
+- recorded_by
 block_titles:
-  visit_header: "Registo da visita"
-  nerve_table: "Palpação dos nervos periféricos"
-  hand_feet: "Teste sensitivo das mãos e dos pés"
-  eye_exam: "Exame dos olhos"
-  muscle_test: "Testagem dos músculos voluntários"
-  disability: "Graus de deformidade"
-  reactions: "Reacções"
-  prednisolone: "Tratamento com prednisolona"
-  outcome: "Tipo de doente saído"
+  visit_header: Registo da visita
+  nerve_table: Palpação dos nervos periféricos
+  hand_feet: Teste sensitivo das mãos e dos pés
+  eye_exam: Exame dos olhos
+  muscle_test: Testagem dos músculos voluntários
+  disability: Graus de deformidade
+  reactions: Reacções
+  prednisolone: Tratamento com prednisolona
+  outcome: Tipo de doente saído
+tables:
+- id: nerves
+  block: nerve_table
+  title: Palpação dos nervos periféricos
+  columns:
+  - Cubital D
+  - Cubital E
+  - Radial D
+  - Radial E
+  - Poplíteo D
+  - Poplíteo E
+  rows:
+  - label: Grosso
+    cells:
+    - vp_003
+    - vp_009
+    - vp_014
+    - ''
+    - ''
+    - ''
+- id: insensitive_points
+  block: hand_feet
+  title: Pontos insensíveis
+  columns:
+  - Direito
+  - Esquerdo
+  rows:
+  - label: Mão
+    cells:
+    - vp_004
+    - vp_010
+  - label: Pé
+    cells:
+    - vp_015
+    - ''
+  note: Contagem de pontos insensíveis em cada mão e pé (0 a 8).

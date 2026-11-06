@@ -112,18 +112,25 @@ def _field_line(pair: Pair, concept: dict[str, Any]) -> str:
 
 TREATMENT_GRID_PROMPT = """You are reading the treatment grid of a {country} leprosy clinic card.
 
-The grid has three rows, one per course year. Each row has the year written on
+The grid has three rows, one per calendar year. Each row has the year written on
 the left, then twelve month columns from Janeiro to Dezembro. Under the day
 number is a signature line (Rubrica/Faltou).
 
+**Read every row that carries handwriting.** A course that started in July 2024
+and continued into January 2025 returns TWO rows. An empty row is null, not a
+row with no doses. Do not stop after the first filled row.
+
 For each row read:
-- the year in the left column
+- the year in the left column (as written, e.g. 20.24 means 2024)
 - every month cell that contains a day number (the day the supervised blister
   pack was given); a signature or mark under the day confirms the dose
 - a large F written in a month cell means the patient missed that month
 
 Return one JSON object and nothing else, in this shape:
-{{"treatment_grid": {{"rows": [{{"year": 2025, "doses": [{{"month": 5, "day": 31}}], "missed_months": []}}]}}}}
+{{"treatment_grid": {{"rows": [
+  {{"year": 2024, "doses": [{{"month": 7, "day": 24}}, {{"month": 8, "day": 20}}], "missed_months": [11, 12]}},
+  {{"year": 2025, "doses": [{{"month": 1, "day": 7}}, {{"month": 2, "day": 28}}], "missed_months": []}}
+]}}}}
 
 Use month numbers 1-12. Omit empty months. Use null for an empty row. Do not
 invent doses. If a date has no year, use null for the year. The handwriting is

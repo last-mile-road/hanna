@@ -385,8 +385,8 @@ blocks:
     bbox: null
     sensitivity: clinical
     allowed_values:
-    - true
-    - false
+    - 'Yes'
+    - 'No'
     geometry_source: v5 had no per-pair box; block crop only
   - id: complication_amputation
     concept: complication_amputation
@@ -394,8 +394,8 @@ blocks:
     bbox: null
     sensitivity: clinical
     allowed_values:
-    - true
-    - false
+    - 'Yes'
+    - 'No'
     geometry_source: v5 had no per-pair box; block crop only
   - id: complication_contracture
     concept: complication_contracture
@@ -403,8 +403,8 @@ blocks:
     bbox: null
     sensitivity: clinical
     allowed_values:
-    - true
-    - false
+    - 'Yes'
+    - 'No'
     geometry_source: v5 had no per-pair box; block crop only
   - id: complication_other
     concept: complication_other
@@ -412,8 +412,8 @@ blocks:
     bbox: null
     sensitivity: clinical
     allowed_values:
-    - true
-    - false
+    - 'Yes'
+    - 'No'
     geometry_source: v5 had no per-pair box; block crop only
   - id: hand_feet_notes
     concept: hand_foot_exam_notes
