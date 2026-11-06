@@ -306,11 +306,12 @@ READERS = {"def_exam": _def_exam, "nerve_assessment": _nerve,
 
 # --- transport ----------------------------------------------------------------------
 
-def _box_wait(base: str, key: str, timeout: float = 420.0) -> None:
-    """Wait for the box to warm when it answers 503 (scale-to-zero cold start).
+def _box_wait(base: str, key: str, timeout: float = 60.0) -> None:
+    """Wait briefly for the box when it answers 503 (scale-to-zero cold start).
 
-    The box boots three engines and takes ~5–6 minutes from zero. A queued run
-    can afford to wait once; failing it immediately wastes the whole card.
+    A full boot takes ~5–6 minutes. Blocking a card that long is worse than
+    reading the table with the VLM for that card: wait a minute, and if the box
+    is still not up, let the caller raise so the block falls back.
     """
     import urllib.parse
 
@@ -327,14 +328,14 @@ def _box_wait(base: str, key: str, timeout: float = 420.0) -> None:
     while time.monotonic() - started < timeout:
         try:
             with urllib.request.urlopen(
-                urllib.request.Request(ready_url, headers=headers), timeout=60
+                urllib.request.Request(ready_url, headers=headers), timeout=20
             ) as response:
                 payload = json.load(response)
             if payload.get("ready"):
                 return
         except (urllib.error.URLError, OSError, ValueError, json.JSONDecodeError):
             pass
-        time.sleep(15)
+        time.sleep(10)
 
 
 def _post_file(url: str, path: Path, key: str) -> dict:
