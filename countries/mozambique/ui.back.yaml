@@ -4,19 +4,39 @@ hidden: []
 dev_only:
 - recorded_by
 block_titles:
-  visit_header: Registo da visita
-  nerve_table: Palpação dos nervos periféricos
-  hand_feet: Teste sensitivo das mãos e dos pés
-  eye_exam: Exame dos olhos
-  muscle_test: Testagem dos músculos voluntários
-  disability: Graus de deformidade
-  reactions: Reacções
+  visit1_header: Visita 1 — 3 meses
+  visit1_nerve: Visita 1 — Palpação dos nervos
+  visit1_sensory: Visita 1 — Teste sensitivo
+  visit1_eye: Visita 1 — Exame dos olhos
+  visit1_muscle: Visita 1 — Músculos voluntários
+  visit1_disability: Visita 1 — Graus de deformidade
+  visit2_header: Visita 2 — 6 meses
+  visit2_nerve: Visita 2 — Palpação dos nervos
+  visit2_sensory: Visita 2 — Teste sensitivo
+  visit2_eye: Visita 2 — Exame dos olhos
+  visit2_muscle: Visita 2 — Músculos voluntários
+  visit2_disability: Visita 2 — Graus de deformidade
+  visit3_header: Visita 3 — 9 meses
+  visit3_nerve: Visita 3 — Palpação dos nervos
+  visit3_sensory: Visita 3 — Teste sensitivo
+  visit3_eye: Visita 3 — Exame dos olhos
+  visit3_muscle: Visita 3 — Músculos voluntários
+  visit3_disability: Visita 3 — Graus de deformidade
+  visit4_header: Visita 4 — 12 meses
+  visit4_nerve: Visita 4 — Palpação dos nervos
+  visit4_sensory: Visita 4 — Teste sensitivo
+  visit4_eye: Visita 4 — Exame dos olhos
+  visit4_muscle: Visita 4 — Músculos voluntários
+  visit4_disability: Visita 4 — Graus de deformidade
+  reactions_history: Reacções — história clínica
+  reactions_exam: Reacções — exame clínico
   prednisolone: Tratamento com prednisolona
   outcome: Tipo de doente saído
+  self_care: Grupo de auto cuidados
 tables:
-- id: nerves
-  block: nerve_table
-  title: Palpação dos nervos periféricos
+- id: v1_nerves
+  block: visit1_nerve
+  title: Palpação
   columns:
   - Cubital D
   - Cubital E
@@ -27,14 +47,22 @@ tables:
   rows:
   - label: Grosso
     cells:
-    - vp_003
-    - vp_009
-    - vp_014
-    - ''
-    - ''
-    - ''
-- id: insensitive_points
-  block: hand_feet
+    - v1_nerve_enlargement_cubital_right
+    - v1_nerve_enlargement_cubital_left
+    - v1_nerve_enlargement_radial_cutaneous_right
+    - v1_nerve_enlargement_radial_cutaneous_left
+    - v1_nerve_enlargement_popliteal_external_right
+    - v1_nerve_enlargement_popliteal_external_left
+  - label: Dor
+    cells:
+    - v1_nerve_pain_cubital_right
+    - v1_nerve_pain_cubital_left
+    - v1_nerve_pain_radial_cutaneous_right
+    - v1_nerve_pain_radial_cutaneous_left
+    - v1_nerve_pain_popliteal_external_right
+    - v1_nerve_pain_popliteal_external_left
+- id: v1_sensory
+  block: visit1_sensory
   title: Pontos insensíveis
   columns:
   - Direito
@@ -42,10 +70,331 @@ tables:
   rows:
   - label: Mão
     cells:
-    - vp_004
-    - vp_010
+    - v1_insensitive_points_right_hand
+    - v1_insensitive_points_left_hand
   - label: Pé
     cells:
-    - vp_015
-    - ''
-  note: Contagem de pontos insensíveis em cada mão e pé (0 a 8).
+    - v1_insensitive_points_right_foot
+    - v1_insensitive_points_left_foot
+- id: v1_eye
+  block: visit1_eye
+  title: Olhos
+  columns:
+  - Direito
+  - Esquerdo
+  rows:
+  - label: Pestanejo
+    cells:
+    - v1_eye_blinking_right
+    - v1_eye_blinking_left
+  - label: Lagoftalmia
+    cells:
+    - v1_eye_lagophthalmos_right
+    - v1_eye_lagophthalmos_left
+- id: v1_muscle
+  block: visit1_muscle
+  title: Músculos
+  columns:
+  - Direito
+  - Esquerdo
+  rows:
+  - label: Abdução dos dedos mínimos
+    cells:
+    - v1_finger_abduction_right
+    - v1_finger_abduction_left
+  - label: Dorsi-flexão
+    cells:
+    - v1_foot_dorsiflex_right
+    - v1_foot_dorsiflex_left
+- id: v1_disability
+  block: visit1_disability
+  title: Graus
+  columns:
+  - Direito
+  - Esquerdo
+  rows:
+  - label: Olhos
+    cells:
+    - v1_disability_grade_eye_right
+    - v1_disability_grade_eye_left
+  - label: Mãos
+    cells:
+    - v1_disability_grade_hand_right
+    - v1_disability_grade_hand_left
+  - label: Pés
+    cells:
+    - v1_disability_grade_foot_right
+    - v1_disability_grade_foot_left
+- id: v2_nerves
+  block: visit2_nerve
+  title: Palpação
+  columns:
+  - Cubital D
+  - Cubital E
+  - Radial D
+  - Radial E
+  - Poplíteo D
+  - Poplíteo E
+  rows:
+  - label: Grosso
+    cells:
+    - v2_nerve_enlargement_cubital_right
+    - v2_nerve_enlargement_cubital_left
+    - v2_nerve_enlargement_radial_cutaneous_right
+    - v2_nerve_enlargement_radial_cutaneous_left
+    - v2_nerve_enlargement_popliteal_external_right
+    - v2_nerve_enlargement_popliteal_external_left
+  - label: Dor
+    cells:
+    - v2_nerve_pain_cubital_right
+    - v2_nerve_pain_cubital_left
+    - v2_nerve_pain_radial_cutaneous_right
+    - v2_nerve_pain_radial_cutaneous_left
+    - v2_nerve_pain_popliteal_external_right
+    - v2_nerve_pain_popliteal_external_left
+- id: v2_sensory
+  block: visit2_sensory
+  title: Pontos insensíveis
+  columns:
+  - Direito
+  - Esquerdo
+  rows:
+  - label: Mão
+    cells:
+    - v2_insensitive_points_right_hand
+    - v2_insensitive_points_left_hand
+  - label: Pé
+    cells:
+    - v2_insensitive_points_right_foot
+    - v2_insensitive_points_left_foot
+- id: v2_eye
+  block: visit2_eye
+  title: Olhos
+  columns:
+  - Direito
+  - Esquerdo
+  rows:
+  - label: Pestanejo
+    cells:
+    - v2_eye_blinking_right
+    - v2_eye_blinking_left
+  - label: Lagoftalmia
+    cells:
+    - v2_eye_lagophthalmos_right
+    - v2_eye_lagophthalmos_left
+- id: v2_muscle
+  block: visit2_muscle
+  title: Músculos
+  columns:
+  - Direito
+  - Esquerdo
+  rows:
+  - label: Abdução dos dedos mínimos
+    cells:
+    - v2_finger_abduction_right
+    - v2_finger_abduction_left
+  - label: Dorsi-flexão
+    cells:
+    - v2_foot_dorsiflex_right
+    - v2_foot_dorsiflex_left
+- id: v2_disability
+  block: visit2_disability
+  title: Graus
+  columns:
+  - Direito
+  - Esquerdo
+  rows:
+  - label: Olhos
+    cells:
+    - v2_disability_grade_eye_right
+    - v2_disability_grade_eye_left
+  - label: Mãos
+    cells:
+    - v2_disability_grade_hand_right
+    - v2_disability_grade_hand_left
+  - label: Pés
+    cells:
+    - v2_disability_grade_foot_right
+    - v2_disability_grade_foot_left
+- id: v3_nerves
+  block: visit3_nerve
+  title: Palpação
+  columns:
+  - Cubital D
+  - Cubital E
+  - Radial D
+  - Radial E
+  - Poplíteo D
+  - Poplíteo E
+  rows:
+  - label: Grosso
+    cells:
+    - v3_nerve_enlargement_cubital_right
+    - v3_nerve_enlargement_cubital_left
+    - v3_nerve_enlargement_radial_cutaneous_right
+    - v3_nerve_enlargement_radial_cutaneous_left
+    - v3_nerve_enlargement_popliteal_external_right
+    - v3_nerve_enlargement_popliteal_external_left
+  - label: Dor
+    cells:
+    - v3_nerve_pain_cubital_right
+    - v3_nerve_pain_cubital_left
+    - v3_nerve_pain_radial_cutaneous_right
+    - v3_nerve_pain_radial_cutaneous_left
+    - v3_nerve_pain_popliteal_external_right
+    - v3_nerve_pain_popliteal_external_left
+- id: v3_sensory
+  block: visit3_sensory
+  title: Pontos insensíveis
+  columns:
+  - Direito
+  - Esquerdo
+  rows:
+  - label: Mão
+    cells:
+    - v3_insensitive_points_right_hand
+    - v3_insensitive_points_left_hand
+  - label: Pé
+    cells:
+    - v3_insensitive_points_right_foot
+    - v3_insensitive_points_left_foot
+- id: v3_eye
+  block: visit3_eye
+  title: Olhos
+  columns:
+  - Direito
+  - Esquerdo
+  rows:
+  - label: Pestanejo
+    cells:
+    - v3_eye_blinking_right
+    - v3_eye_blinking_left
+  - label: Lagoftalmia
+    cells:
+    - v3_eye_lagophthalmos_right
+    - v3_eye_lagophthalmos_left
+- id: v3_muscle
+  block: visit3_muscle
+  title: Músculos
+  columns:
+  - Direito
+  - Esquerdo
+  rows:
+  - label: Abdução dos dedos mínimos
+    cells:
+    - v3_finger_abduction_right
+    - v3_finger_abduction_left
+  - label: Dorsi-flexão
+    cells:
+    - v3_foot_dorsiflex_right
+    - v3_foot_dorsiflex_left
+- id: v3_disability
+  block: visit3_disability
+  title: Graus
+  columns:
+  - Direito
+  - Esquerdo
+  rows:
+  - label: Olhos
+    cells:
+    - v3_disability_grade_eye_right
+    - v3_disability_grade_eye_left
+  - label: Mãos
+    cells:
+    - v3_disability_grade_hand_right
+    - v3_disability_grade_hand_left
+  - label: Pés
+    cells:
+    - v3_disability_grade_foot_right
+    - v3_disability_grade_foot_left
+- id: v4_nerves
+  block: visit4_nerve
+  title: Palpação
+  columns:
+  - Cubital D
+  - Cubital E
+  - Radial D
+  - Radial E
+  - Poplíteo D
+  - Poplíteo E
+  rows:
+  - label: Grosso
+    cells:
+    - v4_nerve_enlargement_cubital_right
+    - v4_nerve_enlargement_cubital_left
+    - v4_nerve_enlargement_radial_cutaneous_right
+    - v4_nerve_enlargement_radial_cutaneous_left
+    - v4_nerve_enlargement_popliteal_external_right
+    - v4_nerve_enlargement_popliteal_external_left
+  - label: Dor
+    cells:
+    - v4_nerve_pain_cubital_right
+    - v4_nerve_pain_cubital_left
+    - v4_nerve_pain_radial_cutaneous_right
+    - v4_nerve_pain_radial_cutaneous_left
+    - v4_nerve_pain_popliteal_external_right
+    - v4_nerve_pain_popliteal_external_left
+- id: v4_sensory
+  block: visit4_sensory
+  title: Pontos insensíveis
+  columns:
+  - Direito
+  - Esquerdo
+  rows:
+  - label: Mão
+    cells:
+    - v4_insensitive_points_right_hand
+    - v4_insensitive_points_left_hand
+  - label: Pé
+    cells:
+    - v4_insensitive_points_right_foot
+    - v4_insensitive_points_left_foot
+- id: v4_eye
+  block: visit4_eye
+  title: Olhos
+  columns:
+  - Direito
+  - Esquerdo
+  rows:
+  - label: Pestanejo
+    cells:
+    - v4_eye_blinking_right
+    - v4_eye_blinking_left
+  - label: Lagoftalmia
+    cells:
+    - v4_eye_lagophthalmos_right
+    - v4_eye_lagophthalmos_left
+- id: v4_muscle
+  block: visit4_muscle
+  title: Músculos
+  columns:
+  - Direito
+  - Esquerdo
+  rows:
+  - label: Abdução dos dedos mínimos
+    cells:
+    - v4_finger_abduction_right
+    - v4_finger_abduction_left
+  - label: Dorsi-flexão
+    cells:
+    - v4_foot_dorsiflex_right
+    - v4_foot_dorsiflex_left
+- id: v4_disability
+  block: visit4_disability
+  title: Graus
+  columns:
+  - Direito
+  - Esquerdo
+  rows:
+  - label: Olhos
+    cells:
+    - v4_disability_grade_eye_right
+    - v4_disability_grade_eye_left
+  - label: Mãos
+    cells:
+    - v4_disability_grade_hand_right
+    - v4_disability_grade_hand_left
+  - label: Pés
+    cells:
+    - v4_disability_grade_foot_right
+    - v4_disability_grade_foot_left

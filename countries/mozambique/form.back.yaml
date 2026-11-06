@@ -1,362 +1,698 @@
 form:
   id: mozambique_back_card
   country: mozambique
+  variant: back
   template: template.back.jpg
   status: draft
-  reference_year: null
-  reference_year_note: REQUIRED, no silent default (CONSTRAINTS §1.6). Set the year
-    printed on the card.
+  reference_year: 2026
+  note: 'Complete follow-up declaration generated from the printed card: 4 visit columns
+    (header, nerve table, sensory, eyes, muscles, grades) plus the REACÇÕES panel.
+    Pairs are boxless inside each section crop.'
 blocks:
-- id: visit_header
+- id: visit1_header
   block_type: value_pairs
   bbox:
-  - 0
-  - 37
-  - 3221
-  - 2292
-  hint: Registo da visita
+  - 3
+  - 114
+  - 617
+  - 224
+  hint: Visita 1 — Registo da visita
   value_pairs:
-  - id: vp_001
+  - id: v1_visit_date
     concept: visit_date
-    value_type: date
-    bbox:
-    - 5
-    - 50
-    - 607
-    - 118
-    label_local: Data preenchido
-    description: Date form was fileld in or evaluation was done
-    sensitivity: administrative
-    required_hint: Data de visita
-  - id: vp_002
+    label_local: Visita 1 — visit_date
+  - id: v1_recorded_by
     concept: recorded_by
-    value_type: text
-    bbox:
-    - 0
-    - 111
-    - 607
-    - 163
-    label_local: Preenchido por
-    description: Person that did the followup exam and filled the form
-    sensitivity: administrative
-    required_hint: Quem preencheu
-  - id: vp_007
-    concept: visit_date
-    value_type: date
-    bbox:
-    - 603
-    - 43
-    - 1225
-    - 121
-    label_local: Data preenchido
-    sensitivity: administrative
-  - id: vp_008
-    concept: recorded_by
-    value_type: text
-    bbox:
-    - 616
-    - 111
-    - 1234
-    - 169
-    label_local: Quem preencheu
-    sensitivity: administrative
-  - id: vp_012
-    concept: visit_date
-    value_type: date
-    bbox:
-    - 1221
-    - 40
-    - 1849
-    - 118
-    label_local: Data preenchido
-    sensitivity: administrative
-  - id: vp_013
-    concept: recorded_by
-    value_type: text
-    bbox:
-    - 1218
-    - 108
-    - 1843
-    - 179
-    label_local: Quem preencheu
-    sensitivity: administrative
-  - id: vp_016
-    concept: hand_ulnar_right
-    value_type: choice_single
-    bbox:
-    - 1225
-    - 1609
-    - 1852
-    - 2292
-    label_local: disability table
-    sensitivity: clinical
-  - id: vp_017
-    concept: visit_date
-    value_type: date
-    bbox:
-    - 1836
-    - 37
-    - 2451
-    - 114
-    label_local: Data preenchido
-    sensitivity: clinical
-  - id: vp_018
-    concept: recorded_by
-    value_type: text
-    bbox:
-    - 1836
-    - 101
-    - 2461
-    - 166
-    label_local: Quem preencheu
-    sensitivity: administrative
-  - id: vp_023
-    concept: treatment_completion_date
-    value_type: date
-    bbox:
-    - 2448
-    - 1609
-    - 3221
-    - 1771
-    label_local: Data fim de tratamento
-    description: Date treatment was completed or ended
-    sensitivity: administrative
-- id: nerve_table
+    label_local: Visita 1 — recorded_by
+- id: visit1_nerve
   block_type: annotated_table
   bbox:
-  - 0
-  - 150
-  - 2467
-  - 655
-  hint: Palpação dos nervos periféricos
+  - 3
+  - 224
+  - 617
+  - 520
+  hint: Visita 1 — Palpação dos nervos periféricos
   value_pairs:
-  - id: vp_003
+  - id: v1_nerve_enlargement_cubital_right
     concept: nerve_enlargement_cubital_right
-    value_type: tick_box
-    bbox:
-    - 0
-    - 160
-    - 626
-    - 532
-    label_local: Tabela Nervos
-    description: Nerve table with reference to enlarged or painful nerves.
-    sensitivity: clinical
-    required_hint: Resultado do exame dos nervos
-  - id: vp_009
+    label_local: Visita 1 — nerve_enlargement_cubital_right
+  - id: v1_nerve_enlargement_cubital_left
     concept: nerve_enlargement_cubital_left
-    value_type: tick_box
-    bbox:
-    - 613
-    - 153
-    - 1238
-    - 535
-    label_local: Tabela Nervos
-    sensitivity: clinical
-  - id: vp_014
+    label_local: Visita 1 — nerve_enlargement_cubital_left
+  - id: v1_nerve_enlargement_radial_cutaneous_right
     concept: nerve_enlargement_radial_cutaneous_right
-    value_type: tick_box
-    bbox:
-    - 1228
-    - 153
-    - 1856
-    - 529
-    label_local: Tabela Nervos
-    sensitivity: clinical
-  - id: vp_019
-    concept: nerve_enlargement_cubital_left
-    value_type: tick_box
-    bbox:
-    - 1839
-    - 150
-    - 2467
-    - 655
-    label_local: Tabela Nervos
-    sensitivity: clinical
-- id: hand_feet
+    label_local: Visita 1 — nerve_enlargement_radial_cutaneous_right
+  - id: v1_nerve_enlargement_radial_cutaneous_left
+    concept: nerve_enlargement_radial_cutaneous_left
+    label_local: Visita 1 — nerve_enlargement_radial_cutaneous_left
+  - id: v1_nerve_enlargement_popliteal_external_right
+    concept: nerve_enlargement_popliteal_external_right
+    label_local: Visita 1 — nerve_enlargement_popliteal_external_right
+  - id: v1_nerve_enlargement_popliteal_external_left
+    concept: nerve_enlargement_popliteal_external_left
+    label_local: Visita 1 — nerve_enlargement_popliteal_external_left
+  - id: v1_nerve_pain_cubital_right
+    concept: nerve_pain_cubital_right
+    label_local: Visita 1 — nerve_pain_cubital_right
+  - id: v1_nerve_pain_cubital_left
+    concept: nerve_pain_cubital_left
+    label_local: Visita 1 — nerve_pain_cubital_left
+  - id: v1_nerve_pain_radial_cutaneous_right
+    concept: nerve_pain_radial_cutaneous_right
+    label_local: Visita 1 — nerve_pain_radial_cutaneous_right
+  - id: v1_nerve_pain_radial_cutaneous_left
+    concept: nerve_pain_radial_cutaneous_left
+    label_local: Visita 1 — nerve_pain_radial_cutaneous_left
+  - id: v1_nerve_pain_popliteal_external_right
+    concept: nerve_pain_popliteal_external_right
+    label_local: Visita 1 — nerve_pain_popliteal_external_right
+  - id: v1_nerve_pain_popliteal_external_left
+    concept: nerve_pain_popliteal_external_left
+    label_local: Visita 1 — nerve_pain_popliteal_external_left
+- id: visit1_sensory
   block_type: visual_annotation
   bbox:
-  - 0
-  - 516
-  - 2464
-  - 1622
-  hint: Teste sensitivo das mãos e dos pés
+  - 3
+  - 520
+  - 617
+  - 973
+  hint: Visita 1 — Teste sensitivo das mãos e dos pés
   value_pairs:
-  - id: vp_004
+  - id: v1_insensitive_points_right_hand
     concept: insensitive_points_right_hand
-    value_type: integer
-    bbox:
-    - 0
-    - 522
-    - 626
-    - 1619
-    label_local: Test sensitivo Maos e Pes.
-    description: The sensation test of hands and feet
-    sensitivity: clinical
-    required_hint: Resultados do teste sensitivo
-  - id: vp_010
+    label_local: Visita 1 — insensitive_points_right_hand
+  - id: v1_insensitive_points_left_hand
     concept: insensitive_points_left_hand
-    value_type: integer
-    bbox:
-    - 610
-    - 522
-    - 1238
-    - 1619
-    label_local: exame dos Maos e Pes
-    description: Sensitivity assessment of hands and feet
-    sensitivity: clinical
-  - id: vp_015
+    label_local: Visita 1 — insensitive_points_left_hand
+  - id: v1_insensitive_points_right_foot
     concept: insensitive_points_right_foot
-    value_type: integer
-    bbox:
-    - 1225
-    - 516
-    - 1856
-    - 1622
-    label_local: exame dos Maos e Pes
-    sensitivity: clinical
-  - id: vp_020
-    concept: insensitive_points_right_hand
-    value_type: integer
-    bbox:
-    - 1839
-    - 639
-    - 2464
-    - 1622
-    label_local: exame dos Maos e Pes
-    sensitivity: clinical
-- id: eye_exam
+    label_local: Visita 1 — insensitive_points_right_foot
+  - id: v1_insensitive_points_left_foot
+    concept: insensitive_points_left_foot
+    label_local: Visita 1 — insensitive_points_left_foot
+- id: visit1_eye
   block_type: annotated_table
   bbox:
-  - 0
-  - 1603
-  - 2451
-  - 2298
-  hint: Exame dos olhos
+  - 3
+  - 973
+  - 617
+  - 1110
+  hint: Visita 1 — Exame dos olhos
   value_pairs:
-  - id: vp_005
+  - id: v1_eye_blinking_right
     concept: eye_blinking_right
-    value_type: choice_single
-    bbox:
-    - 0
-    - 1603
-    - 626
-    - 2298
-    label_local: disability table
-    description: Table with 3 aspects, Eye exam, muscle exam in hands and feet and
-      disability grading
-    sensitivity: clinical
-    required_hint: Motor tests and disability grade
-  - id: vp_021
-    concept: eye_blinking_right
-    value_type: choice_single
-    bbox:
-    - 1843
-    - 1606
-    - 2451
-    - 2295
-    label_local: disability table
-    sensitivity: clinical
-- id: disability
+    label_local: Visita 1 — eye_blinking_right
+  - id: v1_eye_blinking_left
+    concept: eye_blinking_left
+    label_local: Visita 1 — eye_blinking_left
+  - id: v1_eye_lagophthalmos_right
+    concept: eye_lagophthalmos_right
+    label_local: Visita 1 — eye_lagophthalmos_right
+  - id: v1_eye_lagophthalmos_left
+    concept: eye_lagophthalmos_left
+    label_local: Visita 1 — eye_lagophthalmos_left
+- id: visit1_muscle
   block_type: annotated_table
   bbox:
-  - 613
-  - 1603
-  - 1231
-  - 2295
-  hint: Graus de deformidade
+  - 3
+  - 1110
+  - 617
+  - 1248
+  hint: Visita 1 — Testagem dos músculos voluntários
   value_pairs:
-  - id: vp_011
+  - id: v1_finger_abduction_right
+    concept: finger_abduction_right
+    label_local: Visita 1 — finger_abduction_right
+  - id: v1_finger_abduction_left
+    concept: finger_abduction_left
+    label_local: Visita 1 — finger_abduction_left
+  - id: v1_foot_dorsiflex_right
+    concept: foot_dorsiflex_right
+    label_local: Visita 1 — foot_dorsiflex_right
+  - id: v1_foot_dorsiflex_left
+    concept: foot_dorsiflex_left
+    label_local: Visita 1 — foot_dorsiflex_left
+- id: visit1_disability
+  block_type: annotated_table
+  bbox:
+  - 3
+  - 1248
+  - 617
+  - 1523
+  hint: Visita 1 — Graus de deformidade
+  value_pairs:
+  - id: v1_disability_grade_eye_right
     concept: disability_grade_eye_right
-    value_type: integer
-    bbox:
-    - 613
-    - 1603
-    - 1231
-    - 2295
-    label_local: disability table
-    sensitivity: clinical
-- id: reactions
+    label_local: Visita 1 — disability_grade_eye_right
+  - id: v1_disability_grade_eye_left
+    concept: disability_grade_eye_left
+    label_local: Visita 1 — disability_grade_eye_left
+  - id: v1_disability_grade_hand_right
+    concept: disability_grade_hand_right
+    label_local: Visita 1 — disability_grade_hand_right
+  - id: v1_disability_grade_hand_left
+    concept: disability_grade_hand_left
+    label_local: Visita 1 — disability_grade_hand_left
+  - id: v1_disability_grade_foot_right
+    concept: disability_grade_foot_right
+    label_local: Visita 1 — disability_grade_foot_right
+  - id: v1_disability_grade_foot_left
+    concept: disability_grade_foot_left
+    label_local: Visita 1 — disability_grade_foot_left
+- id: visit2_header
   block_type: value_pairs
   bbox:
-  - 2451
-  - 221
-  - 3218
-  - 975
-  hint: Reacções
+  - 617
+  - 114
+  - 1229
+  - 224
+  hint: Visita 2 — Registo da visita
   value_pairs:
-  - id: vp_006
+  - id: v2_visit_date
+    concept: visit_date
+    label_local: Visita 2 — visit_date
+  - id: v2_recorded_by
+    concept: recorded_by
+    label_local: Visita 2 — recorded_by
+- id: visit2_nerve
+  block_type: annotated_table
+  bbox:
+  - 617
+  - 224
+  - 1229
+  - 520
+  hint: Visita 2 — Palpação dos nervos periféricos
+  value_pairs:
+  - id: v2_nerve_enlargement_cubital_right
+    concept: nerve_enlargement_cubital_right
+    label_local: Visita 2 — nerve_enlargement_cubital_right
+  - id: v2_nerve_enlargement_cubital_left
+    concept: nerve_enlargement_cubital_left
+    label_local: Visita 2 — nerve_enlargement_cubital_left
+  - id: v2_nerve_enlargement_radial_cutaneous_right
+    concept: nerve_enlargement_radial_cutaneous_right
+    label_local: Visita 2 — nerve_enlargement_radial_cutaneous_right
+  - id: v2_nerve_enlargement_radial_cutaneous_left
+    concept: nerve_enlargement_radial_cutaneous_left
+    label_local: Visita 2 — nerve_enlargement_radial_cutaneous_left
+  - id: v2_nerve_enlargement_popliteal_external_right
+    concept: nerve_enlargement_popliteal_external_right
+    label_local: Visita 2 — nerve_enlargement_popliteal_external_right
+  - id: v2_nerve_enlargement_popliteal_external_left
+    concept: nerve_enlargement_popliteal_external_left
+    label_local: Visita 2 — nerve_enlargement_popliteal_external_left
+  - id: v2_nerve_pain_cubital_right
+    concept: nerve_pain_cubital_right
+    label_local: Visita 2 — nerve_pain_cubital_right
+  - id: v2_nerve_pain_cubital_left
+    concept: nerve_pain_cubital_left
+    label_local: Visita 2 — nerve_pain_cubital_left
+  - id: v2_nerve_pain_radial_cutaneous_right
+    concept: nerve_pain_radial_cutaneous_right
+    label_local: Visita 2 — nerve_pain_radial_cutaneous_right
+  - id: v2_nerve_pain_radial_cutaneous_left
+    concept: nerve_pain_radial_cutaneous_left
+    label_local: Visita 2 — nerve_pain_radial_cutaneous_left
+  - id: v2_nerve_pain_popliteal_external_right
+    concept: nerve_pain_popliteal_external_right
+    label_local: Visita 2 — nerve_pain_popliteal_external_right
+  - id: v2_nerve_pain_popliteal_external_left
+    concept: nerve_pain_popliteal_external_left
+    label_local: Visita 2 — nerve_pain_popliteal_external_left
+- id: visit2_sensory
+  block_type: visual_annotation
+  bbox:
+  - 617
+  - 520
+  - 1229
+  - 973
+  hint: Visita 2 — Teste sensitivo das mãos e dos pés
+  value_pairs:
+  - id: v2_insensitive_points_right_hand
+    concept: insensitive_points_right_hand
+    label_local: Visita 2 — insensitive_points_right_hand
+  - id: v2_insensitive_points_left_hand
+    concept: insensitive_points_left_hand
+    label_local: Visita 2 — insensitive_points_left_hand
+  - id: v2_insensitive_points_right_foot
+    concept: insensitive_points_right_foot
+    label_local: Visita 2 — insensitive_points_right_foot
+  - id: v2_insensitive_points_left_foot
+    concept: insensitive_points_left_foot
+    label_local: Visita 2 — insensitive_points_left_foot
+- id: visit2_eye
+  block_type: annotated_table
+  bbox:
+  - 617
+  - 973
+  - 1229
+  - 1110
+  hint: Visita 2 — Exame dos olhos
+  value_pairs:
+  - id: v2_eye_blinking_right
+    concept: eye_blinking_right
+    label_local: Visita 2 — eye_blinking_right
+  - id: v2_eye_blinking_left
+    concept: eye_blinking_left
+    label_local: Visita 2 — eye_blinking_left
+  - id: v2_eye_lagophthalmos_right
+    concept: eye_lagophthalmos_right
+    label_local: Visita 2 — eye_lagophthalmos_right
+  - id: v2_eye_lagophthalmos_left
+    concept: eye_lagophthalmos_left
+    label_local: Visita 2 — eye_lagophthalmos_left
+- id: visit2_muscle
+  block_type: annotated_table
+  bbox:
+  - 617
+  - 1110
+  - 1229
+  - 1248
+  hint: Visita 2 — Testagem dos músculos voluntários
+  value_pairs:
+  - id: v2_finger_abduction_right
+    concept: finger_abduction_right
+    label_local: Visita 2 — finger_abduction_right
+  - id: v2_finger_abduction_left
+    concept: finger_abduction_left
+    label_local: Visita 2 — finger_abduction_left
+  - id: v2_foot_dorsiflex_right
+    concept: foot_dorsiflex_right
+    label_local: Visita 2 — foot_dorsiflex_right
+  - id: v2_foot_dorsiflex_left
+    concept: foot_dorsiflex_left
+    label_local: Visita 2 — foot_dorsiflex_left
+- id: visit2_disability
+  block_type: annotated_table
+  bbox:
+  - 617
+  - 1248
+  - 1229
+  - 1523
+  hint: Visita 2 — Graus de deformidade
+  value_pairs:
+  - id: v2_disability_grade_eye_right
+    concept: disability_grade_eye_right
+    label_local: Visita 2 — disability_grade_eye_right
+  - id: v2_disability_grade_eye_left
+    concept: disability_grade_eye_left
+    label_local: Visita 2 — disability_grade_eye_left
+  - id: v2_disability_grade_hand_right
+    concept: disability_grade_hand_right
+    label_local: Visita 2 — disability_grade_hand_right
+  - id: v2_disability_grade_hand_left
+    concept: disability_grade_hand_left
+    label_local: Visita 2 — disability_grade_hand_left
+  - id: v2_disability_grade_foot_right
+    concept: disability_grade_foot_right
+    label_local: Visita 2 — disability_grade_foot_right
+  - id: v2_disability_grade_foot_left
+    concept: disability_grade_foot_left
+    label_local: Visita 2 — disability_grade_foot_left
+- id: visit3_header
+  block_type: value_pairs
+  bbox:
+  - 1229
+  - 114
+  - 1845
+  - 224
+  hint: Visita 3 — Registo da visita
+  value_pairs:
+  - id: v3_visit_date
+    concept: visit_date
+    label_local: Visita 3 — visit_date
+  - id: v3_recorded_by
+    concept: recorded_by
+    label_local: Visita 3 — recorded_by
+- id: visit3_nerve
+  block_type: annotated_table
+  bbox:
+  - 1229
+  - 224
+  - 1845
+  - 520
+  hint: Visita 3 — Palpação dos nervos periféricos
+  value_pairs:
+  - id: v3_nerve_enlargement_cubital_right
+    concept: nerve_enlargement_cubital_right
+    label_local: Visita 3 — nerve_enlargement_cubital_right
+  - id: v3_nerve_enlargement_cubital_left
+    concept: nerve_enlargement_cubital_left
+    label_local: Visita 3 — nerve_enlargement_cubital_left
+  - id: v3_nerve_enlargement_radial_cutaneous_right
+    concept: nerve_enlargement_radial_cutaneous_right
+    label_local: Visita 3 — nerve_enlargement_radial_cutaneous_right
+  - id: v3_nerve_enlargement_radial_cutaneous_left
+    concept: nerve_enlargement_radial_cutaneous_left
+    label_local: Visita 3 — nerve_enlargement_radial_cutaneous_left
+  - id: v3_nerve_enlargement_popliteal_external_right
+    concept: nerve_enlargement_popliteal_external_right
+    label_local: Visita 3 — nerve_enlargement_popliteal_external_right
+  - id: v3_nerve_enlargement_popliteal_external_left
+    concept: nerve_enlargement_popliteal_external_left
+    label_local: Visita 3 — nerve_enlargement_popliteal_external_left
+  - id: v3_nerve_pain_cubital_right
+    concept: nerve_pain_cubital_right
+    label_local: Visita 3 — nerve_pain_cubital_right
+  - id: v3_nerve_pain_cubital_left
+    concept: nerve_pain_cubital_left
+    label_local: Visita 3 — nerve_pain_cubital_left
+  - id: v3_nerve_pain_radial_cutaneous_right
+    concept: nerve_pain_radial_cutaneous_right
+    label_local: Visita 3 — nerve_pain_radial_cutaneous_right
+  - id: v3_nerve_pain_radial_cutaneous_left
+    concept: nerve_pain_radial_cutaneous_left
+    label_local: Visita 3 — nerve_pain_radial_cutaneous_left
+  - id: v3_nerve_pain_popliteal_external_right
+    concept: nerve_pain_popliteal_external_right
+    label_local: Visita 3 — nerve_pain_popliteal_external_right
+  - id: v3_nerve_pain_popliteal_external_left
+    concept: nerve_pain_popliteal_external_left
+    label_local: Visita 3 — nerve_pain_popliteal_external_left
+- id: visit3_sensory
+  block_type: visual_annotation
+  bbox:
+  - 1229
+  - 520
+  - 1845
+  - 973
+  hint: Visita 3 — Teste sensitivo das mãos e dos pés
+  value_pairs:
+  - id: v3_insensitive_points_right_hand
+    concept: insensitive_points_right_hand
+    label_local: Visita 3 — insensitive_points_right_hand
+  - id: v3_insensitive_points_left_hand
+    concept: insensitive_points_left_hand
+    label_local: Visita 3 — insensitive_points_left_hand
+  - id: v3_insensitive_points_right_foot
+    concept: insensitive_points_right_foot
+    label_local: Visita 3 — insensitive_points_right_foot
+  - id: v3_insensitive_points_left_foot
+    concept: insensitive_points_left_foot
+    label_local: Visita 3 — insensitive_points_left_foot
+- id: visit3_eye
+  block_type: annotated_table
+  bbox:
+  - 1229
+  - 973
+  - 1845
+  - 1110
+  hint: Visita 3 — Exame dos olhos
+  value_pairs:
+  - id: v3_eye_blinking_right
+    concept: eye_blinking_right
+    label_local: Visita 3 — eye_blinking_right
+  - id: v3_eye_blinking_left
+    concept: eye_blinking_left
+    label_local: Visita 3 — eye_blinking_left
+  - id: v3_eye_lagophthalmos_right
+    concept: eye_lagophthalmos_right
+    label_local: Visita 3 — eye_lagophthalmos_right
+  - id: v3_eye_lagophthalmos_left
+    concept: eye_lagophthalmos_left
+    label_local: Visita 3 — eye_lagophthalmos_left
+- id: visit3_muscle
+  block_type: annotated_table
+  bbox:
+  - 1229
+  - 1110
+  - 1845
+  - 1248
+  hint: Visita 3 — Testagem dos músculos voluntários
+  value_pairs:
+  - id: v3_finger_abduction_right
+    concept: finger_abduction_right
+    label_local: Visita 3 — finger_abduction_right
+  - id: v3_finger_abduction_left
+    concept: finger_abduction_left
+    label_local: Visita 3 — finger_abduction_left
+  - id: v3_foot_dorsiflex_right
+    concept: foot_dorsiflex_right
+    label_local: Visita 3 — foot_dorsiflex_right
+  - id: v3_foot_dorsiflex_left
+    concept: foot_dorsiflex_left
+    label_local: Visita 3 — foot_dorsiflex_left
+- id: visit3_disability
+  block_type: annotated_table
+  bbox:
+  - 1229
+  - 1248
+  - 1845
+  - 1523
+  hint: Visita 3 — Graus de deformidade
+  value_pairs:
+  - id: v3_disability_grade_eye_right
+    concept: disability_grade_eye_right
+    label_local: Visita 3 — disability_grade_eye_right
+  - id: v3_disability_grade_eye_left
+    concept: disability_grade_eye_left
+    label_local: Visita 3 — disability_grade_eye_left
+  - id: v3_disability_grade_hand_right
+    concept: disability_grade_hand_right
+    label_local: Visita 3 — disability_grade_hand_right
+  - id: v3_disability_grade_hand_left
+    concept: disability_grade_hand_left
+    label_local: Visita 3 — disability_grade_hand_left
+  - id: v3_disability_grade_foot_right
+    concept: disability_grade_foot_right
+    label_local: Visita 3 — disability_grade_foot_right
+  - id: v3_disability_grade_foot_left
+    concept: disability_grade_foot_left
+    label_local: Visita 3 — disability_grade_foot_left
+- id: visit4_header
+  block_type: value_pairs
+  bbox:
+  - 1845
+  - 114
+  - 2457
+  - 224
+  hint: Visita 4 — Registo da visita
+  value_pairs:
+  - id: v4_visit_date
+    concept: visit_date
+    label_local: Visita 4 — visit_date
+  - id: v4_recorded_by
+    concept: recorded_by
+    label_local: Visita 4 — recorded_by
+- id: visit4_nerve
+  block_type: annotated_table
+  bbox:
+  - 1845
+  - 224
+  - 2457
+  - 520
+  hint: Visita 4 — Palpação dos nervos periféricos
+  value_pairs:
+  - id: v4_nerve_enlargement_cubital_right
+    concept: nerve_enlargement_cubital_right
+    label_local: Visita 4 — nerve_enlargement_cubital_right
+  - id: v4_nerve_enlargement_cubital_left
+    concept: nerve_enlargement_cubital_left
+    label_local: Visita 4 — nerve_enlargement_cubital_left
+  - id: v4_nerve_enlargement_radial_cutaneous_right
+    concept: nerve_enlargement_radial_cutaneous_right
+    label_local: Visita 4 — nerve_enlargement_radial_cutaneous_right
+  - id: v4_nerve_enlargement_radial_cutaneous_left
+    concept: nerve_enlargement_radial_cutaneous_left
+    label_local: Visita 4 — nerve_enlargement_radial_cutaneous_left
+  - id: v4_nerve_enlargement_popliteal_external_right
+    concept: nerve_enlargement_popliteal_external_right
+    label_local: Visita 4 — nerve_enlargement_popliteal_external_right
+  - id: v4_nerve_enlargement_popliteal_external_left
+    concept: nerve_enlargement_popliteal_external_left
+    label_local: Visita 4 — nerve_enlargement_popliteal_external_left
+  - id: v4_nerve_pain_cubital_right
+    concept: nerve_pain_cubital_right
+    label_local: Visita 4 — nerve_pain_cubital_right
+  - id: v4_nerve_pain_cubital_left
+    concept: nerve_pain_cubital_left
+    label_local: Visita 4 — nerve_pain_cubital_left
+  - id: v4_nerve_pain_radial_cutaneous_right
+    concept: nerve_pain_radial_cutaneous_right
+    label_local: Visita 4 — nerve_pain_radial_cutaneous_right
+  - id: v4_nerve_pain_radial_cutaneous_left
+    concept: nerve_pain_radial_cutaneous_left
+    label_local: Visita 4 — nerve_pain_radial_cutaneous_left
+  - id: v4_nerve_pain_popliteal_external_right
+    concept: nerve_pain_popliteal_external_right
+    label_local: Visita 4 — nerve_pain_popliteal_external_right
+  - id: v4_nerve_pain_popliteal_external_left
+    concept: nerve_pain_popliteal_external_left
+    label_local: Visita 4 — nerve_pain_popliteal_external_left
+- id: visit4_sensory
+  block_type: visual_annotation
+  bbox:
+  - 1845
+  - 520
+  - 2457
+  - 973
+  hint: Visita 4 — Teste sensitivo das mãos e dos pés
+  value_pairs:
+  - id: v4_insensitive_points_right_hand
+    concept: insensitive_points_right_hand
+    label_local: Visita 4 — insensitive_points_right_hand
+  - id: v4_insensitive_points_left_hand
+    concept: insensitive_points_left_hand
+    label_local: Visita 4 — insensitive_points_left_hand
+  - id: v4_insensitive_points_right_foot
+    concept: insensitive_points_right_foot
+    label_local: Visita 4 — insensitive_points_right_foot
+  - id: v4_insensitive_points_left_foot
+    concept: insensitive_points_left_foot
+    label_local: Visita 4 — insensitive_points_left_foot
+- id: visit4_eye
+  block_type: annotated_table
+  bbox:
+  - 1845
+  - 973
+  - 2457
+  - 1110
+  hint: Visita 4 — Exame dos olhos
+  value_pairs:
+  - id: v4_eye_blinking_right
+    concept: eye_blinking_right
+    label_local: Visita 4 — eye_blinking_right
+  - id: v4_eye_blinking_left
+    concept: eye_blinking_left
+    label_local: Visita 4 — eye_blinking_left
+  - id: v4_eye_lagophthalmos_right
+    concept: eye_lagophthalmos_right
+    label_local: Visita 4 — eye_lagophthalmos_right
+  - id: v4_eye_lagophthalmos_left
+    concept: eye_lagophthalmos_left
+    label_local: Visita 4 — eye_lagophthalmos_left
+- id: visit4_muscle
+  block_type: annotated_table
+  bbox:
+  - 1845
+  - 1110
+  - 2457
+  - 1248
+  hint: Visita 4 — Testagem dos músculos voluntários
+  value_pairs:
+  - id: v4_finger_abduction_right
+    concept: finger_abduction_right
+    label_local: Visita 4 — finger_abduction_right
+  - id: v4_finger_abduction_left
+    concept: finger_abduction_left
+    label_local: Visita 4 — finger_abduction_left
+  - id: v4_foot_dorsiflex_right
+    concept: foot_dorsiflex_right
+    label_local: Visita 4 — foot_dorsiflex_right
+  - id: v4_foot_dorsiflex_left
+    concept: foot_dorsiflex_left
+    label_local: Visita 4 — foot_dorsiflex_left
+- id: visit4_disability
+  block_type: annotated_table
+  bbox:
+  - 1845
+  - 1248
+  - 2457
+  - 1523
+  hint: Visita 4 — Graus de deformidade
+  value_pairs:
+  - id: v4_disability_grade_eye_right
+    concept: disability_grade_eye_right
+    label_local: Visita 4 — disability_grade_eye_right
+  - id: v4_disability_grade_eye_left
+    concept: disability_grade_eye_left
+    label_local: Visita 4 — disability_grade_eye_left
+  - id: v4_disability_grade_hand_right
+    concept: disability_grade_hand_right
+    label_local: Visita 4 — disability_grade_hand_right
+  - id: v4_disability_grade_hand_left
+    concept: disability_grade_hand_left
+    label_local: Visita 4 — disability_grade_hand_left
+  - id: v4_disability_grade_foot_right
+    concept: disability_grade_foot_right
+    label_local: Visita 4 — disability_grade_foot_right
+  - id: v4_disability_grade_foot_left
+    concept: disability_grade_foot_left
+    label_local: Visita 4 — disability_grade_foot_left
+- id: reactions_history
+  block_type: value_pairs
+  bbox:
+  - 2457
+  - 113
+  - 3225
+  - 420
+  hint: Reacções — história clínica
+  value_pairs:
+  - id: lepra_reaction_present
     concept: lepra_reaction_present
-    value_type: choice_single
-    bbox:
-    - 2451
-    - 221
-    - 3218
-    - 975
-    label_local: Reaction clinical history
-    description: questions that help to determine if patient has a reaction
-    sensitivity: clinical
+  - id: lepra_reaction_type
+    concept: lepra_reaction_type
+  - id: nerve_pain_spontaneous
+    concept: nerve_pain_spontaneous
+  - id: recent_sensitivity_change
+    concept: recent_sensitivity_change
+  - id: recent_patch_change
+    concept: recent_patch_change
+- id: reactions_exam
+  block_type: value_pairs
+  bbox:
+  - 2457
+  - 420
+  - 3225
+  - 972
+  hint: Reacções — exame clínico
+  value_pairs:
+  - id: painful_skin_lesions
+    concept: painful_skin_lesions
+  - id: infiltrated_skin_lesions
+    concept: infiltrated_skin_lesions
+  - id: warm_skin_lesions
+    concept: warm_skin_lesions
+  - id: red_skin_lesions
+    concept: red_skin_lesions
+  - id: skin_lesion_ulcerated
+    concept: skin_lesion_ulcerated
+  - id: nerve_tenderness_present
+    concept: nerve_tenderness_present
+  - id: eye_redness_pain
+    concept: eye_redness_pain
 - id: prednisolone
   block_type: dose_grid
   bbox:
-  - 2448
-  - 962
-  - 3218
-  - 1625
+  - 2457
+  - 972
+  - 3225
+  - 1710
   hint: Tratamento com prednisolona
   value_pairs:
-  - id: vp_022
+  - id: prednisolone_table
     concept: prednisolone_table
-    value_type: dose_grid
-    bbox:
-    - 2448
-    - 962
-    - 3218
-    - 1625
-    label_local: Tratamento Reaccao tabela
-    description: Table that has the dates prednisolone was given to the patient, the
-      weeks, dosages and the name of the person that gave it to the right.
-    sensitivity: clinical
 - id: outcome
   block_type: value_pairs
   bbox:
-  - 2441
-  - 1758
-  - 3221
-  - 2292
+  - 2457
+  - 1710
+  - 3225
+  - 2064
   hint: Tipo de doente saído
   value_pairs:
-  - id: vp_024
+  - id: outcome_released
     concept: outcome_released
-    value_type: choice_single
-    bbox:
-    - 2444
-    - 1758
-    - 3218
-    - 2104
-    label_local: Classificacao na Saida
-    description: The end of treatment outcome classification, whether abandoned, treatment
-      completed, died, Wrong classification (all tick boxes), or something else (hand
-      written).
-    sensitivity: administrative
-  - id: vp_025
+  - id: outcome_ltfu
+    concept: outcome_ltfu
+  - id: outcome_died
+    concept: outcome_died
+  - id: outcome_misclassification
+    concept: outcome_misclassification
+  - id: outcome_other
+    concept: outcome_other
+  - id: transferred_to
     concept: transferred_to
-    value_type: text
-    bbox:
-    - 2444
-    - 2098
-    - 3218
-    - 2201
-    label_local: Transferido para
-    description: Where the patient was referred to if anywhere.
-    sensitivity: administrative
-  - id: vp_026
+  - id: outcome_date
+    concept: outcome_date
+- id: self_care
+  block_type: value_pairs
+  bbox:
+  - 2457
+  - 2156
+  - 3225
+  - 2282
+  hint: Grupo de auto cuidados
+  value_pairs:
+  - id: self_care_group
     concept: self_care_group
-    value_type: choice_single
-    bbox:
-    - 2441
-    - 2188
-    - 3221
-    - 2292
-    label_local: Grupo de auto cuidado integrado
-    description: name of the selfcare group patient is integrated to if any
-    sensitivity: administrative
