@@ -179,7 +179,7 @@ function openPicker(location, onSaved) {
 
 function renderLocation() {
   const loc = data.location;
-  if (!loc) return null;
+  if (!loc || data.show_location === false) return null;
 
   const section = document.createElement("section");
   section.className = "section location";
@@ -317,7 +317,7 @@ function render() {
     const head = document.createElement("div");
     head.className = "section-head";
     const title = document.createElement("h2");
-    title.textContent = BLOCK_LABELS[block.id] || block.id;
+    title.textContent = (data.block_titles || {})[block.id] || BLOCK_LABELS[block.id] || block.id;
     const count = document.createElement("span");
     count.className = "count";
     count.textContent = `${block.pairs.length} campos`;

@@ -462,14 +462,23 @@ _UI_LAYOUT: dict[str, dict] = {}
 
 
 def _ui_layout(form_definition: dict) -> dict:
-    """countries/<country>/ui.yaml — how the review screen lays a block out."""
+    """How the review screen lays this form out.
+
+    Per form variant first (ui.<variant>.yaml — the back card has no map and
+    different sections), then the country default (ui.yaml).
+    """
     import yaml
 
     country = form_definition.get("country", "mozambique")
-    if country not in _UI_LAYOUT:
-        path = settings.COUNTRIES_DIR / country / "ui.yaml"
-        _UI_LAYOUT[country] = yaml.safe_load(path.read_text()) if path.exists() else {}
-    return _UI_LAYOUT[country]
+    variant = form_definition.get("variant") or "draft"
+    key = f"{country}:{variant}"
+    if key not in _UI_LAYOUT:
+        directory = settings.COUNTRIES_DIR / country
+        variant_path = directory / f"ui.{variant}.yaml"
+        default_path = directory / "ui.yaml"
+        path = variant_path if variant_path.exists() else default_path
+        _UI_LAYOUT[key] = yaml.safe_load(path.read_text()) if path.exists() else {}
+    return _UI_LAYOUT[key]
 
 
 def _template_size(path: str) -> tuple[int, int]:
@@ -579,6 +588,8 @@ def get_review(run_id: str):
         "status": run["status"],
         "validation_status": run["validation_status"],
         "location": run.get("location"),
+        "show_location": bool(layout.get("show_location", True)),
+        "block_titles": layout.get("block_titles") or {},
         "issues": issues,
         "counts": counts,
         "image": {

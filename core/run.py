@@ -81,12 +81,26 @@ def _apply_box_states(parsed: dict, pairs_in_block) -> None:
             parsed[pair.id] = _match_option(ticked[0], pair)
 
 
-def _find_form(conn, form_id=None):
-    """The run's own form. Never the globally latest: a test publish must not
-    silently redirect a queued card to another form's blocks."""
+def _find_form(conn, form_id=None, country_id=None, variant: str = "draft"):
+    """The form a run works on. Never the globally latest by accident.
+
+    `form_id` wins (a queued run names its form). Otherwise the latest
+    published form for the card's country and the requested variant.
+    """
     if form_id is not None:
         return conn.execute(select(forms).where(forms.c.id == form_id)).mappings().one()
-    return conn.execute(select(forms).order_by(forms.c.version.desc()).limit(1)).mappings().one()
+    query = select(forms).order_by(forms.c.version.desc())
+    if country_id is not None:
+        query = query.where(forms.c.country_id == country_id)
+    rows = conn.execute(query).mappings().all()
+    for row in rows:
+        if str((row["definition"] or {}).get("variant") or "draft") == variant:
+            return row
+    if rows:
+        return rows[0]
+    return conn.execute(
+        select(forms).order_by(forms.c.version.desc()).limit(1)
+    ).mappings().one()
 
 
 def _profile(conn, profile_id: str):
@@ -110,6 +124,14 @@ def _routing(form: dict, profile_id: str, filename: str = "routing.yaml") -> dic
     return data
 
 
+def _label_norm(text: str) -> str:
+    """Lowercase, accent-free, punctuation-trimmed form of a label or value."""
+    import unicodedata
+
+    folded = unicodedata.normalize("NFD", str(text).lower())
+    return "".join(ch for ch in folded if not unicodedata.combining(ch)).strip(" :.-")
+
+
 def _jsonable(value: Any) -> Any:
     if isinstance(value, Path):
         return str(value)
@@ -125,6 +147,7 @@ def run_card(
     card_id: int | None = None,
     run_id=None,
     routing_file: str | None = None,
+    variant: str = "draft",
 ) -> dict[str, Any]:
     """Run one card. CLI benchmarks pass `form_name`; the worker passes `card_id` and a
     pre-created `run_id`, so the HTTP layer can hand out the id before the work starts."""
@@ -134,7 +157,7 @@ def run_card(
             run_row = conn.execute(select(runs).where(runs.c.id == run_id)).mappings().one()
             form = _find_form(conn, run_row["form_id"])
         else:
-            form = _find_form(conn)
+            form = _find_form(conn, country_id=card["country_id"], variant=variant)
         profiles_by_id = _profiles(conn)
         profile = profiles_by_id[profile_id]
         routing_map = (
@@ -322,6 +345,14 @@ def run_card(
                 for pair in pairs_in_block:
                     concept = concepts[pair.concept]
                     raw_value = parsed.get(pair.id)
+                    # Never store a printed label as a value: the reader sometimes
+                    # returns "Preenchido por:" for an empty line. If the read is
+                    # the field's own label (or its WHO name), it is blank.
+                    if isinstance(raw_value, str):
+                        seen = _label_norm(raw_value)
+                        if seen and seen in {_label_norm(pair.label_local or ""),
+                                             _label_norm(concept.get("who_name") or "")}:
+                            raw_value = None
                     got = normalise.canonical(
                         pair.value_type, raw_value, concept, reference_year=reference_year
                     )

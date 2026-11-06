@@ -7,14 +7,14 @@ form:
   reference_year_note: REQUIRED, no silent default (CONSTRAINTS §1.6). Set the year
     printed on the card.
 blocks:
-- id: auto_vp_001
+- id: visit_header
   block_type: value_pairs
   bbox:
-  - 5
-  - 50
-  - 607
-  - 118
-  studio_auto: true
+  - 0
+  - 37
+  - 3221
+  - 2292
+  hint: Registo da visita
   value_pairs:
   - id: vp_001
     concept: visit_date
@@ -28,15 +28,6 @@ blocks:
     description: Date form was fileld in or evaluation was done
     sensitivity: administrative
     required_hint: Data de visita
-- id: auto_vp_002
-  block_type: value_pairs
-  bbox:
-  - 0
-  - 111
-  - 607
-  - 163
-  studio_auto: true
-  value_pairs:
   - id: vp_002
     concept: recorded_by
     value_type: text
@@ -49,14 +40,95 @@ blocks:
     description: Person that did the followup exam and filled the form
     sensitivity: administrative
     required_hint: Quem preencheu
-- id: auto_vp_003
-  block_type: value_pairs
+  - id: vp_007
+    concept: visit_date
+    value_type: date
+    bbox:
+    - 603
+    - 43
+    - 1225
+    - 121
+    label_local: Data preenchido
+    sensitivity: administrative
+  - id: vp_008
+    concept: recorded_by
+    value_type: text
+    bbox:
+    - 616
+    - 111
+    - 1234
+    - 169
+    label_local: Quem preencheu
+    sensitivity: administrative
+  - id: vp_012
+    concept: visit_date
+    value_type: date
+    bbox:
+    - 1221
+    - 40
+    - 1849
+    - 118
+    label_local: Data preenchido
+    sensitivity: administrative
+  - id: vp_013
+    concept: recorded_by
+    value_type: text
+    bbox:
+    - 1218
+    - 108
+    - 1843
+    - 179
+    label_local: Quem preencheu
+    sensitivity: administrative
+  - id: vp_016
+    concept: hand_ulnar_right
+    value_type: choice_single
+    bbox:
+    - 1225
+    - 1609
+    - 1852
+    - 2292
+    label_local: disability table
+    sensitivity: clinical
+  - id: vp_017
+    concept: visit_date
+    value_type: date
+    bbox:
+    - 1836
+    - 37
+    - 2451
+    - 114
+    label_local: Data preenchido
+    sensitivity: clinical
+  - id: vp_018
+    concept: recorded_by
+    value_type: text
+    bbox:
+    - 1836
+    - 101
+    - 2461
+    - 166
+    label_local: Quem preencheu
+    sensitivity: administrative
+  - id: vp_023
+    concept: treatment_completion_date
+    value_type: date
+    bbox:
+    - 2448
+    - 1609
+    - 3221
+    - 1771
+    label_local: Data fim de tratamento
+    description: Date treatment was completed or ended
+    sensitivity: administrative
+- id: nerve_table
+  block_type: annotated_table
   bbox:
   - 0
-  - 160
-  - 626
-  - 532
-  studio_auto: true
+  - 150
+  - 2467
+  - 655
+  hint: Palpação dos nervos periféricos
   value_pairs:
   - id: vp_003
     concept: nerve_enlargement_cubital_right
@@ -70,14 +142,44 @@ blocks:
     description: Nerve table with reference to enlarged or painful nerves.
     sensitivity: clinical
     required_hint: Resultado do exame dos nervos
-- id: auto_vp_004
-  block_type: value_pairs
+  - id: vp_009
+    concept: nerve_enlargement_cubital_left
+    value_type: tick_box
+    bbox:
+    - 613
+    - 153
+    - 1238
+    - 535
+    label_local: Tabela Nervos
+    sensitivity: clinical
+  - id: vp_014
+    concept: nerve_enlargement_radial_cutaneous_right
+    value_type: tick_box
+    bbox:
+    - 1228
+    - 153
+    - 1856
+    - 529
+    label_local: Tabela Nervos
+    sensitivity: clinical
+  - id: vp_019
+    concept: nerve_enlargement_cubital_left
+    value_type: tick_box
+    bbox:
+    - 1839
+    - 150
+    - 2467
+    - 655
+    label_local: Tabela Nervos
+    sensitivity: clinical
+- id: hand_feet
+  block_type: visual_annotation
   bbox:
   - 0
-  - 522
-  - 626
-  - 1619
-  studio_auto: true
+  - 516
+  - 2464
+  - 1622
+  hint: Teste sensitivo das mãos e dos pés
   value_pairs:
   - id: vp_004
     concept: insensitive_points_right_hand
@@ -91,14 +193,45 @@ blocks:
     description: The sensation test of hands and feet
     sensitivity: clinical
     required_hint: Resultados do teste sensitivo
-- id: auto_vp_005
-  block_type: value_pairs
+  - id: vp_010
+    concept: insensitive_points_left_hand
+    value_type: integer
+    bbox:
+    - 610
+    - 522
+    - 1238
+    - 1619
+    label_local: exame dos Maos e Pes
+    description: Sensitivity assessment of hands and feet
+    sensitivity: clinical
+  - id: vp_015
+    concept: insensitive_points_right_foot
+    value_type: integer
+    bbox:
+    - 1225
+    - 516
+    - 1856
+    - 1622
+    label_local: exame dos Maos e Pes
+    sensitivity: clinical
+  - id: vp_020
+    concept: insensitive_points_right_hand
+    value_type: integer
+    bbox:
+    - 1839
+    - 639
+    - 2464
+    - 1622
+    label_local: exame dos Maos e Pes
+    sensitivity: clinical
+- id: eye_exam
+  block_type: annotated_table
   bbox:
   - 0
   - 1603
-  - 626
+  - 2451
   - 2298
-  studio_auto: true
+  hint: Exame dos olhos
   value_pairs:
   - id: vp_005
     concept: eye_blinking_right
@@ -113,14 +246,43 @@ blocks:
       disability grading
     sensitivity: clinical
     required_hint: Motor tests and disability grade
-- id: auto_vp_006
+  - id: vp_021
+    concept: eye_blinking_right
+    value_type: choice_single
+    bbox:
+    - 1843
+    - 1606
+    - 2451
+    - 2295
+    label_local: disability table
+    sensitivity: clinical
+- id: disability
+  block_type: annotated_table
+  bbox:
+  - 613
+  - 1603
+  - 1231
+  - 2295
+  hint: Graus de deformidade
+  value_pairs:
+  - id: vp_011
+    concept: disability_grade_eye_right
+    value_type: integer
+    bbox:
+    - 613
+    - 1603
+    - 1231
+    - 2295
+    label_local: disability table
+    sensitivity: clinical
+- id: reactions
   block_type: value_pairs
   bbox:
   - 2451
   - 221
   - 3218
   - 975
-  studio_auto: true
+  hint: Reacções
   value_pairs:
   - id: vp_006
     concept: lepra_reaction_present
@@ -133,300 +295,14 @@ blocks:
     label_local: Reaction clinical history
     description: questions that help to determine if patient has a reaction
     sensitivity: clinical
-- id: auto_vp_007
-  block_type: value_pairs
-  bbox:
-  - 603
-  - 43
-  - 1225
-  - 121
-  studio_auto: true
-  value_pairs:
-  - id: vp_007
-    concept: visit_date
-    value_type: date
-    bbox:
-    - 603
-    - 43
-    - 1225
-    - 121
-    label_local: Data preenchido
-    sensitivity: administrative
-- id: auto_vp_008
-  block_type: value_pairs
-  bbox:
-  - 616
-  - 111
-  - 1234
-  - 169
-  studio_auto: true
-  value_pairs:
-  - id: vp_008
-    concept: recorded_by
-    value_type: text
-    bbox:
-    - 616
-    - 111
-    - 1234
-    - 169
-    label_local: Quem preencheu
-    sensitivity: administrative
-- id: auto_vp_009
-  block_type: value_pairs
-  bbox:
-  - 613
-  - 153
-  - 1238
-  - 535
-  studio_auto: true
-  value_pairs:
-  - id: vp_009
-    concept: nerve_enlargement_cubital_left
-    value_type: tick_box
-    bbox:
-    - 613
-    - 153
-    - 1238
-    - 535
-    label_local: Tabela Nervos
-    sensitivity: clinical
-- id: auto_vp_010
-  block_type: value_pairs
-  bbox:
-  - 610
-  - 522
-  - 1238
-  - 1619
-  studio_auto: true
-  value_pairs:
-  - id: vp_010
-    concept: insensitive_points_left_hand
-    value_type: integer
-    bbox:
-    - 610
-    - 522
-    - 1238
-    - 1619
-    label_local: exame dos Maos e Pes
-    description: Sensitivity assessment of hands and feet
-    sensitivity: clinical
-- id: auto_vp_011
-  block_type: value_pairs
-  bbox:
-  - 613
-  - 1603
-  - 1231
-  - 2295
-  studio_auto: true
-  value_pairs:
-  - id: vp_011
-    concept: disability_grade_eye_right
-    value_type: integer
-    bbox:
-    - 613
-    - 1603
-    - 1231
-    - 2295
-    label_local: disability table
-    sensitivity: clinical
-- id: auto_vp_012
-  block_type: value_pairs
-  bbox:
-  - 1221
-  - 40
-  - 1849
-  - 118
-  studio_auto: true
-  value_pairs:
-  - id: vp_012
-    concept: visit_date
-    value_type: date
-    bbox:
-    - 1221
-    - 40
-    - 1849
-    - 118
-    label_local: Data preenchido
-    sensitivity: administrative
-- id: auto_vp_013
-  block_type: value_pairs
-  bbox:
-  - 1218
-  - 108
-  - 1843
-  - 179
-  studio_auto: true
-  value_pairs:
-  - id: vp_013
-    concept: recorded_by
-    value_type: text
-    bbox:
-    - 1218
-    - 108
-    - 1843
-    - 179
-    label_local: Quem preencheu
-    sensitivity: administrative
-- id: auto_vp_014
-  block_type: value_pairs
-  bbox:
-  - 1228
-  - 153
-  - 1856
-  - 529
-  studio_auto: true
-  value_pairs:
-  - id: vp_014
-    concept: nerve_enlargement_radial_cutaneous_right
-    value_type: tick_box
-    bbox:
-    - 1228
-    - 153
-    - 1856
-    - 529
-    label_local: Tabela Nervos
-    sensitivity: clinical
-- id: auto_vp_015
-  block_type: value_pairs
-  bbox:
-  - 1225
-  - 516
-  - 1856
-  - 1622
-  studio_auto: true
-  value_pairs:
-  - id: vp_015
-    concept: insensitive_points_right_foot
-    value_type: integer
-    bbox:
-    - 1225
-    - 516
-    - 1856
-    - 1622
-    label_local: exame dos Maos e Pes
-    sensitivity: clinical
-- id: auto_vp_016
-  block_type: value_pairs
-  bbox:
-  - 1225
-  - 1609
-  - 1852
-  - 2292
-  studio_auto: true
-  value_pairs:
-  - id: vp_016
-    concept: hand_ulnar_right
-    value_type: choice_single
-    bbox:
-    - 1225
-    - 1609
-    - 1852
-    - 2292
-    label_local: disability table
-    sensitivity: clinical
-- id: auto_vp_017
-  block_type: value_pairs
-  bbox:
-  - 1836
-  - 37
-  - 2451
-  - 114
-  studio_auto: true
-  value_pairs:
-  - id: vp_017
-    concept: visit_date
-    value_type: date
-    bbox:
-    - 1836
-    - 37
-    - 2451
-    - 114
-    label_local: Data preenchido
-    sensitivity: clinical
-- id: auto_vp_018
-  block_type: value_pairs
-  bbox:
-  - 1836
-  - 101
-  - 2461
-  - 166
-  studio_auto: true
-  value_pairs:
-  - id: vp_018
-    concept: recorded_by
-    value_type: text
-    bbox:
-    - 1836
-    - 101
-    - 2461
-    - 166
-    label_local: Quem preencheu
-    sensitivity: administrative
-- id: auto_vp_019
-  block_type: value_pairs
-  bbox:
-  - 1839
-  - 150
-  - 2467
-  - 655
-  studio_auto: true
-  value_pairs:
-  - id: vp_019
-    concept: nerve_enlargement_cubital_left
-    value_type: tick_box
-    bbox:
-    - 1839
-    - 150
-    - 2467
-    - 655
-    label_local: Tabela Nervos
-    sensitivity: clinical
-- id: auto_vp_020
-  block_type: value_pairs
-  bbox:
-  - 1839
-  - 639
-  - 2464
-  - 1622
-  studio_auto: true
-  value_pairs:
-  - id: vp_020
-    concept: insensitive_points_right_hand
-    value_type: integer
-    bbox:
-    - 1839
-    - 639
-    - 2464
-    - 1622
-    label_local: exame dos Maos e Pes
-    sensitivity: clinical
-- id: auto_vp_021
-  block_type: value_pairs
-  bbox:
-  - 1843
-  - 1606
-  - 2451
-  - 2295
-  studio_auto: true
-  value_pairs:
-  - id: vp_021
-    concept: eye_blinking_right
-    value_type: choice_single
-    bbox:
-    - 1843
-    - 1606
-    - 2451
-    - 2295
-    label_local: disability table
-    sensitivity: clinical
-- id: auto_vp_022
-  block_type: value_pairs
+- id: prednisolone
+  block_type: dose_grid
   bbox:
   - 2448
   - 962
   - 3218
   - 1625
-  studio_auto: true
+  hint: Tratamento com prednisolona
   value_pairs:
   - id: vp_022
     concept: prednisolone_table
@@ -440,34 +316,14 @@ blocks:
     description: Table that has the dates prednisolone was given to the patient, the
       weeks, dosages and the name of the person that gave it to the right.
     sensitivity: clinical
-- id: auto_vp_023
+- id: outcome
   block_type: value_pairs
   bbox:
-  - 2448
-  - 1609
-  - 3221
-  - 1771
-  studio_auto: true
-  value_pairs:
-  - id: vp_023
-    concept: treatment_completion_date
-    value_type: date
-    bbox:
-    - 2448
-    - 1609
-    - 3221
-    - 1771
-    label_local: Data fim de tratamento
-    description: Date treatment was completed or ended
-    sensitivity: administrative
-- id: auto_vp_024
-  block_type: value_pairs
-  bbox:
-  - 2444
+  - 2441
   - 1758
-  - 3218
-  - 2104
-  studio_auto: true
+  - 3221
+  - 2292
+  hint: Tipo de doente saído
   value_pairs:
   - id: vp_024
     concept: outcome_released
@@ -482,15 +338,6 @@ blocks:
       completed, died, Wrong classification (all tick boxes), or something else (hand
       written).
     sensitivity: administrative
-- id: auto_vp_025
-  block_type: value_pairs
-  bbox:
-  - 2444
-  - 2098
-  - 3218
-  - 2201
-  studio_auto: true
-  value_pairs:
   - id: vp_025
     concept: transferred_to
     value_type: text
@@ -502,15 +349,6 @@ blocks:
     label_local: Transferido para
     description: Where the patient was referred to if anywhere.
     sensitivity: administrative
-- id: auto_vp_026
-  block_type: value_pairs
-  bbox:
-  - 2441
-  - 2188
-  - 3221
-  - 2292
-  studio_auto: true
-  value_pairs:
   - id: vp_026
     concept: self_care_group
     value_type: choice_single

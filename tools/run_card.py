@@ -24,6 +24,8 @@ def main() -> None:
     ap.add_argument("--block", action="append", dest="blocks")
     ap.add_argument("--routing", action="store_true")
     ap.add_argument("--routing-file", default="routing.yaml")
+    ap.add_argument("--variant", default="draft",
+                    help="form variant (draft = front, back, …)")
     args = ap.parse_args()
 
     result = run_card(
@@ -33,6 +35,7 @@ def main() -> None:
         only_blocks=args.blocks,
         routing=args.routing,
         routing_file=args.routing_file,
+        variant=args.variant,
     )
     print(json.dumps({k: v for k, v in result.items() if k != "blocks"}, indent=2))
     for block in result["blocks"]:

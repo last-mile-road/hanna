@@ -18,17 +18,23 @@ BLOCK_GUIDANCE = {
     "value_pairs": (
         "This crop is one region of a printed form with handwritten answers. "
         "Each field below has a printed label and a handwritten value next to or "
-        "below it. Read the handwritten value, never the printed label."
+        "below it. Read the handwritten value, never the printed label. If a line "
+        "has nothing handwritten on it, answer null — never the label, a dash or "
+        "the word 'blank'."
     ),
     "tick_grid": (
         "This crop is a grid of printed options. The clinician marks one option "
         "with a tick, a cross or a handwritten sign. For each field, read which "
-        "cell is marked. A plus or minus sign is a mark, not text."
+        "cell is marked. A plus or minus sign is a mark, not text. If no cell is "
+        "marked, answer null. The printed words Yes/No, sim/não or True/False are "
+        "the column headings, never the answer."
     ),
     "annotated_table": (
         "This crop is a hand-written table. Read the cell that belongs to each "
         "field, keeping its row and column position in mind. Do not shift values "
-        "between adjacent rows."
+        "between adjacent rows. A cell with nothing written in it is null; a mark "
+        "in a neighbouring cell does not fill it. Printed row and column headings "
+        "are labels, never values."
     ),
     "dose_grid": (
         "This crop is a three-row by twelve-month treatment grid. Read the year, the "
@@ -37,7 +43,8 @@ BLOCK_GUIDANCE = {
     "visual_annotation": (
         "This crop contains a body diagram or a drawing. Interpret the marks that "
         "are actually drawn. Count distinct marks only where a field asks for a "
-        "count. Printed body outlines are not marks."
+        "count. Printed body outlines are not marks, and an unmarked area is null, "
+        "not zero."
     ),
     "free_text": "This crop contains handwritten free text. Read it as written.",
     "sketch": "This crop contains a sketch. Read only what each field asks for.",
