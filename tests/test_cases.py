@@ -194,6 +194,8 @@ def test_case_capture_page_visit_and_confirmed_values_round_trip():
                 note="clinician corrected the card",
             )
             assert reopened["state"] == "open"
+            assert reopened["confirmed_by"] == "tester"
+            assert reopened["confirmed_at"] is not None
             assert (None, "clinical_history") not in cases.closed_sections(
                 conn, case["id"]
             )

@@ -237,12 +237,21 @@ def set_section_state(
         "reopened_at": func.now() if state == "open" else None,
         "note": note,
     }
+    keys = ("case_id", "section_id") if visit_id is None else (
+        "case_id", "visit_id", "section_id"
+    )
+    update = {k: v for k, v in values.items() if k not in keys}
+    if state == "open":
+        # Re-opening must not erase who confirmed the section and when: that is
+        # the audit line. The current state is open; the old confirmation stays.
+        update["confirmed_by"] = section_states.c.confirmed_by
+        update["confirmed_at"] = section_states.c.confirmed_at
     stmt = pg_insert(section_states).values(**values)
     if visit_id is None:
         stmt = stmt.on_conflict_do_update(
             index_elements=[section_states.c.case_id, section_states.c.section_id],
             index_where=section_states.c.visit_id.is_(None),
-            set_={k: v for k, v in values.items() if k not in ("case_id", "section_id")},
+            set_=update,
         )
     else:
         stmt = stmt.on_conflict_do_update(
@@ -252,11 +261,7 @@ def set_section_state(
                 section_states.c.section_id,
             ],
             index_where=section_states.c.visit_id.is_not(None),
-            set_={
-                k: v
-                for k, v in values.items()
-                if k not in ("case_id", "visit_id", "section_id")
-            },
+            set_=update,
         )
     conn.execute(stmt)
     query = select(section_states).where(
