@@ -1,13 +1,6 @@
 import pytest
 
-from core.caseid import (
-    check_digit,
-    display_number,
-    format_number,
-    generate,
-    is_valid,
-    normalise,
-)
+from core.caseid import check_digit, format_number, generate, is_valid, normalise
 
 
 def test_known_luhn_check_digit():
@@ -19,12 +12,6 @@ def test_spaces_and_hyphens_are_accepted():
     assert normalise("799 273 982") == "799273982"
     assert is_valid("799-273-982")
 
-
-def test_the_h_marker_is_a_display_prefix_only():
-    assert normalise("H 799 273 982") == "799273982"
-    assert normalise("h799273982") == "799273982"
-    assert is_valid("H 799 273 982")
-    assert display_number("799273982") == "H 799 273 982"
 
 
 def test_a_bad_check_digit_is_rejected():

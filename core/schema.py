@@ -306,6 +306,8 @@ capture_pages = Table(
     Column("md5", String(32), nullable=False),
     Column("variant", String(32)),  # front | back | page3, set by the page matcher
     Column("form_id", ForeignKey("forms.id"), nullable=True),
+    # The extraction run for this page, once admission has passed.
+    Column("run_id", ForeignKey("runs.id", ondelete="SET NULL"), nullable=True),
     # Binary gate: good or retake. pending until the matcher has run.
     Column("admission", String(16), nullable=False, server_default="pending"),
     Column("match_inliers", Integer),
@@ -371,6 +373,7 @@ case_values = Table(
 )
 
 Index("ix_cases_government", cases.c.country_id, cases.c.government_id)
+Index("ix_capture_pages_run", capture_pages.c.run_id)
 Index("ix_visits_case_date", visits.c.case_id, visits.c.visit_date)
 Index("ix_section_states_case", section_states.c.case_id)
 Index("ix_case_values_case", case_values.c.case_id)

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>HANNA — fotografar o cartão</title>
+<link rel="stylesheet" href="/static/bench.css?v=15">
+<style>
+  .capture-main { max-width: 62rem; }
+  .capture-wrap { display: block; }
+  .stage.a4 {
+    width: min(100%, calc(68vh * 210 / 297));
+    margin: 0 auto;
+    aspect-ratio: 210 / 297;
+    background: #000;
+  }
+  .stage.a4 video, .stage.a4 img { width: 100%; height: 100%; object-fit: contain; }
+  .frame-guide {
+    position: absolute; inset: 4.5%; border: 2px dashed rgba(255,255,255,.75);
+    border-radius: .4rem; pointer-events: none;
+  }
+  .frame-guide span {
+    position: absolute; left: 50%; top: -1.6rem; transform: translateX(-50%);
+    color: #fff; background: rgba(0,0,0,.45); padding: .1rem .5rem;
+    border-radius: 1rem; font-size: .75rem; white-space: nowrap;
+  }
+  .focus-dot {
+    position: absolute; width: 4.2rem; height: 4.2rem; margin: -2.1rem 0 0 -2.1rem;
+    border: 2px solid #fff; border-radius: 50%; pointer-events: none;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.35);
+  }
+  .rail { margin-top: .8rem; }
+  .rail .card { margin-bottom: .6rem; }
+  .shutter {
+    width: 5.2rem; height: 5.2rem; padding: 0; border-radius: 50%;
+    margin: .8rem auto .2rem; display: block; font-size: .85rem; line-height: 1.1;
+    background: var(--accent); color: var(--accent-ink); border: 4px solid #fff;
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  .side-badge { display: inline-block; font-weight: 700; padding: .15rem .6rem; border-radius: 1rem; background: #e7f3ea; color: var(--good); }
+  .thumbs { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; margin: 1rem 0; }
+  .thumb { border: 1px solid var(--line); border-radius: .5rem; padding: .4rem; background: var(--card); }
+  .thumb img { width: 100%; height: auto; display: block; border-radius: .3rem; background: #000; }
+  .thumb .thumb-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .35rem; font-size: .85rem; }
+  .thumb button { width: auto; padding: .35rem .6rem; font-size: .8rem; margin: 0; }
+  .run-panels { display: grid; grid-template-columns: 1fr; gap: .8rem; }
+  .run-panel { border: 1px solid var(--line); border-radius: .5rem; padding: .8rem; background: var(--card); }
+  .run-panel h2 { font-size: 1rem; margin: 0 0 .3rem; display: flex; justify-content: space-between; gap: .5rem; }
+  .run-panel .muted { color: var(--muted); font-size: .88rem; }
+  .run-panel a { color: var(--accent); }
+  @media (orientation: landscape) and (max-height: 34rem) {
+    .capture-wrap { display: flex; gap: .8rem; align-items: flex-start; }
+    .stage.a4 { flex: 1 1 auto; height: 72vh; max-height: 72vh; aspect-ratio: auto; }
+    .rail { width: 12.5rem; flex: none; margin-top: 0; max-height: 72vh; overflow-y: auto; }
+    .shutter { width: 4.4rem; height: 4.4rem; }
+  }
+  @media (min-width: 48rem) {
+    .run-panels { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">HANNA</div>
+  <span class="tag">cartão — frente e verso</span>
+</header>
+
+<main class="capture-main">
+  <!-- 1. consent -->
+  <section id="view-consent" class="view">
+    <h1>Antes de fotografar</h1>
+    <div class="card">
+      <p>Este ecrã é para <strong>cartões de teste</strong>. Não fotografe um cartão com dados de um doente real.</p>
+      <p class="hint">A fotografia é enviada para leitura por um modelo de visão. Os valores são revistos por uma pessoa antes de qualquer registo.</p>
+      <label class="check">
+        <input type="checkbox" id="consent">
+        <span>Confirmo que este é um cartão de teste, sem dados de um doente real.</span>
+      </label>
+    </div>
+    <button id="consent-next" disabled>Continuar</button>
+  </section>
+
+  <!-- 2. country -->
+  <section id="view-country" class="view hidden">
+    <h1>País</h1>
+    <div class="card">
+      <label for="country">Cartão a testar</label>
+      <select id="country">
+        <option value="mozambique">Moçambique — Ficha clínica lepra</option>
+      </select>
+      <p class="hint" style="margin-top:.6rem">A frente e o verso são fotografados na mesma sessão. O sistema identifica cada lado.</p>
+    </div>
+    <button id="country-next">Abrir câmara</button>
+  </section>
+
+  <!-- 3. capture -->
+  <section id="view-capture" class="view hidden">
+    <h1>Fotografar o cartão</h1>
+    <div class="capture-wrap">
+      <div class="stage a4" id="stage">
+        <video id="video" playsinline muted autoplay class="hidden"></video>
+        <img id="preview" alt="" class="hidden">
+        <div class="frame-guide"><span>Enquadre o cartão dentro do guia</span></div>
+        <div id="focus-dot" class="focus-dot hidden"></div>
+        <div id="placeholder" class="placeholder">A câmara ainda não está aberta</div>
+      </div>
+      <div class="rail">
+        <div class="card">
+          <div id="side-label" class="side-badge">Frente</div>
+          <p class="hint" style="margin-top:.5rem" id="side-hint">Coloque a frente do cartão no guia, com luz uniforme.</p>
+          <div id="gate" class="gate hidden">
+            <div class="gate-row"><span>Nitidez</span><b id="g-blur">—</b></div>
+            <div class="gate-row"><span>Luz</span><b id="g-bright">—</b></div>
+            <div class="gate-row"><span>Reflexo</span><b id="g-glare">—</b></div>
+            <div id="gate-reason" class="gate-reason"></div>
+          </div>
+          <p id="size-note" class="hint"></p>
+          <button id="btn-start">Abrir câmara</button>
+          <button id="btn-torch" class="secondary hidden">Luz da câmara</button>
+          <button id="btn-shot" class="shutter hidden">Fotografar</button>
+          <button id="btn-continue" class="hidden">Continuar</button>
+          <button id="btn-retake" class="secondary hidden">Repetir este lado</button>
+          <label class="file-fallback">
+            <input type="file" id="file" accept="image/jpeg,image/png" hidden>
+            <span class="link" id="btn-file">Sem câmara? Escolher ficheiro</span>
+          </label>
+          <p id="file-note" class="hint hidden">Atenção: um ficheiro escolhido do telefone fica guardado no dispositivo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. review both sides -->
+  <section id="view-review" class="view hidden">
+    <h1>Rever as duas fotografias</h1>
+    <div class="thumbs">
+      <div class="thumb">
+        <div class="thumb-head"><strong>Frente</strong><button class="secondary" data-retake="front">Repetir</button></div>
+        <img id="thumb-front" alt="Frente do cartão">
+      </div>
+      <div class="thumb">
+        <div class="thumb-head"><strong>Verso</strong><button class="secondary" data-retake="back">Repetir</button></div>
+        <img id="thumb-back" alt="Verso do cartão">
+      </div>
+    </div>
+    <p class="hint">As duas páginas são enviadas juntas. O sistema confirma o enquadramento antes de iniciar a leitura.</p>
+    <button id="btn-send">Enviar para análise</button>
+    <p id="send-note" class="hint"></p>
+  </section>
+
+  <!-- 5. admission -->
+  <section id="view-admission" class="view hidden">
+    <h1 id="admission-title">Resultado</h1>
+    <p id="admission-message" class="hint"></p>
+    <div id="admission-pages"></div>
+    <div class="actions">
+      <button id="btn-retake-front" class="secondary hidden">Repetir frente</button>
+      <button id="btn-retake-back" class="secondary hidden">Repetir verso</button>
+    </div>
+  </section>
+
+  <!-- 6. extraction -->
+  <section id="view-progress" class="view hidden">
+    <h1>A ler o cartão</h1>
+    <p class="hint">O número HANNA é atribuído depois da leitura e da verificação, quando não houver condições bloqueantes.</p>
+    <div id="run-panels" class="run-panels"></div>
+    <div id="finalise" class="card hidden" style="margin-top:1rem">
+      <p class="hint">As duas páginas foram lidas. Finalize para obter o número HANNA do caso.</p>
+      <button id="btn-finalise">Finalizar e obter número HANNA</button>
+      <p id="number-note" class="hint"></p>
+    </div>
+  </section>
+</main>
+
+<footer><span id="net"></span></footer>
+<script src="/static/capture.js?v=1"></script>
+</body>
+</html>

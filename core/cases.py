@@ -17,11 +17,11 @@ from pathlib import Path
 from typing import Any
 
 from sqlalchemy import case as sa_case
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.engine import Connection
 
-from .caseid import generate_unique, is_valid
+from .caseid import generate_unique, is_valid, normalise
 from .schema import (
     capture_pages,
     captures,
@@ -49,7 +49,7 @@ def find_case(
     if country_id is not None:
         query = query.where(cases.c.country_id == country_id)
     if hanna_number is not None:
-        query = query.where(cases.c.hanna_number == hanna_number.replace(" ", ""))
+        query = query.where(cases.c.hanna_number == normalise(hanna_number))
     if government_id is not None:
         query = query.where(cases.c.government_id == government_id)
     row = conn.execute(query.limit(1)).mappings().first()
@@ -67,21 +67,22 @@ def create_case(
     classification: str | None = None,
     treatment_start_date: date | None = None,
 ) -> dict[str, Any]:
-    """Create a case. A new case always gets a HANNA number.
+    """Create a case. A new case is provisional and has no HANNA number yet.
 
     ``identity_status`` records how the capture reached this case:
     ``hanna_number`` (read from the card), ``nil`` (matched by the government
     number) or ``new`` (neither; a provisional case, deduplicated later).
+    The number is allocated by :func:`allocate_number` only after extraction
+    and validation have no blocking conditions.
     """
     if hanna_number is not None and not is_valid(hanna_number):
         raise ValueError(f"invalid HANNA number: {hanna_number!r}")
-    number = hanna_number or generate_unique(conn, country_id)
     case_id = uuid.uuid4()
     conn.execute(
         cases.insert().values(
             id=case_id,
             country_id=country_id,
-            hanna_number=number,
+            hanna_number=normalise(hanna_number) if hanna_number else None,
             government_id=government_id,
             identity_status=identity_status,
             status=status,
@@ -89,6 +90,29 @@ def create_case(
             treatment_start_date=treatment_start_date,
         )
     )
+    return find_case(conn, case_id=case_id)  # type: ignore[return-value]
+
+
+def allocate_number(conn: Connection, case_id: uuid.UUID) -> dict[str, Any]:
+    """Allocate the HANNA number, once, after validation is clear.
+
+    The caller is responsible for the rule: no blocking conditions, and for a
+    closed card the outcome is filled. This is the proof that notification was
+    completed, not a capture receipt.
+    """
+    case = find_case(conn, case_id=case_id)
+    if case is None:
+        raise ValueError("case not found")
+    if case["hanna_number"]:
+        return case
+    number = generate_unique(conn, case["country_id"])
+    result = conn.execute(
+        update(cases)
+        .where(cases.c.id == case_id, cases.c.hanna_number.is_(None))
+        .values(hanna_number=number)
+    )
+    if result.rowcount == 0:  # another transaction won the race
+        return find_case(conn, case_id=case_id)  # type: ignore[return-value]
     return find_case(conn, case_id=case_id)  # type: ignore[return-value]
 
 
@@ -129,6 +153,7 @@ def add_page(
     md5: str,
     variant: str | None = None,
     form_id: int | None = None,
+    run_id: uuid.UUID | None = None,
     admission: str = "pending",
     quality: dict[str, Any] | None = None,
     match_inliers: int | None = None,
@@ -146,6 +171,7 @@ def add_page(
                 md5=md5,
                 variant=variant,
                 form_id=form_id,
+                run_id=run_id,
                 admission=admission,
                 quality=quality,
                 match_inliers=match_inliers,
@@ -156,6 +182,15 @@ def add_page(
         )
         .mappings()
         .one()
+    )
+
+
+def set_page_run(conn: Connection, page_id: int, run_id: uuid.UUID) -> None:
+    """Link a page to its extraction run."""
+    conn.execute(
+        update(capture_pages)
+        .where(capture_pages.c.id == page_id)
+        .values(run_id=run_id)
     )
 
 

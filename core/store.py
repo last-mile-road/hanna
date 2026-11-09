@@ -206,6 +206,28 @@ def replace_ground_truth(
         )
 
 
+def upsert_ground_truth(
+    conn: Connection, card_id: int, rows: list[dict[str, Any]], version: int = 1
+) -> None:
+    """Write reviewed values as the card's ground truth, one row per pair."""
+    for row in rows:
+        values = {"card_id": card_id, "version": version, **row}
+        stmt = pg_insert(ground_truth).values(**values)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=[
+                ground_truth.c.card_id,
+                ground_truth.c.gt_key,
+                ground_truth.c.version,
+            ],
+            set_={
+                key: value
+                for key, value in values.items()
+                if key not in ("card_id", "gt_key", "version")
+            },
+        )
+        conn.execute(stmt)
+
+
 def ground_truth_map(conn: Connection, card_id: int, version: int = 1) -> dict[str, dict[str, Any]]:
     rows = conn.execute(
         select(ground_truth).where(

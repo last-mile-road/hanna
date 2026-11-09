@@ -713,3 +713,31 @@ $("finish").addEventListener("click", async () => {
   await saveQueue;
   location.href = "/";
 });
+
+/* Save the reviewed values as this card's ground truth. Only confirmed and
+   corrected values are exported; skipped and untouched values are not truth. */
+$("save-truth").addEventListener("click", async () => {
+  if (!runId) return;
+  const button = $("save-truth");
+  button.disabled = true;
+  button.textContent = "A guardar…";
+  await saveQueue;
+  let response;
+  try {
+    response = await fetch(`/api/runs/${runId}/ground-truth`, { method: "POST" });
+  } catch {
+    button.disabled = false;
+    button.textContent = "Guardar como cartão de verdade";
+    $("truth-note").textContent = "A ligação falhou. Tente novamente.";
+    return;
+  }
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    button.disabled = false;
+    button.textContent = "Guardar como cartão de verdade";
+    $("truth-note").textContent = body.detail || "Não foi possível guardar.";
+    return;
+  }
+  button.textContent = "Guardado";
+  $("truth-note").textContent = `${body.saved} valores guardados como verdade de teste.`;
+});

@@ -5,7 +5,7 @@ The running version of HANNA for testing and iteration. Design lives in
 
 **Status:** working vertical slice with a validation layer and the first case
 model. PostgreSQL 18.6 run ledger, form contract, alignment, prompt generation,
-OpenRouter extraction, scoring and a required/parameter validator; 181 tests
+OpenRouter extraction, scoring and a required/parameter validator; 184 tests
 pass. Phase 1 adds a job worker, an HTTP/SSE surface and signed image links, with
 no UI or auth yet. Renamed from `objective-2-server` on 2026-10-23.
 
@@ -147,7 +147,9 @@ run ledger:
   projection, list closed sections.
 - `core/schema.py` — `cases`, `captures`, `capture_pages`, `visits`,
   `section_states`, `case_values`; migration `9a1c2e3f4b5d`.
-- 12 new tests in the case model; full suite 181 passed.
+- 12 new tests in the case model; full suite 184 passed.
+- A new case is provisional and has **no HANNA number**. `cases.allocate_number()`
+  assigns the nine digits only after extraction and validation are clear.
 
 `cases`, `captures` and `visits` follow the DHIS2 tracker shape (case = tracked
 entity, visit = event, concept = data element) so a later sync is a mapping, not
@@ -195,13 +197,23 @@ curl -N localhost:8100/api/runs/<run_id>/events        # block events, then one 
 - `tools/cleanup_images.py --days 30` implements the retention rule; it writes an
   audit line per deletion.
 
-### Two-sided capture and admission (2026-11-09)
+### Two-sided capture, admission and the phone route (2026-11-09)
 
-`POST /api/captures` takes the front and back in one request, identifies each
-side by SIFT/USAC alignment and returns a binary admission result. It creates
-the case, capture and pages only when every required side is good. A retake
-leaves no case and no image behind; its measurements go to
-`output/admission.jsonl`.
+`/capture` is the phone screen: consent, front, turn the card, back, review,
+send. `POST /api/captures` identifies each side by SIFT/USAC alignment and
+returns a binary admission result. It creates the provisional case, capture and
+pages only when every required side is good. A retake leaves no case and no
+image behind; its measurements go to `output/admission.jsonl`.
+
+On admission the extraction starts: one run per page, returned as `runs` with an
+SSE URL. The case has **no HANNA number yet**. `POST /api/cases/{id}/allocate`
+assigns the nine-digit number only after both page runs are done and clear (no
+blocked page); a closed card also needs its outcome and date. The number is the
+proof of notification, not a capture receipt.
+
+`POST /api/runs/{id}/ground-truth` saves the values a human confirmed or
+corrected as that card's ground truth — how a phone-captured dummy card becomes
+a test card without writing a sheet by hand.
 
 ```bash
 curl -s -X POST localhost:8100/api/captures \
@@ -209,12 +221,16 @@ curl -s -X POST localhost:8100/api/captures \
   -F country=mozambique -F attested_dummy=true
 ```
 
-`status: admitted` returns `hanna_number_display` (`H 123 456 789`) and one entry
-per page. `status: retake` returns `missing`, `duplicates` and the reason for each
-page. Page templates and form variants come from
-`countries/mozambique/pages.yaml`; `GET /api/captures/{id}/page/{n}?sig=...`
-serves a page through a signed URL. The Bench screen still uses the single-image
-`/api/runs` path until it is switched to `/api/captures`.
+`status: admitted` returns one entry per page and the `runs` that were started.
+`status: retake` returns `missing`, `duplicates` and the reason for each page.
+Page templates and form variants come from `countries/mozambique/pages.yaml`;
+`GET /api/captures/{id}/page/{n}?sig=...` serves a page through a signed URL.
+
+Default routing is OpenRouter Qwen3.5 9B with the Qwen3-VL 8B fallback. For the
+two table blocks on the local MinerU, start `mineru-api` and run the server and
+worker with `HANNA_ROUTING_FILE=routing-local.yaml` and `MINERU_LOCAL_BASE`.
+MinerU has no VLM fallback: a failed table block fails visibly and is fixed
+structurally.
 
 Still missing: the UI (Phase 2), login and country scoping (Phase 3), and the form
 builder (Studio).

@@ -1,24 +1,11 @@
-# Block -> reader. One VLM (the 9B) plus the table readers; the 8B is retired.
-# MinerU standard reads the disability table 98/98 and the nerve grid 84/84
-# (routed VLM: 89/98, 79/84); hand/feet stays VLM (a diagram, not a table).
+# Testing default: OpenRouter Qwen3.5 9B for every block, Qwen3-VL 8B as the
+# fallback. The Modal box is out of the loop until the rest of the infrastructure
+# is in place. For local MinerU on the two table blocks, run the server and worker
+# with HANNA_ROUTING_FILE=routing-local.yaml and MINERU_LOCAL_BASE set.
+#
+# A controlled reader (MinerU) has no fallback by design: a failure is surfaced
+# and fixed structurally, not hidden behind a different model.
 strips: or-qwen35-9b-v1
-fallback: or-qwen35-9b-v1
+fallback: or-qwen3vl-8b-v1
 default: or-qwen35-9b-v1
-blocks:
-  general_demographic: or-qwen35-9b-v1
-  clinical_history: or-qwen35-9b-v1
-  skin_patch: or-qwen35-9b-v1
-  hand_feet_assessment: or-qwen35-9b-v1
-  classification: or-qwen35-9b-v1
-  treatment_follow: or-qwen35-9b-v1
-  nerve_assessment: mineru-standard
-  def_exam: mineru-standard
-  visit_header: or-qwen35-9b-v1
-  nerve_table: or-qwen35-9b-v1
-  hand_feet: or-qwen35-9b-v1
-  eye_exam: or-qwen35-9b-v1
-  muscle_test: or-qwen35-9b-v1
-  disability: or-qwen35-9b-v1
-  reactions: or-qwen35-9b-v1
-  prednisolone: or-qwen35-9b-v1
-  outcome: or-qwen35-9b-v1
+blocks: {}

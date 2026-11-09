@@ -74,8 +74,10 @@ def test_case_capture_page_visit_and_confirmed_values_round_trip():
                 classification="MB",
                 treatment_start_date=date(2026, 1, 10),
             )
-            assert case["hanna_number"] and is_valid(case["hanna_number"])
-            assert cases.find_case(conn, hanna_number=case["hanna_number"])["id"] == case["id"]
+            assert case["hanna_number"] is None
+            allocated = cases.allocate_number(conn, case["id"])
+            assert allocated["hanna_number"] and is_valid(allocated["hanna_number"])
+            assert cases.find_case(conn, hanna_number=allocated["hanna_number"])["id"] == case["id"]
             assert cases.find_case(
                 conn, country_id=country_id, government_id="NIL-TEST-1"
             )["id"] == case["id"]

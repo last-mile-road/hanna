@@ -33,14 +33,29 @@ OCR_BLOCK_TYPES = {"value_pairs", "tick_grid", "annotated_table", "free_text"}
 MINERU_PROFILE = "mineru-standard"
 
 
-def _complete_with_fallback(client, prompt, image_paths, profile, fallback):
-    """Ordered fail-through: one model rate-limited upstream must not fail the block."""
+def _complete_with_fallback(client_for, prompt, image_paths, profile, fallback):
+    """Ordered fail-through: one model rate-limited upstream must not fail the block.
+
+    `client_for` returns the client for a profile's provider, so the primary can
+    be the self-hosted box and the fallback OpenRouter (or the reverse) — the
+    fail-over crosses providers, not just model names.
+    """
     try:
-        return client.complete(prompt, image_paths, profile["model"], profile["settings"])
+        return (
+            client_for(profile).complete(
+                prompt, image_paths, profile["model"], profile["settings"]
+            ),
+            profile["id"],
+        )
     except Exception:
         if not fallback or fallback["id"] == profile["id"]:
             raise
-        return client.complete(prompt, image_paths, fallback["model"], fallback["settings"])
+        return (
+            client_for(fallback).complete(
+                prompt, image_paths, fallback["model"], fallback["settings"]
+            ),
+            fallback["id"],
+        )
 
 
 def _find_card(conn, form_name: str):
@@ -195,7 +210,22 @@ def run_card(
         "errors": [],
     }
 
-    client = OpenRouter()
+    _clients: dict[str, OpenRouter] = {}
+
+    def client_for(profile) -> OpenRouter:
+        """One client per provider: the box for modal profiles, the hosted
+        gateway for everything else. The routing decides which block uses which."""
+        provider = str((profile or {}).get("provider") or "openrouter")
+        if provider not in _clients:
+            if provider == "modal":
+                if not settings.MODAL_BOX_URL:
+                    raise RuntimeError("MODAL_BOX_URL is not set")
+                _clients[provider] = OpenRouter(
+                    api_key=settings.MODAL_BOX_KEY, base_url=settings.MODAL_BOX_URL
+                )
+            else:
+                _clients[provider] = OpenRouter()
+        return _clients[provider]
     block_hashes: list[str] = []
 
     try:
@@ -207,6 +237,10 @@ def run_card(
         result["alignment_ms"] = alignment_ms
 
         reference_year = int(form["definition"].get("reference_year") or date.today().year)
+        # Tick strips are measured on the front template. The back page has its own
+        # layout and no strip spec, so running them there would read the wrong pixels.
+        form_variant = str((form["definition"] or {}).get("variant") or "draft")
+        is_front = form_variant in {"draft", "front"}
         age_derived: dict[str, int] = {}
         selected = [
             b for b in blocks
@@ -289,6 +323,10 @@ def run_card(
             block = item["block"]
             pairs_in_block = item["pairs"]
             block_values = item["block_values"]
+            if item.get("used_profile"):
+                # The ledger names the model that actually answered, including
+                # a 9B -> 8B fallback. No silent substitution.
+                block_values["profile_id"] = item["used_profile"]
             completion = item["completion"]
             if completion is not None:
                 block_values.update(
@@ -306,7 +344,7 @@ def run_card(
                     # the 13:48 card lost its whole demographics block this way and looked
                     # like a completed run with every field blank.
                     try:
-                        retry = client.complete(
+                        retry = client_for(item["profile"]).complete(
                             item["prompt"],
                             item["image_paths"],
                             item["profile"]["model"],
@@ -409,7 +447,13 @@ def run_card(
                 f"{block_values.get('latency_ms', '-')} ms"
             )
 
-        for items in groups.values():
+        def process_group(items):
+            """One profile group: its blocks in parallel, then persist each.
+
+            Groups run concurrently with each other (below), so a slow VLM group
+            no longer holds the table readers back — the box starts working at
+            the same time as the first model call, not after the last one.
+            """
             group_profile = items[0]["profile"]
             is_reader = group_profile["id"] == MINERU_PROFILE
             workers = max(
@@ -435,7 +479,7 @@ def run_card(
                     futures = {
                         pool.submit(
                             _complete_with_fallback,
-                            client,
+                            client_for,
                             item["prompt"],
                             item["image_paths"],
                             group_profile,
@@ -446,40 +490,35 @@ def run_card(
                 for future in as_completed(futures):
                     item = futures[future]
                     try:
-                        item["completion"] = future.result()
+                        item["completion"], item["used_profile"] = future.result()
                     except Exception as exc:
+                        # A controlled reader that fails is surfaced, not silently
+                        # replaced: the block fails and the run says so.
                         item["error"] = str(exc)
-                        # A table reader that failed or returned the wrong
-                        # vocabulary must not cost the card: fall back to the
-                        # VLM for that block and record why.
-                        if item.get("reader") and fallback_profile is not None:
-                            try:
-                                item["completion"] = _complete_with_fallback(
-                                    client,
-                                    item["prompt"],
-                                    item["image_paths"],
-                                    fallback_profile,
-                                    fallback_profile,
-                                )
-                                item["reader_fallback"] = str(exc)[:240]
-                                item.pop("error", None)
-                            except Exception as retry_exc:
-                                item["error"] = f"reader: {exc}; fallback: {retry_exc}"
                     # Persist as each block lands: SSE reads block_runs, so a late
                     # write would turn progress into one batch at the end.
                     record(item)
 
+        if len(groups) <= 1:
+            for items in groups.values():
+                process_group(items)
+        else:
+            with ThreadPoolExecutor(max_workers=len(groups)) as group_pool:
+                futures = [group_pool.submit(process_group, items) for items in groups.values()]
+                for future in futures:
+                    future.result()
+
         # Tick groups: one strip per printed question, overriding the block values for the
         # tick fields. Measured 49/49 for strips against 30/35 for the block prompt.
         tick_values: dict = {}
-        if routing:
+        if routing and is_front:
             tick_profile_id = routing_map.get("strips", profile_id)
             tick_profile = profiles_by_id.get(tick_profile_id, profile)
             try:
                 tick_values, tick_usage = ticks.read_ticks(
                     alignment.image,
                     str(form["definition"].get("country", "mozambique")).lower(),
-                    client,
+                    client_for(tick_profile),
                     tick_profile,
                     run_dir,
                 )

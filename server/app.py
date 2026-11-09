@@ -21,6 +21,7 @@ import json
 import re
 import time
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
@@ -33,6 +34,7 @@ from core import admission, caseid, cases as cases_mod, jobs, settings, store
 from core.forms import prompt_options
 from core.db import connect
 from core.schema import capture_pages as capture_pages_t
+from core.schema import captures as captures_t
 from core.schema import cards as cards_t
 from core.schema import countries as countries_t
 from core.schema import forms as forms_t
@@ -58,6 +60,12 @@ def review_page():
 def index():
     """Bench screen 1: consent, capture, client gate, upload, live stream."""
     return FileResponse(STATIC_DIR / "index.html")
+
+
+@app.get("/capture", include_in_schema=False)
+def capture_page():
+    """Phone route: front and back, admission gate, extraction, HANNA number."""
+    return FileResponse(STATIC_DIR / "capture.html")
 
 
 @app.get("/studio", include_in_schema=False)
@@ -228,6 +236,61 @@ def _page_json(match: admission.PageMatch, page: dict | None = None) -> dict:
     return payload
 
 
+def _start_capture_runs(
+    conn,
+    pages: list[dict],
+    forms_by_side: dict[str, dict],
+    country_id: int,
+) -> list[dict]:
+    """Create one extraction run and job per admitted page. Idempotent."""
+    runs = []
+    for page in pages:
+        if page.get("run_id"):
+            run_id = page["run_id"]
+        else:
+            form = forms_by_side.get(page["variant"])
+            if form is None:
+                raise HTTPException(
+                    503, f"Nenhum formulário para o lado {page['variant']}."
+                )
+            card_id = store.upsert_card(
+                conn,
+                country_id,
+                Path(page["image_path"]),
+                kind="upload",
+                attested_dummy=True,
+            )
+            run_id = store.create_run(
+                conn,
+                card_id,
+                form["id"],
+                form["version"],
+                "or-routing-v1",
+                "upload",
+                status="queued",
+            )
+            jobs.enqueue(
+                conn,
+                "extract",
+                {
+                    "run_id": str(run_id),
+                    "card_id": card_id,
+                    "routing": True,
+                    "purpose": "upload",
+                },
+            )
+            cases_mod.set_page_run(conn, page["id"], run_id)
+        runs.append(
+            {
+                "side": page["variant"],
+                "page_no": page["page_no"],
+                "run_id": str(run_id),
+                "events_url": f"/api/runs/{run_id}/events",
+            }
+        )
+    return runs
+
+
 @app.post("/api/captures")
 def create_capture(
     files: list[UploadFile] = File(...),
@@ -237,6 +300,7 @@ def create_capture(
     government_id: str | None = Form(None),
     client: str | None = Form(None),
     require_back: bool = Form(True),
+    start_extraction: bool = Form(True),
 ):
     """Photograph the card sides, identify them, and admit or ask for a retake.
 
@@ -343,6 +407,7 @@ def create_capture(
             "pages": [_page_json(match) for match in assessment.pages],
         }
 
+    runs_out: list[dict] = []
     try:
         with connect() as conn:
             if existing is not None:
@@ -391,28 +456,42 @@ def create_capture(
                         rotation=match.rotation,
                     )
                 )
+            if start_extraction:
+                forms_by_side = {spec.id: forms[spec.form_variant] for spec in specs}
+                runs_out = _start_capture_runs(
+                    conn, page_rows, forms_by_side, country_row["id"]
+                )
             conn.commit()
     except Exception:
         for path, _ in saved.values():
             path.unlink(missing_ok=True)
         raise
 
-    number_value = case.get("hanna_number") or ""
+    number_value = case.get("hanna_number") or None
     admitted_matches = [match for match in assessment.pages if match.spec is not None]
+    runs_by_page = {run["page_no"]: run for run in runs_out}
+    pages_json = []
+    for match, page in zip(admitted_matches, page_rows):
+        item = _page_json(match, page)
+        run = runs_by_page.get(page["page_no"])
+        if run:
+            item["run_id"] = run["run_id"]
+            item["events_url"] = run["events_url"]
+        pages_json.append(item)
     return {
         "status": "admitted",
         "case_id": str(case["id"]),
         "capture_id": str(capture["id"]),
         "hanna_number": number_value,
-        "hanna_number_display": caseid.display_number(number_value) if number_value else "",
+        "hanna_number_display": caseid.format_number(number_value) if number_value else None,
+        "number_allocated": bool(number_value),
         "identity_status": case["identity_status"],
         "matched_by": "hanna_number" if number else "new",
         "message": assessment.message,
         "missing": assessment.pages_missing,
         "duplicates": assessment.duplicates,
-        "pages": [
-            _page_json(match, page) for match, page in zip(admitted_matches, page_rows)
-        ],
+        "pages": pages_json,
+        "runs": runs_out,
     }
 
 
@@ -433,6 +512,172 @@ def capture_page_image(capture_id: str, page_no: int, sig: str = Query(...)):
         raise HTTPException(404, "imagem não encontrada")
     media_type = "image/png" if page["image_path"].lower().endswith(".png") else "image/jpeg"
     return FileResponse(page["image_path"], media_type=media_type)
+
+
+@app.post("/api/captures/{capture_id}/extract")
+def extract_capture(capture_id: str):
+    """Start one extraction run per admitted page. Idempotent."""
+    capture_id = _uuid(capture_id)
+    with connect() as conn:
+        capture = conn.execute(
+            select(captures_t).where(captures_t.c.id == uuid.UUID(capture_id))
+        ).mappings().first()
+        if capture is None:
+            raise HTTPException(404, "captura não encontrada")
+        case = cases_mod.find_case(conn, case_id=capture["case_id"])
+        if case is None:
+            raise HTTPException(404, "caso não encontrado")
+        country = conn.execute(
+            select(countries_t).where(countries_t.c.id == case["country_id"])
+        ).mappings().one()
+        specs = admission.load_pages(country["code"])
+        forms_by_side = {}
+        for spec in specs:
+            row = _form(conn, case["country_id"], spec.form_variant)
+            if row:
+                forms_by_side[spec.id] = dict(row)
+        missing = [spec.id for spec in specs if spec.id not in forms_by_side]
+        if missing:
+            raise HTTPException(
+                503, "Nenhum formulário publicado para: " + ", ".join(missing) + "."
+            )
+        pages = [
+            dict(row)
+            for row in conn.execute(
+                select(capture_pages_t)
+                .where(capture_pages_t.c.capture_id == uuid.UUID(capture_id))
+                .order_by(capture_pages_t.c.page_no)
+            ).mappings()
+        ]
+        runs = _start_capture_runs(conn, pages, forms_by_side, case["country_id"])
+        conn.commit()
+    return {"capture_id": capture_id, "runs": runs}
+
+
+@app.post("/api/cases/{case_id}/allocate")
+def allocate_case_number(case_id: str):
+    """Allocate the HANNA number only after both pages are read and clear.
+
+    The number is proof that notification was completed, not a capture receipt.
+    A blocked page, a page still reading, or a closed card without an outcome
+    leaves the case without a number.
+    """
+    case_id = _uuid(case_id)
+    with connect() as conn:
+        case = cases_mod.find_case(conn, case_id=uuid.UUID(case_id))
+        if case is None:
+            raise HTTPException(404, "caso não encontrado")
+        if case["hanna_number"]:
+            return {
+                "hanna_number": case["hanna_number"],
+                "hanna_number_display": caseid.format_number(case["hanna_number"]),
+                "allocated": False,
+            }
+
+        capture = conn.execute(
+            select(captures_t)
+            .where(captures_t.c.case_id == uuid.UUID(case_id))
+            .order_by(captures_t.c.captured_at.desc())
+            .limit(1)
+        ).mappings().first()
+        if capture is None:
+            raise HTTPException(409, "O caso ainda não tem uma captura.")
+        pages = conn.execute(
+            select(capture_pages_t)
+            .where(capture_pages_t.c.capture_id == capture["id"])
+            .order_by(capture_pages_t.c.page_no)
+        ).mappings().all()
+        if not pages:
+            raise HTTPException(409, "A captura não tem páginas.")
+
+        problems = []
+        for page in pages:
+            label = page["variant"] or f"página {page['page_no']}"
+            if page["run_id"] is None:
+                problems.append(f"{label}: leitura não iniciada")
+                continue
+            run = conn.execute(
+                select(runs_t).where(runs_t.c.id == page["run_id"])
+            ).mappings().first()
+            if run is None:
+                problems.append(f"{label}: leitura não encontrada")
+            elif run["status"] not in ("done", "partial"):
+                problems.append(f"{label}: ainda a ler")
+            elif run["validation_status"] == "blocked":
+                problems.append(f"{label}: bloqueado")
+            elif run["validation_status"] not in ("ok", "review"):
+                problems.append(f"{label}: leitura incompleta")
+        if problems:
+            raise HTTPException(
+                409, "Ainda há condições bloqueantes: " + "; ".join(problems) + "."
+            )
+        if case["status"] == "closed" and (
+            not case["outcome"] or not case["outcome_date"]
+        ):
+            raise HTTPException(
+                409, "O resultado do tratamento está em falta para fechar o caso."
+            )
+
+        allocated = cases_mod.allocate_number(conn, uuid.UUID(case_id))
+        conn.commit()
+    return {
+        "hanna_number": allocated["hanna_number"],
+        "hanna_number_display": caseid.format_number(allocated["hanna_number"]),
+        "allocated": True,
+    }
+
+
+@app.post("/api/runs/{run_id}/ground-truth")
+def save_run_ground_truth(run_id: str):
+    """Save the reviewed values as this card's ground truth.
+
+    Only values a human confirmed or corrected are exported; skipped and
+    untouched values are not truth. This is how a phone-captured dummy card
+    becomes a test card without a separate sheet-writing step.
+    """
+    run_id = _uuid(run_id)
+    with connect() as conn:
+        run = conn.execute(
+            select(runs_t).where(runs_t.c.id == uuid.UUID(run_id))
+        ).mappings().first()
+        if run is None:
+            raise HTTPException(404, "análise não encontrada")
+        rows = conn.execute(
+            text(
+                """
+                SELECT pair_id, concept_id,
+                       COALESCE(reviewed_value, value) AS value
+                  FROM observations
+                 WHERE run_id = CAST(:run_id AS uuid)
+                   AND review_mode IN ('confirmed', 'corrected')
+                   AND COALESCE(reviewed_value, value) IS NOT NULL
+                 ORDER BY pair_id
+                """
+            ),
+            {"run_id": run_id},
+        ).mappings().all()
+        if not rows:
+            raise HTTPException(
+                409,
+                "Não há valores revistos para guardar. Reveja os campos e tente de novo.",
+            )
+        truth_rows = [
+            {
+                "gt_key": row["pair_id"],
+                "concept_id": row["concept_id"],
+                "pair_id": row["pair_id"],
+                "value": row["value"],
+                "status": "verified",
+                "scoreable": True,
+                "source": "phone review",
+                "verified_by": "phone review",
+                "verified_at": datetime.now(timezone.utc),
+            }
+            for row in rows
+        ]
+        store.upsert_ground_truth(conn, run["card_id"], truth_rows)
+        conn.commit()
+    return {"run_id": run_id, "card_id": run["card_id"], "saved": len(truth_rows)}
 
 
 @app.get("/api/runs/{run_id}")
