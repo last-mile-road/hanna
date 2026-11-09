@@ -3,11 +3,11 @@
 The running version of HANNA for testing and iteration. Design lives in
 `../hanna_next/`; the read-only baseline lives in `../hanna_v2/`.
 
-**Status:** working vertical slice with a validation layer. PostgreSQL 18.6 run
-ledger, form contract, alignment, prompt generation, OpenRouter extraction,
-scoring and a required/parameter validator; 105 tests pass. Phase 1 adds a job
-worker, an HTTP/SSE surface and signed image links, with no UI or auth yet. No remote or
-remote yet. Renamed from `objective-2-server` on 2026-10-23.
+**Status:** working vertical slice with a validation layer and the first case
+model. PostgreSQL 18.6 run ledger, form contract, alignment, prompt generation,
+OpenRouter extraction, scoring and a required/parameter validator; 163 tests
+pass. Phase 1 adds a job worker, an HTTP/SSE surface and signed image links, with
+no UI or auth yet. Renamed from `objective-2-server` on 2026-10-23.
 
 ## Decisions taken 2026-10-23
 
@@ -134,6 +134,26 @@ weakest fields are the three blocks v5 never declared as value pairs:
 Ground truth for the seven test cards: 337 verified values of 427. All seven are
 read (46 to 51 of 61 fields each); the gaps are fields that are blank on the card.
 form20 was dropped: it is a duplicate of form16.
+
+## Case model (2026-11-09)
+
+The durable case record the next capture reads back is in place, additive to the
+run ledger:
+
+- `core/caseid.py` — nine-digit HANNA number: eight payload digits plus a Luhn
+  check digit, generated at first capture, grouped `123 456 789`.
+- `core/cases.py` — create/find a case, add a capture and its pages, upsert a
+  visit, close or re-open a section, write and read the confirmed-value
+  projection, list closed sections.
+- `core/schema.py` — `cases`, `captures`, `capture_pages`, `visits`,
+  `section_states`, `case_values`; migration `9a1c2e3f4b5d`.
+- 12 new tests; full suite 163 passed.
+
+`cases`, `captures` and `visits` follow the DHIS2 tracker shape (case = tracked
+entity, visit = event, concept = data element) so a later sync is a mapping, not
+a migration. The run ledger and the web layer are unchanged. The capture API,
+page admission gate, three-state validation and DHIS2 sync are the next steps;
+see `../memory/decisions/2026-11-09-case-foundation.md`.
 
 ## Capture ground truth
 
