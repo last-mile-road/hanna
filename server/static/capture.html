@@ -165,6 +165,23 @@
     <h1>A ler o cartão</h1>
     <p class="hint">O número HANNA é atribuído depois da leitura e da verificação, quando não houver condições bloqueantes.</p>
     <div id="run-panels" class="run-panels"></div>
+    <div id="close-case" class="card hidden" style="margin-top:1rem">
+      <p class="hint">Se o cartão já está fechado (resultado do tratamento decidido), registe-o antes do número HANNA.</p>
+      <label for="outcome">Resultado</label>
+      <select id="outcome">
+        <option value="">—</option>
+        <option value="outcome_released">Alta de tratamento</option>
+        <option value="outcome_ltfu">Abandono</option>
+        <option value="outcome_died">Falecido</option>
+        <option value="outcome_misclassification">Má classificação</option>
+        <option value="outcome_other">Outro</option>
+        <option value="transferred_to">Transferido</option>
+      </select>
+      <label for="outcome-date" style="margin-top:.6rem;display:block">Data</label>
+      <input type="date" id="outcome-date" style="width:100%;padding:.7rem;border:1px solid var(--line);border-radius:.4rem">
+      <button id="btn-close-case" class="secondary">Guardar resultado</button>
+      <p id="close-note" class="hint"></p>
+    </div>
     <div id="finalise" class="card hidden" style="margin-top:1rem">
       <p class="hint">As duas páginas foram lidas. Finalize para obter o número HANNA do caso.</p>
       <button id="btn-finalise">Finalizar e obter número HANNA</button>

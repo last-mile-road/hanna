@@ -405,6 +405,9 @@ function startProgress(body) {
     watchRun(run, panel);
   });
   $("finalise").classList.add("hidden");
+  $("close-case").classList.add("hidden");
+  $("close-note").textContent = "";
+  $("btn-close-case").disabled = false;
   $("number-note").textContent = "";
 }
 
@@ -433,6 +436,7 @@ function watchRun(run, panel) {
     linkEl.innerHTML = `<a href="/review?run=${run.run_id}" target="_blank" rel="noopener">Rever valores</a>`;
     runStates[run.side] = data;
     if (Object.keys(runStates).length === (captureBody.runs || []).length) {
+      $("close-case").classList.remove("hidden");
       $("finalise").classList.remove("hidden");
     }
   };
@@ -481,6 +485,7 @@ async function pollRun(run, panel) {
       linkEl.innerHTML = `<a href="/review?run=${run.run_id}" target="_blank" rel="noopener">Rever valores</a>`;
       runStates[run.side] = data;
       if (Object.keys(runStates).length === (captureBody.runs || []).length) {
+        $("close-case").classList.remove("hidden");
         $("finalise").classList.remove("hidden");
       }
       return;
@@ -488,6 +493,37 @@ async function pollRun(run, panel) {
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }
 }
+
+$("btn-close-case").addEventListener("click", async () => {
+  if (!captureBody) return;
+  const outcome = $("outcome").value;
+  const outcomeDate = $("outcome-date").value;
+  if (!outcome || !outcomeDate) {
+    $("close-note").textContent = "Escolha o resultado e a data.";
+    return;
+  }
+  $("btn-close-case").disabled = true;
+  $("close-note").textContent = "A guardar…";
+  let response;
+  try {
+    response = await fetch(`/api/cases/${captureBody.case_id}/close`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ outcome, outcome_date: outcomeDate }),
+    });
+  } catch {
+    $("btn-close-case").disabled = false;
+    $("close-note").textContent = "A ligação falhou. Tente novamente.";
+    return;
+  }
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    $("btn-close-case").disabled = false;
+    $("close-note").textContent = body.detail || "Não foi possível guardar o resultado.";
+    return;
+  }
+  $("close-note").textContent = "Caso fechado. Pode obter o número HANNA.";
+});
 
 $("btn-finalise").addEventListener("click", finalise);
 

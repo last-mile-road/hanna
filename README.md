@@ -5,7 +5,7 @@ The running version of HANNA for testing and iteration. Design lives in
 
 **Status:** working vertical slice with a validation layer and the first case
 model. PostgreSQL 18.6 run ledger, form contract, alignment, prompt generation,
-OpenRouter extraction, scoring and a required/parameter validator; 184 tests
+OpenRouter extraction, scoring and a required/parameter validator; 185 tests
 pass. Phase 1 adds a job worker, an HTTP/SSE surface and signed image links, with
 no UI or auth yet. Renamed from `objective-2-server` on 2026-10-23.
 
@@ -147,7 +147,7 @@ run ledger:
   projection, list closed sections.
 - `core/schema.py` — `cases`, `captures`, `capture_pages`, `visits`,
   `section_states`, `case_values`; migration `9a1c2e3f4b5d`.
-- 12 new tests in the case model; full suite 184 passed.
+- 12 new tests in the case model; full suite 185 passed.
 - A new case is provisional and has **no HANNA number**. `cases.allocate_number()`
   assigns the nine digits only after extraction and validation are clear.
 
@@ -206,10 +206,11 @@ pages only when every required side is good. A retake leaves no case and no
 image behind; its measurements go to `output/admission.jsonl`.
 
 On admission the extraction starts: one run per page, returned as `runs` with an
-SSE URL. The case has **no HANNA number yet**. `POST /api/cases/{id}/allocate`
-assigns the nine-digit number only after both page runs are done and clear (no
-blocked page); a closed card also needs its outcome and date. The number is the
-proof of notification, not a capture receipt.
+SSE URL. The case has **no HANNA number yet**. `POST /api/cases/{id}/close`
+records a treatment outcome and date; `POST /api/cases/{id}/allocate` assigns the
+nine-digit number only after both page runs are done and clear (no blocked page),
+and a closed card also needs its outcome and date. The number is the proof of
+notification, not a capture receipt.
 
 `POST /api/runs/{id}/ground-truth` saves the values a human confirmed or
 corrected as that card's ground truth — how a phone-captured dummy card becomes

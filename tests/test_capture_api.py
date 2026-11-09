@@ -400,3 +400,34 @@ def test_reviewed_values_become_ground_truth():
                 text("delete from cards where id = :card_id"), {"card_id": card_id}
             )
             conn.commit()
+
+
+@pytest.mark.skipif(not _db_available(), reason="dev database not running")
+def test_a_closed_card_records_its_outcome_before_the_number():
+    response = _post(
+        [("front.jpg", _front()), ("back.jpg", _back())],
+        start_extraction="true",
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    run_ids = [run["run_id"] for run in body["runs"]]
+    try:
+        closed = client.post(
+            f"/api/cases/{body['case_id']}/close",
+            json={"outcome": "outcome_released", "outcome_date": "2026-11-09"},
+        )
+        assert closed.status_code == 200, closed.text
+        assert closed.json()["status"] == "closed"
+        with connect() as conn:
+            case = conn.execute(
+                text(
+                    "select status, outcome, outcome_date from cases "
+                    "where id = cast(:id as uuid)"
+                ),
+                {"id": body["case_id"]},
+            ).mappings().one()
+            assert case["status"] == "closed"
+            assert case["outcome"] == "outcome_released"
+            assert str(case["outcome_date"]) == "2026-11-09"
+    finally:
+        _cleanup_with_runs(body["case_id"], run_ids)

@@ -21,7 +21,7 @@ import json
 import re
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
@@ -36,6 +36,7 @@ from core.db import connect
 from core.schema import capture_pages as capture_pages_t
 from core.schema import captures as captures_t
 from core.schema import cards as cards_t
+from core.schema import cases as cases_t
 from core.schema import countries as countries_t
 from core.schema import forms as forms_t
 from core.schema import runs as runs_t
@@ -289,6 +290,12 @@ def _start_capture_runs(
             }
         )
     return runs
+
+
+class CloseCaseBody(BaseModel):
+    outcome: str
+    outcome_date: date
+    note: str | None = None
 
 
 @app.post("/api/captures")
@@ -624,6 +631,35 @@ def allocate_case_number(case_id: str):
         "hanna_number": allocated["hanna_number"],
         "hanna_number_display": caseid.format_number(allocated["hanna_number"]),
         "allocated": True,
+    }
+
+
+@app.post("/api/cases/{case_id}/close")
+def close_case(case_id: str, body: CloseCaseBody):
+    """Record the treatment outcome and close the case before its number."""
+    case_id = _uuid(case_id)
+    if not body.outcome.strip():
+        raise HTTPException(422, "Escolha o resultado do tratamento.")
+    with connect() as conn:
+        case = cases_mod.find_case(conn, case_id=uuid.UUID(case_id))
+        if case is None:
+            raise HTTPException(404, "caso não encontrado")
+        conn.execute(
+            update(cases_t)
+            .where(cases_t.c.id == uuid.UUID(case_id))
+            .values(
+                status="closed",
+                outcome=body.outcome.strip(),
+                outcome_date=body.outcome_date,
+                outcome_note=body.note,
+            )
+        )
+        conn.commit()
+    return {
+        "case_id": case_id,
+        "status": "closed",
+        "outcome": body.outcome,
+        "outcome_date": body.outcome_date.isoformat(),
     }
 
 
