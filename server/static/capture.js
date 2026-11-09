@@ -91,6 +91,20 @@ async function startCamera() {
 
 $("btn-start").addEventListener("click", startCamera);
 
+function stopCamera() {
+  if (stream) {
+    stream.getTracks().forEach((track) => track.stop());
+    stream = null;
+    track = null;
+  }
+  $("video").srcObject = null;
+  $("video").classList.add("hidden");
+  $("btn-torch").classList.add("hidden");
+  $("btn-torch").textContent = "Luz da câmara";
+}
+
+window.addEventListener("pagehide", stopCamera);
+
 $("btn-torch").addEventListener("click", async () => {
   if (!track || !track.getCapabilities || !track.getCapabilities().torch) return;
   const on = $("btn-torch").textContent.includes("ligada");
@@ -365,6 +379,7 @@ async function sendCapture() {
     showAdmission(body);
     return;
   }
+  stopCamera();
   captureBody = body;
   showAdmission(body);
   setTimeout(() => startProgress(body), 700);
@@ -554,7 +569,7 @@ async function finalise() {
     $("number-note").textContent = body.detail || "Ainda não é possível atribuir o número.";
     return;
   }
-  $("number-note").innerHTML = `Número HANNA: <strong>${body.hanna_number_display}</strong>`;
+  $("number-note").innerHTML = `Número HANNA: <strong>${body.hanna_number_display}</strong><br><span class="hint">Escreva-o no cartão: frente, no espaço acima do bloco NIL; verso, acima do primeiro bloco de seguimento.</span>`;
   $("btn-finalise").classList.add("hidden");
 }
 
