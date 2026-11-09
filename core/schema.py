@@ -11,10 +11,13 @@ import uuid
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Column,
+    Date,
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     Integer,
     MetaData,
     Numeric,
@@ -235,4 +238,172 @@ jobs = Table(
     Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
     Column("finished_at", DateTime(timezone=True)),
     Column("error", Text),
+)
+
+# --------------------------------------------------------------------------- case model
+#
+# The run ledger above records one reading of one image. The case model below is
+# the durable record the next capture reads back: one case, many captures, many
+# pages, visits, closed sections and the confirmed values. It follows the shape
+# of a DHIS2 tracker (case = tracked entity, visit = event, concept = data
+# element) so a later sync is a mapping, not a migration.
+
+cases = Table(
+    "cases",
+    metadata,
+    Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column("country_id", ForeignKey("countries.id"), nullable=False),
+    # Nine digits, generated at first capture. Nullable only for imported legacy rows.
+    Column("hanna_number", String(16)),
+    # The government NIL, when the card carries one. Not unique: it is blank until
+    # notification, and two patients cannot be keyed on a blank.
+    Column("government_id", String(64)),
+    # How this case was matched: a HANNA number read from the card, a NIL, or new.
+    Column("identity_status", String(16), nullable=False, server_default="new"),
+    # open = in treatment or unknown; closed = an outcome value and date are recorded.
+    Column("status", String(16), nullable=False, server_default="open"),
+    Column("classification", String(16)),  # PB | MB, from the card
+    Column("treatment_start_date", Date),
+    Column("outcome", String(32)),  # country-defined: completed, abandoned, died, ...
+    Column("outcome_date", Date),
+    Column("outcome_note", Text),
+    Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
+    CheckConstraint(
+        "hanna_number IS NULL OR hanna_number ~ '^[0-9]{9}$'",
+        name="hanna_number",
+    ),
+    CheckConstraint("identity_status IN ('new','hanna_number','nil')", name="identity_status"),
+    CheckConstraint("status IN ('open','closed')", name="status"),
+    UniqueConstraint("country_id", "hanna_number", name="uq_cases_country_hanna"),
+)
+
+captures = Table(
+    "captures",
+    metadata,
+    Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column("case_id", ForeignKey("cases.id", ondelete="CASCADE"), nullable=False),
+    Column("source", String(16), nullable=False, server_default="camera"),
+    Column("attested_dummy", Boolean, nullable=False, server_default="false"),
+    # Device and network details the field cannot standardise: user agent, model if
+    # the browser exposes it, screen, camera capabilities, effective connection type.
+    Column("client", JSONB),
+    # admitted = every page passed the admission gate; rejected = retake requested.
+    Column("status", String(16), nullable=False, server_default="admitted"),
+    Column("captured_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
+    CheckConstraint("status IN ('admitted','rejected','processed')", name="status"),
+)
+
+capture_pages = Table(
+    "capture_pages",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("capture_id", ForeignKey("captures.id", ondelete="CASCADE"), nullable=False),
+    # page_no is the physical order (front=1, back=2, continuation=3...); shot_no is
+    # the order the photos were taken, which the clinician may get wrong.
+    Column("page_no", Integer, nullable=False),
+    Column("shot_no", Integer, nullable=False),
+    Column("image_path", Text, nullable=False),
+    Column("md5", String(32), nullable=False),
+    Column("variant", String(32)),  # front | back | page3, set by the page matcher
+    Column("form_id", ForeignKey("forms.id"), nullable=True),
+    # Binary gate: good or retake. pending until the matcher has run.
+    Column("admission", String(16), nullable=False, server_default="pending"),
+    Column("match_inliers", Integer),
+    Column("match_margin", Integer),
+    Column("rotation", Integer),
+    Column("quality", JSONB),  # blur, brightness, glare, edge coverage, reasons
+    # Retention: the row survives, the image may not.
+    Column("image_state", String(16), nullable=False, server_default="present"),
+    Column("purged_at", DateTime(timezone=True)),
+    CheckConstraint("admission IN ('pending','good','retake')", name="admission"),
+    CheckConstraint("image_state IN ('present','redacted','purged')", name="image_state"),
+    UniqueConstraint("capture_id", "page_no", name="uq_capture_pages_capture_page"),
+)
+
+visits = Table(
+    "visits",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("case_id", ForeignKey("cases.id", ondelete="CASCADE"), nullable=False),
+    Column("capture_id", ForeignKey("captures.id", ondelete="SET NULL"), nullable=True),
+    Column("source_page_id", ForeignKey("capture_pages.id", ondelete="SET NULL"), nullable=True),
+    # The printed column position on the card (1..N). Stable across captures.
+    Column("visit_seq", Integer, nullable=False),
+    Column("visit_label", String(32)),  # the printed header, e.g. "3 meses"
+    # Nullable: a column can be filled without a written date. That is data too.
+    Column("visit_date", Date),
+    Column("date_status", String(16), nullable=False, server_default="recorded"),
+    CheckConstraint("date_status IN ('recorded','missing','inferred')", name="date_status"),
+    UniqueConstraint("case_id", "visit_seq", name="uq_visits_case_seq"),
+)
+
+section_states = Table(
+    "section_states",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("case_id", ForeignKey("cases.id", ondelete="CASCADE"), nullable=False),
+    # NULL for a case-level section (registration, diagnosis, initial assessment).
+    Column("visit_id", ForeignKey("visits.id", ondelete="CASCADE"), nullable=True),
+    Column("section_id", String(64), nullable=False),
+    Column("state", String(16), nullable=False, server_default="open"),
+    Column("capture_id", ForeignKey("captures.id", ondelete="SET NULL"), nullable=True),
+    Column("confirmed_by", String(64)),
+    Column("confirmed_at", DateTime(timezone=True)),
+    Column("reopened_by", String(64)),
+    Column("reopened_at", DateTime(timezone=True)),
+    Column("note", Text),
+    CheckConstraint("state IN ('open','closed')", name="state"),
+)
+
+case_values = Table(
+    "case_values",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("case_id", ForeignKey("cases.id", ondelete="CASCADE"), nullable=False),
+    Column("visit_id", ForeignKey("visits.id", ondelete="CASCADE"), nullable=True),
+    Column("concept_id", ForeignKey("concepts.id"), nullable=False),
+    # NULL means the clinician confirmed the field is blank. A row is a fact.
+    Column("value", Text),
+    Column("source_capture_id", ForeignKey("captures.id", ondelete="SET NULL"), nullable=True),
+    Column("source_page_id", ForeignKey("capture_pages.id", ondelete="SET NULL"), nullable=True),
+    Column("confirmed_by", String(64)),
+    Column("confirmed_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
+)
+
+Index("ix_cases_government", cases.c.country_id, cases.c.government_id)
+Index("ix_visits_case_date", visits.c.case_id, visits.c.visit_date)
+Index("ix_section_states_case", section_states.c.case_id)
+Index("ix_case_values_case", case_values.c.case_id)
+
+# A case-level section (visit_id NULL) and a visit-level section have separate
+# uniqueness: Postgres treats NULLs as distinct, so the partial indexes do the work.
+Index(
+    "uq_section_states_case_section",
+    section_states.c.case_id,
+    section_states.c.section_id,
+    unique=True,
+    postgresql_where=section_states.c.visit_id.is_(None),
+)
+Index(
+    "uq_section_states_case_visit_section",
+    section_states.c.case_id,
+    section_states.c.visit_id,
+    section_states.c.section_id,
+    unique=True,
+    postgresql_where=section_states.c.visit_id.is_not(None),
+)
+Index(
+    "uq_case_values_case_concept",
+    case_values.c.case_id,
+    case_values.c.concept_id,
+    unique=True,
+    postgresql_where=case_values.c.visit_id.is_(None),
+)
+Index(
+    "uq_case_values_case_visit_concept",
+    case_values.c.case_id,
+    case_values.c.visit_id,
+    case_values.c.concept_id,
+    unique=True,
+    postgresql_where=case_values.c.visit_id.is_not(None),
 )
