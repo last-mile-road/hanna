@@ -22,6 +22,9 @@ class Alignment:
     image: np.ndarray
     template: np.ndarray
     good_matches: int
+    inliers: int = 0
+    homography: np.ndarray | None = None
+    source_shape: tuple[int, int] = (0, 0)
 
 
 def preprocess_image(image: np.ndarray) -> np.ndarray:
@@ -80,13 +83,21 @@ def align_card(image_path: Path, template_path: Path) -> Alignment:
 
     src = np.float32([tpl["kp"][m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
     dst = np.float32([kp_form[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
-    homography, _ = cv2.findHomography(src, dst, cv2.USAC_MAGSAC, 5.0)
+    homography, mask = cv2.findHomography(src, dst, cv2.USAC_MAGSAC, 5.0)
     if homography is None:
         raise ValueError("homography could not be computed")
 
     h, w = tpl["enhanced"].shape
     aligned = cv2.warpPerspective(form, np.linalg.inv(homography), (w, h))
-    return Alignment(image=aligned, template=tpl["color"], good_matches=len(good))
+    inliers = int(mask.sum()) if mask is not None else 0
+    return Alignment(
+        image=aligned,
+        template=tpl["color"],
+        good_matches=len(good),
+        inliers=inliers,
+        homography=homography,
+        source_shape=form.shape[:2],
+    )
 
 
 def crop_block(image: np.ndarray, bbox: list[int] | None) -> np.ndarray:

@@ -1,0 +1,20 @@
+# The physical sides of the card the admission gate matches against.
+#
+# The gate aligns each uploaded photo against every template here, picks the
+# strongest match and admits the capture only when each side is unambiguous and
+# the card edges are inside the frame. `form_variant` is the published form
+# definition that later reads the page; `required` is the default requirement,
+# and the API's `require_back` flag can relax the back for an exception.
+pages:
+  - id: front
+    label: Frente
+    page_no: 1
+    template: template.jpg
+    form_variant: draft
+    required: true
+  - id: back
+    label: Verso
+    page_no: 2
+    template: template.back.jpg
+    form_variant: back
+    required: false

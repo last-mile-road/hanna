@@ -16,9 +16,11 @@ immediately. Uploads are refused unless the caller attests the card is a dummy
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import time
+import uuid
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
@@ -27,9 +29,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from sqlalchemy import select, text, update
 
-from core import jobs, settings, store
+from core import admission, caseid, cases as cases_mod, jobs, settings, store
 from core.forms import prompt_options
 from core.db import connect
+from core.schema import capture_pages as capture_pages_t
 from core.schema import cards as cards_t
 from core.schema import countries as countries_t
 from core.schema import forms as forms_t
@@ -201,6 +204,235 @@ async def create_run(
         "status": "queued",
         "events_url": f"/api/runs/{run_id}/events",
     }
+
+
+def _page_json(match: admission.PageMatch, page: dict | None = None) -> dict:
+    payload = {
+        "side": match.spec.id if match.spec else None,
+        "label": match.spec.label if match.spec else "",
+        "page_no": match.spec.page_no if match.spec else None,
+        "shot_no": match.shot_no,
+        "admission": "good" if match.admitted else "retake",
+        "inliers": match.inliers,
+        "margin": match.margin,
+        "rotation": match.rotation,
+        "area_ratio": match.area_ratio,
+        "reasons": match.reasons,
+    }
+    if page is not None:
+        capture_id = page["capture_id"]
+        page_no = page["page_no"]
+        signature = signing.query(f"{capture_id}:page:{page_no}")
+        payload["page_id"] = page["id"]
+        payload["image_url"] = f"/api/captures/{capture_id}/page/{page_no}?{signature}"
+    return payload
+
+
+@app.post("/api/captures")
+def create_capture(
+    files: list[UploadFile] = File(...),
+    country: str = Form("mozambique"),
+    attested_dummy: bool = Form(False),
+    hanna_number: str | None = Form(None),
+    government_id: str | None = Form(None),
+    client: str | None = Form(None),
+    require_back: bool = Form(True),
+):
+    """Photograph the card sides, identify them, and admit or ask for a retake.
+
+    No model is called here. The gate aligns each photo against the registered
+    page templates and returns a binary answer. A rejected attempt creates no
+    case and leaves no image behind; its measurements go to `admission.jsonl`.
+    """
+    if not attested_dummy:
+        raise HTTPException(
+            422,
+            "É necessário confirmar que o cartão é um cartão de teste (não contém dados "
+            "de um doente real).",
+        )
+    if not files:
+        raise HTTPException(422, "Envie pelo menos a frente do cartão.")
+    if len(files) > 6:
+        raise HTTPException(422, "Demasiadas páginas num só cartão.")
+
+    client_data = None
+    if client:
+        try:
+            client_data = json.loads(client)
+        except json.JSONDecodeError as exc:
+            raise HTTPException(422, "Os dados do dispositivo não são JSON válido.") from exc
+
+    number = caseid.normalise(hanna_number) if hanna_number else None
+    if number and not caseid.is_valid(number):
+        raise HTTPException(422, "O número HANNA não é válido. Verifique os dígitos.")
+
+    try:
+        specs = admission.load_pages(country)
+    except (FileNotFoundError, ValueError) as exc:
+        raise HTTPException(503, str(exc)) from exc
+
+    with connect() as conn:
+        country_row = dict(_country(conn, country))
+        existing = (
+            cases_mod.find_case(conn, country_id=country_row["id"], hanna_number=number)
+            if number
+            else None
+        )
+        if number and existing is None:
+            raise HTTPException(
+                404,
+                "Não há nenhum caso com este número HANNA. Corrija o número ou "
+                "fotografe como um caso novo.",
+            )
+        forms: dict[str, dict | None] = {}
+        for spec in specs:
+            row = _form(conn, country_row["id"], spec.form_variant)
+            forms[spec.form_variant] = dict(row) if row else None
+
+    missing_forms = [spec.id for spec in specs if forms.get(spec.form_variant) is None]
+    if missing_forms:
+        raise HTTPException(
+            503, "Nenhum formulário publicado para: " + ", ".join(missing_forms) + "."
+        )
+
+    saved: dict[int, tuple[Path, str]] = {}
+    matches: list[admission.PageMatch] = []
+    try:
+        for shot_no, upload in enumerate(files, start=1):
+            data = upload.file.read()
+            error = uploads.validate(upload.filename, upload.content_type, len(data))
+            if error:
+                raise HTTPException(422, error)
+            try:
+                image = uploads.decode(data)
+            except ValueError as exc:
+                raise HTTPException(422, str(exc)) from exc
+            quality = uploads.check_quality(image)
+            suffix = Path(upload.filename or "").suffix.lower()
+            path = uploads.save(data, suffix)
+            saved[shot_no] = (path, hashlib.md5(data).hexdigest())
+            if quality:
+                matches.append(
+                    admission.PageMatch(
+                        spec=None,
+                        shot_no=shot_no,
+                        reasons=[quality],
+                        quality={"reason": quality},
+                    )
+                )
+                continue
+            matches.append(admission.match_image(path, specs, shot_no=shot_no))
+    except Exception:
+        for path, _ in saved.values():
+            path.unlink(missing_ok=True)
+        raise
+
+    assessment = admission.assess(matches, specs, require_back=require_back)
+    try:
+        admission.log_attempt(country, assessment)
+    except OSError:
+        pass
+    if not assessment.admitted:
+        for path, _ in saved.values():
+            path.unlink(missing_ok=True)
+        return {
+            "status": "retake",
+            "message": assessment.message,
+            "missing": assessment.pages_missing,
+            "duplicates": assessment.duplicates,
+            "pages": [_page_json(match) for match in assessment.pages],
+        }
+
+    try:
+        with connect() as conn:
+            if existing is not None:
+                case = existing
+            else:
+                case = cases_mod.create_case(
+                    conn,
+                    country_row["id"],
+                    government_id=government_id or None,
+                    identity_status="new",
+                )
+            capture = cases_mod.add_capture(
+                conn,
+                case["id"],
+                source="camera",
+                attested_dummy=True,
+                client=client_data,
+                status="admitted",
+            )
+            page_rows = []
+            for match in assessment.pages:
+                if match.spec is None:
+                    continue
+                path, checksum = saved[match.shot_no]
+                form = forms[match.spec.form_variant]
+                page_rows.append(
+                    cases_mod.add_page(
+                        conn,
+                        capture["id"],
+                        page_no=match.spec.page_no,
+                        shot_no=match.shot_no,
+                        image_path=path,
+                        md5=checksum,
+                        variant=match.spec.id,
+                        form_id=form["id"],
+                        admission="good",
+                        quality={
+                            "inliers": match.inliers,
+                            "margin": match.margin,
+                            "rotation": match.rotation,
+                            "area_ratio": match.area_ratio,
+                            "reasons": match.reasons,
+                        },
+                        match_inliers=match.inliers,
+                        match_margin=match.margin,
+                        rotation=match.rotation,
+                    )
+                )
+            conn.commit()
+    except Exception:
+        for path, _ in saved.values():
+            path.unlink(missing_ok=True)
+        raise
+
+    number_value = case.get("hanna_number") or ""
+    admitted_matches = [match for match in assessment.pages if match.spec is not None]
+    return {
+        "status": "admitted",
+        "case_id": str(case["id"]),
+        "capture_id": str(capture["id"]),
+        "hanna_number": number_value,
+        "hanna_number_display": caseid.display_number(number_value) if number_value else "",
+        "identity_status": case["identity_status"],
+        "matched_by": "hanna_number" if number else "new",
+        "message": assessment.message,
+        "missing": assessment.pages_missing,
+        "duplicates": assessment.duplicates,
+        "pages": [
+            _page_json(match, page) for match, page in zip(admitted_matches, page_rows)
+        ],
+    }
+
+
+@app.get("/api/captures/{capture_id}/page/{page_no}")
+def capture_page_image(capture_id: str, page_no: int, sig: str = Query(...)):
+    """A page image behind a short-lived signed URL, never a static directory."""
+    capture_id = _uuid(capture_id)
+    if not signing.verify(f"{capture_id}:page:{page_no}", sig):
+        raise HTTPException(403, "ligação expirada; recarregue a página")
+    with connect() as conn:
+        page = conn.execute(
+            select(capture_pages_t).where(
+                capture_pages_t.c.capture_id == uuid.UUID(capture_id),
+                capture_pages_t.c.page_no == page_no,
+            )
+        ).mappings().first()
+    if page is None or not Path(page["image_path"]).exists():
+        raise HTTPException(404, "imagem não encontrada")
+    media_type = "image/png" if page["image_path"].lower().endswith(".png") else "image/jpeg"
+    return FileResponse(page["image_path"], media_type=media_type)
 
 
 @app.get("/api/runs/{run_id}")

@@ -1,10 +1,12 @@
 """The HANNA case number.
 
 Nine digits: eight payload digits and a Luhn check digit. Written by hand on the
-card, grouped ``123 456 789``. No letters, because letters in handwriting vary
-between readers. Nine digits hold 10^8 values per country, which is ample, and
-the check digit rejects the ordinary single-digit and adjacent-transposition
-errors before a read can link two patients.
+card as ``H 123 456 789``: the H is a fixed visual marker that separates the
+HANNA number from the NIL, not part of the payload or the check digit. The
+payload stays numeric because letters in handwriting vary between readers. Nine
+digits hold 10^8 values per country, which is ample, and the check digit rejects
+the ordinary single-digit and adjacent-transposition errors before a read can
+link two patients.
 
 The number is generated at the first capture, including for retrospective cards:
 it is the visual proof that the card has been captured and the key the next
@@ -37,8 +39,11 @@ def check_digit(payload: str) -> str:
 
 
 def normalise(number: str) -> str:
-    """Strip the spaces and hyphens a reader may have copied with the number."""
-    return str(number).replace(" ", "").replace("-", "").strip()
+    """Strip the H marker and the separators a reader may have copied."""
+    digits = str(number).replace(" ", "").replace("-", "").strip()
+    if digits[:1].lower() == "h":
+        digits = digits[1:]
+    return digits
 
 
 def is_valid(number: str) -> bool:
@@ -53,6 +58,12 @@ def format_number(number: str) -> str:
     if len(digits) != 9:
         return digits
     return f"{digits[:3]} {digits[3:6]} {digits[6:]}"
+
+
+def display_number(number: str) -> str:
+    """How the number is written on the card: H marker, then three groups of three."""
+    digits = normalise(number)
+    return f"H {format_number(digits)}" if len(digits) == 9 else digits
 
 
 def generate() -> str:
