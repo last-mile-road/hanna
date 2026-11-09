@@ -5,16 +5,18 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import re
 import time
 from datetime import date
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import cv2
+import numpy as np
 import yaml
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import select, text, update
+from sqlalchemy import delete, select, text, update
 
 from . import align, aliases, location, normalise, settings, store, ticks
 from .db import connect
@@ -25,9 +27,10 @@ from .prompts import build_prompt, prompt_hash
 from .readers import read_block as read_table_block
 from .treatment import derive_treatment_grid
 from .validate import validate_run
-from .schema import cards, forms, profiles, runs
+from .schema import block_runs, cards, forms, observations, profiles, runs
 
 OCR_BLOCK_TYPES = {"value_pairs", "tick_grid", "annotated_table", "free_text"}
+INK_MIN = 0.008  # share of dark ink pixels not present in the blank template
 
 # A profile id that is not a model: those blocks are read by MinerU on the box.
 MINERU_PROFILE = "mineru-standard"
@@ -56,6 +59,75 @@ def _complete_with_fallback(client_for, prompt, image_paths, profile, fallback):
             ),
             fallback["id"],
         )
+
+
+def _block_ink(aligned, template, bbox, darkness: int = 120) -> float:
+    """Share of dark ink pixels in a block that the blank template does not have.
+
+    A raw absolute difference is dominated by the photo's paper tone; the adaptive
+    mask removes paper texture and the darkness floor keeps shadows out. The
+    template mask is dilated to absorb a few pixels of alignment error.
+    """
+    form_crop = align.crop_block(aligned, bbox)
+    template_crop = align.crop_block(template, bbox)
+    if form_crop.shape[:2] != template_crop.shape[:2]:
+        template_crop = cv2.resize(
+            template_crop, (form_crop.shape[1], form_crop.shape[0])
+        )
+    form_gray = cv2.cvtColor(form_crop, cv2.COLOR_BGR2GRAY)
+    template_gray = cv2.cvtColor(template_crop, cv2.COLOR_BGR2GRAY)
+    form_adaptive = (
+        cv2.adaptiveThreshold(
+            form_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY_INV, 15, 7,
+        ) > 0
+    )
+    template_adaptive = (
+        cv2.adaptiveThreshold(
+            template_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY_INV, 15, 7,
+        ) > 0
+    )
+    form_ink = ((form_gray < darkness) & form_adaptive).astype(np.uint8)
+    template_ink = ((template_gray < darkness) & template_adaptive).astype(np.uint8)
+    template_ink = cv2.dilate(
+        template_ink, np.ones((5, 5), np.uint8), iterations=1
+    )
+    new_ink = cv2.bitwise_and(form_ink, cv2.bitwise_not(template_ink))
+    return float(new_ink.mean())
+
+
+def _skip_empty_visits(blocks, aligned, template):
+    """Drop the six blocks of a visit column whose header has no ink.
+
+    The back card prints four visit columns from the start. A card with one
+    completed visit should cost one visit, not four; the blank headers are
+    detected against the template before any model call.
+    """
+    by_visit: dict[str, list] = {}
+    for block in blocks:
+        match = re.match(r"visit(\d+)_", block.id)
+        if match:
+            by_visit.setdefault(match.group(1), []).append(block)
+
+    empty: set[str] = set()
+    for visit, visit_blocks in by_visit.items():
+        inks = [
+            _block_ink(aligned, template, block.bbox)
+            for block in visit_blocks
+            if block.bbox
+        ]
+        if inks and max(inks) < INK_MIN:
+            empty.add(visit)
+    if empty:
+        print(f"  visit columns with no ink: {', '.join(sorted(empty))}")
+
+    kept = []
+    for block in blocks:
+        match = re.match(r"visit(\d+)_", block.id)
+        if match is None or match.group(1) not in empty:
+            kept.append(block)
+    return kept
 
 
 def _find_card(conn, form_name: str):
@@ -194,6 +266,13 @@ def run_card(
 
     form_name = form_name or Path(card["image_path"]).stem
 
+    # A retried job must not collide with the blocks the failed attempt left
+    # behind (uq_block_runs_run_block). Clear this run's evidence and re-read.
+    with connect() as conn:
+        conn.execute(delete(observations).where(observations.c.run_id == run_id))
+        conn.execute(delete(block_runs).where(block_runs.c.run_id == run_id))
+        conn.commit()
+
     run_dir = settings.OUTPUT_DIR / "runs" / str(run_id)
     run_dir.mkdir(parents=True, exist_ok=True)
 
@@ -246,6 +325,8 @@ def run_card(
             b for b in blocks
             if (not only_blocks or b.id in only_blocks) and b.pairs
         ]
+        if form_variant == "back":
+            selected = _skip_empty_visits(selected, alignment.image, alignment.template)
         prepared: list[dict[str, Any]] = []
         all_values: dict[str, Any] = {}
         for block in selected:

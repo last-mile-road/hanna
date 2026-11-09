@@ -20,15 +20,18 @@ import yaml
 
 from . import align, settings
 
-# Calibrated on 2026-11-09 against the two Mozambique templates: a correct side
-# gives 600+ inliers on a 1600 px phone-sized image and 4000+ on the template
-# itself; the wrong side gives 9-11. The thresholds are deliberately conservative.
+# Calibrated on 2026-11-09 against the two Mozambique templates and the first
+# phone round: a correct side gives 60-130 inliers on a real phone photo and
+# 4000+ on the template itself; the wrong side gives 9-11. The inlier ratio is
+# deliberately not used: printed card texture produces many ratio-test matches
+# outside the homography, and the ratio rejected good photos on 2026-11-09.
+# The edge tolerance is 10% so a card that touches the frame is admitted; the
+# extraction review catches a genuinely clipped block.
 MIN_INLIERS = 40
 MIN_MARGIN = 20
-MIN_INLIER_RATIO = 0.5
 MIN_AREA_RATIO = 0.03
 MAX_AREA_RATIO = 8.0
-EDGE_MARGIN = 0.01
+EDGE_MARGIN = 0.10
 
 
 @dataclass
@@ -149,8 +152,6 @@ def match_image(image_path: Path, specs: list[PageSpec], shot_no: int) -> PageMa
         reasons.append(f"Poucos pontos de alinhamento ({best.inliers}).")
     if margin < MIN_MARGIN:
         reasons.append("A fotografia parece ser de mais de um lado.")
-    if best.good_matches and best.inliers / best.good_matches < MIN_INLIER_RATIO:
-        reasons.append("O alinhamento não é estável.")
     if area_ratio < MIN_AREA_RATIO or area_ratio > MAX_AREA_RATIO or not convex:
         reasons.append("O cartão não está direito no enquadramento.")
     if not inside:

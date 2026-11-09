@@ -1044,10 +1044,18 @@ def get_review(run_id: str):
     by_block = {i.get("block_id"): i for i in issues if i.get("block_id") and not i.get("pair_id")}
 
     width, height = _template_size(form["template_path"])
+    hide_empty = bool(layout.get("hide_empty_sections"))
     sections = []
     counts = {"accepted": 0, "corrected": 0, "skipped": 0, "reviewed": 0, "total": 0}
     for block in blocks:
         if not block.pairs:
+            continue
+        if (
+            hide_empty
+            and not any(pair.id in observations for pair in block.pairs)
+            and not by_block.get(block.id)
+            and not any(pair.id in by_pair for pair in block.pairs)
+        ):
             continue
         rows = []
         skipped_hidden = 0

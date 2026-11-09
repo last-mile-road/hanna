@@ -3,6 +3,7 @@
 
 const $ = (id) => document.getElementById(id);
 const runId = new URLSearchParams(location.search).get("run");
+const from = new URLSearchParams(location.search).get("from");
 
 const BLOCK_LABELS = {
   general_demographic: "Identificação",
@@ -711,6 +712,15 @@ $("finish").addEventListener("click", async () => {
 
   $("finish").textContent = "A guardar…";
   await saveQueue;
+  if (from === "capture") {
+    // This review was opened from the phone capture tab. Keep the tab open:
+    // the other side has its own review link there.
+    $("finish").textContent = "Revisão guardada";
+    $("finish").disabled = true;
+    $("saved").textContent = "Revisão guardada";
+    $("truth-note").textContent = "Volte ao separador da captura para rever o outro lado e finalizar o caso.";
+    return;
+  }
   location.href = "/";
 });
 

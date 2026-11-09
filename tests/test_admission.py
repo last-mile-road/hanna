@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import cv2
+import numpy as np
 
 from core import admission, settings
+from core.run import _block_ink
 
 
 def _specs():
@@ -46,6 +48,22 @@ def test_front_photo_does_not_admit_as_the_back():
     match = admission.match_image(_front(), [back_spec], shot_no=1)
     assert not match.admitted
     assert match.reasons
+
+
+def test_a_slightly_cropped_card_is_still_admitted(tmp_path):
+    image = cv2.imread(_front())
+    assert image is not None
+    height, width = image.shape[:2]
+    crop = image[
+        int(0.03 * height) : int(0.97 * height),
+        int(0.03 * width) : int(0.97 * width),
+    ]
+    path = tmp_path / "front_slightly_cut.jpg"
+    assert cv2.imwrite(str(path), crop)
+
+    match = admission.match_image(path, _specs(), shot_no=1)
+    assert match.spec is not None and match.spec.id == "front"
+    assert match.admitted
 
 
 def test_a_rotated_front_is_admitted_and_the_rotation_is_reported(tmp_path):
@@ -95,3 +113,12 @@ def test_a_photo_that_matches_no_side_is_reported():
     assessment = admission.assess([match], [back_spec], require_back=False)
     assert not assessment.admitted
     assert match.reasons
+
+
+def test_block_ink_separates_a_blank_header_from_a_written_one():
+    blank = np.full((60, 240, 3), 245, dtype=np.uint8)
+    written = blank.copy()
+    cv2.line(written, (20, 30), (120, 30), (20, 20, 20), 3)
+
+    assert _block_ink(blank, blank, [0, 0, 240, 60]) < 0.001
+    assert _block_ink(written, blank, [0, 0, 240, 60]) > 0.005

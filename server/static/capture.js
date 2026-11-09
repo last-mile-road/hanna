@@ -11,6 +11,7 @@ const $ = (id) => document.getElementById(id);
 const show = (id) => {
   document.querySelectorAll(".view").forEach((v) => v.classList.add("hidden"));
   $(id).classList.remove("hidden");
+  window.scrollTo(0, 0);
 };
 
 let stream = null;
@@ -223,7 +224,15 @@ function retake(side) {
   setSideLabel();
   show("view-capture");
   resetStage();
-  if (!stream) startCamera();
+  if (!stream || !track || track.readyState !== "live") {
+    stream = null;
+    track = null;
+    startCamera();
+  } else {
+    $("video").srcObject = stream;
+    $("video").play().catch(() => {});
+  }
+  window.scrollTo(0, 0);
 }
 
 function setSideLabel() {
@@ -433,7 +442,7 @@ function watchRun(run, panel) {
     statusEl.className = `badge ${validation}`;
     const total = data.blocks_done ? `${data.blocks_done} blocos` : "leitura terminada";
     detailEl.textContent = `${total}${data.error ? " · " + data.error : ""}`;
-    linkEl.innerHTML = `<a href="/review?run=${run.run_id}" target="_blank" rel="noopener">Rever valores</a>`;
+    linkEl.innerHTML = `<a href="/review?run=${run.run_id}&from=capture" target="_blank" rel="noopener">Rever valores</a>`;
     runStates[run.side] = data;
     if (Object.keys(runStates).length === (captureBody.runs || []).length) {
       $("close-case").classList.remove("hidden");
@@ -482,7 +491,7 @@ async function pollRun(run, panel) {
       const validation = data.validation_status || (data.status === "failed" ? "failed" : "review");
       statusEl.textContent = validation;
       statusEl.className = `badge ${validation}`;
-      linkEl.innerHTML = `<a href="/review?run=${run.run_id}" target="_blank" rel="noopener">Rever valores</a>`;
+      linkEl.innerHTML = `<a href="/review?run=${run.run_id}&from=capture" target="_blank" rel="noopener">Rever valores</a>`;
       runStates[run.side] = data;
       if (Object.keys(runStates).length === (captureBody.runs || []).length) {
         $("close-case").classList.remove("hidden");

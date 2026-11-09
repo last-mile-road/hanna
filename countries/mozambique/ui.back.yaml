@@ -1,5 +1,8 @@
 # Review layout — back (follow-up) card. Presentation only.
 show_location: false
+# Empty future visits are skipped by extraction; do not ask the reviewer to
+# confirm sections that were never read.
+hide_empty_sections: true
 hidden: []
 dev_only:
 - recorded_by
