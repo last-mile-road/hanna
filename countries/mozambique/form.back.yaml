@@ -622,6 +622,10 @@ blocks:
   - id: eye_redness_pain
     concept: eye_redness_pain
     label_local: Olhos vermelhos e dolorosos?
+  - id: reaction_diagnosed
+    concept: reaction_diagnosed
+    label_local: Reacção diagnosticada
+    derived: true
 - id: prednisolone
   block_type: annotated_table
   bbox:
@@ -630,6 +634,12 @@ blocks:
   - 3222
   - 1663
   value_pairs:
+  - id: prednisolone_status
+    concept: prednisolone_status
+    label_local: Estado da prednisolona
+  - id: prednisolone_weeks_recorded
+    concept: prednisolone_weeks_recorded
+    label_local: Semanas registadas
   - id: prednisolone_table
     concept: prednisolone_table
 - id: outcome_date

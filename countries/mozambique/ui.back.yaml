@@ -1,7 +1,9 @@
 show_location: false
 hide_empty_sections: true
 hidden: []
-dev_only: []
+dev_only:
+- prednisolone_table
+- prednisolone_weeks_recorded
 block_titles:
   visit_index: Registo das visitas
   visit1_nerve: Visita 1 — Palpação dos nervos
@@ -437,3 +439,10 @@ option_labels:
   'false': Não
   'Yes': Sim
   'No': Não
+  not_started: Não iniciado
+  in_progress: Incompleto
+  completed: Completo
+labels:
+  prednisolone_status: Estado da prednisolona
+  prednisolone_weeks_recorded: Semanas de prednisolona registadas
+  reaction_diagnosed: Reacção diagnosticada

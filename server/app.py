@@ -16,6 +16,7 @@ immediately. Uploads are refused unless the caller attests the card is a dummy
 
 from __future__ import annotations
 
+import calendar
 import hashlib
 import json
 import re
@@ -32,6 +33,7 @@ from sqlalchemy import select, text, update
 
 from core import admission, caseid, cases as cases_mod, jobs, settings, store
 from core.forms import prompt_options
+from core.validate import load_contract, validate_run
 from core.db import connect
 from core.schema import capture_pages as capture_pages_t
 from core.schema import captures as captures_t
@@ -561,6 +563,88 @@ def extract_capture(capture_id: str):
     return {"capture_id": capture_id, "runs": runs}
 
 
+OUTCOME_CODES = {
+    "Alta de tratamento": "released",
+    "Abandono": "ltfu",
+    "Falecido": "died",
+    "Má classificação": "misclassification",
+    "Outro": "other",
+    "Transferido": "transferred",
+    "released": "released",
+    "ltfu": "ltfu",
+    "died": "died",
+    "misclassification": "misclassification",
+    "other": "other",
+    "transferred": "transferred",
+}
+
+
+def _case_readings(conn, case_id: uuid.UUID) -> dict[str, str]:
+    """Latest non-null value per concept across every page of a case."""
+    rows = conn.execute(
+        text(
+            "SELECT o.concept_id, COALESCE(o.reviewed_value, o.value) AS value, "
+            "       r.started_at "
+            "  FROM observations o "
+            "  JOIN runs r ON r.id = o.run_id "
+            "  JOIN capture_pages p ON p.run_id = r.id "
+            "  JOIN captures c ON c.id = p.capture_id "
+            " WHERE c.case_id = :case_id "
+            " ORDER BY r.started_at DESC"
+        ),
+        {"case_id": case_id},
+    ).mappings().all()
+    readings: dict[str, str] = {}
+    for row in rows:
+        value = row["value"]
+        if row["concept_id"] in readings or value is None or str(value).strip() == "":
+            continue
+        readings[row["concept_id"]] = str(value).strip()
+    return readings
+
+
+def _add_months(value: date, months: int) -> date:
+    year = value.year + (value.month - 1 + months) // 12
+    month = (value.month - 1 + months) % 12 + 1
+    day = min(value.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
+def _outcome_required(readings: dict[str, str]) -> str | None:
+    """Why a missing outcome blocks the number, or None while treatment is running."""
+    classification = (readings.get("classification") or "").upper()
+    if classification.startswith("PB"):
+        months = 6
+    elif classification.startswith("MB"):
+        months = 12
+    else:
+        return None
+    start = readings.get("treatment_start_date")
+    if start:
+        try:
+            started = date.fromisoformat(start[:10])
+        except ValueError:
+            return None
+        ended = _add_months(started, months)
+        if date.today() >= ended:
+            return (
+                f"Resultado do tratamento em falta: o regime {'PB' if months == 6 else 'MB'} "
+                f"terminou em {ended.isoformat()}. Registe o resultado no verso."
+            )
+        return None
+    recorded = readings.get("treatment_months_total")
+    try:
+        recorded_months = int(float(recorded)) if recorded is not None else None
+    except (TypeError, ValueError):
+        recorded_months = None
+    if recorded_months is not None and recorded_months >= months:
+        return (
+            f"Resultado do tratamento em falta: a ficha regista {recorded_months} meses "
+            f"de tratamento ({months} esperados). Registe o resultado no verso."
+        )
+    return None
+
+
 @app.post("/api/cases/{case_id}/allocate")
 def allocate_case_number(case_id: str):
     """Allocate the HANNA number only after both pages are read and clear.
@@ -618,12 +702,37 @@ def allocate_case_number(case_id: str):
             raise HTTPException(
                 409, "Ainda há condições bloqueantes: " + "; ".join(problems) + "."
             )
-        if case["status"] == "closed" and (
-            not case["outcome"] or not case["outcome_date"]
-        ):
-            raise HTTPException(
-                409, "O resultado do tratamento está em falta para fechar o caso."
+        # The treatment outcome is not chosen on the phone any more. It comes from
+        # the back page, where the reviewer sees and corrects it. If the back is
+        # blank and the regimen has already run its course, the number is held.
+        readings = _case_readings(conn, uuid.UUID(case_id))
+        outcome = readings.get("outcome_decision")
+        if outcome:
+            outcome_date = readings.get("outcome_date")
+            if not outcome_date:
+                raise HTTPException(
+                    409,
+                    "Resultado do tratamento em falta no verso: falta a data do resultado.",
+                )
+            try:
+                closed_on = date.fromisoformat(outcome_date[:10])
+            except ValueError as exc:
+                raise HTTPException(
+                    409, "A data do resultado no verso não é uma data válida."
+                ) from exc
+            conn.execute(
+                update(cases_t)
+                .where(cases_t.c.id == uuid.UUID(case_id))
+                .values(
+                    status="closed",
+                    outcome=OUTCOME_CODES.get(outcome, outcome),
+                    outcome_date=closed_on,
+                )
             )
+        else:
+            reason = _outcome_required(readings)
+            if reason:
+                raise HTTPException(409, reason)
 
         allocated = cases_mod.allocate_number(conn, uuid.UUID(case_id))
         conn.commit()
@@ -1045,6 +1154,11 @@ def get_review(run_id: str):
 
     width, height = _template_size(form["template_path"])
     hide_empty = bool(layout.get("hide_empty_sections"))
+    contract = load_contract(str((form["definition"] or {}).get("country", "mozambique")))
+    section_modes = {
+        block_id: cfg.get("mode")
+        for block_id, cfg in (contract.get("blocks") or {}).items()
+    }
     visit_dates = {
         n: str((observations.get(f"v{n}_visit_date") or {}).get("value") or "").strip()
         for n in (1, 2, 3, 4)
@@ -1061,9 +1175,15 @@ def get_review(run_id: str):
                 # blank date is hidden even if the reader produced a value; the
                 # missing date is the data-quality issue, not a visit to review.
                 continue
+            has_value = any(
+                not pair.derived
+                and str((observations.get(pair.id) or {}).get("value") or "").strip()
+                not in {"", "None", "[]"}
+                for pair in block.pairs
+            )
             if (
                 not visit_match
-                and not any(pair.id in observations for pair in block.pairs)
+                and not has_value
                 and not by_block.get(block.id)
                 and not any(pair.id in by_pair for pair in block.pairs)
             ):
@@ -1112,6 +1232,13 @@ def get_review(run_id: str):
                 "pairs": rows,
                 "tables": tables_by_block.get(block.id, []),
                 "hidden_count": skipped_hidden,
+                # A section the model called empty can still hold normal-sensation
+                # ticks. The reviewer can confirm it was filled; that clears the
+                # section_filled issue instead of making them fight the model.
+                "confirm_filled": (
+                    section_modes.get(block.id) == "section_filled"
+                    and by_block.get(block.id) is not None
+                ),
             }
         )
 
@@ -1131,6 +1258,113 @@ def get_review(run_id: str):
             "height": height,
         },
         "blocks": sections,
+    }
+
+
+@app.post("/api/runs/{run_id}/sections/{section_id}/filled")
+def confirm_section_filled(run_id: str, section_id: str):
+    """The reviewer confirms a section the model called empty.
+
+    The hand/feet sensation ticks are small; a false negative is common. This
+    sets the section's ``is_filled`` field to true, re-runs validation from the
+    reviewed observations, and records the human confirmation on the case.
+    """
+    run_id = _uuid(run_id)
+    with connect() as conn:
+        run = events.run_row(conn, run_id)
+        if run is None:
+            raise HTTPException(404, "run não encontrado")
+        blocks, pairs, concepts = store.form_rows(conn, run["form_id"])
+        form = conn.execute(select(forms_t).where(forms_t.c.id == run["form_id"])).mappings().one()
+        country = str((form["definition"] or {}).get("country", "mozambique"))
+        contract = load_contract(country)
+        cfg = (contract.get("blocks") or {}).get(section_id) or {}
+        if cfg.get("mode") != "section_filled":
+            raise HTTPException(422, "esta secção não tem um campo de preenchimento")
+        field = cfg.get("field", "is_filled")
+        pair = next((item for item in pairs if item.id == field), None)
+        if pair is None:
+            raise HTTPException(422, f"campo {field} não existe nesta ficha")
+
+        rows = conn.execute(
+            text(
+                "SELECT pair_id, value, review_mode, reviewed_value FROM observations "
+                "WHERE run_id = CAST(:run_id AS uuid)"
+            ),
+            {"run_id": run_id},
+        ).mappings().all()
+        values = {}
+        for row in rows:
+            if row["review_mode"] == "corrected" and row["reviewed_value"] is not None:
+                values[row["pair_id"]] = row["reviewed_value"]
+            else:
+                values[row["pair_id"]] = row["value"]
+        values[field] = "true"
+
+        result = conn.execute(
+            text(
+                "UPDATE observations SET review_mode = 'corrected', reviewed_value = 'true' "
+                "WHERE run_id = CAST(:run_id AS uuid) AND pair_id = :pair_id"
+            ),
+            {"run_id": run_id, "pair_id": field},
+        )
+        if result.rowcount == 0:
+            conn.execute(
+                text(
+                    "INSERT INTO observations "
+                    "(run_id, block_run_id, block_id, pair_id, concept_id, value, raw_value, "
+                    " review_mode, reviewed_value) "
+                    "SELECT CAST(:run_id AS uuid), br.id, :block_id, :pair_id, :concept_id, "
+                    "       'true', 'true', 'corrected', 'true' "
+                    "  FROM block_runs br "
+                    " WHERE br.run_id = CAST(:run_id AS uuid) AND br.block_id = :block_id "
+                    " LIMIT 1"
+                ),
+                {
+                    "run_id": run_id,
+                    "block_id": section_id,
+                    "pair_id": field,
+                    "concept_id": pair.concept,
+                },
+            )
+
+        validation = validate_run(blocks, pairs, concepts, values, country=country)
+        conn.execute(
+            text(
+                "UPDATE runs SET validation = CAST(:validation AS jsonb), "
+                "validation_status = :status WHERE id = CAST(:run_id AS uuid)"
+            ),
+            {
+                "validation": json.dumps(validation, ensure_ascii=False),
+                "status": validation["status"],
+                "run_id": run_id,
+            },
+        )
+
+        page = conn.execute(
+            text(
+                "SELECT p.capture_id, c.case_id FROM capture_pages p "
+                "JOIN captures c ON c.id = p.capture_id "
+                "WHERE p.run_id = CAST(:run_id AS uuid) LIMIT 1"
+            ),
+            {"run_id": run_id},
+        ).mappings().first()
+        if page is not None:
+            cases_mod.set_section_state(
+                conn,
+                page["case_id"],
+                section_id,
+                state="closed",
+                capture_id=page["capture_id"],
+                confirmed_by="review",
+                note="Secção confirmada preenchida na revisão.",
+            )
+        conn.commit()
+    return {
+        "section_id": section_id,
+        "filled": True,
+        "validation": validation,
+        "validation_status": validation["status"],
     }
 
 

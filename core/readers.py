@@ -279,7 +279,21 @@ def _prednisolone(markdown: str) -> dict[str, str]:
         })
     if not rows:
         return {}
-    return {"prednisolone_table": json.dumps(rows, ensure_ascii=False)}
+    # The dose column is printed. Only a handwritten date or signature proves the
+    # week was actually given. No handwriting at all means the block is blank, not
+    # a completed 12-week course.
+    recorded = [
+        row for row in rows
+        if row["data"].strip() or row["responsavel"].strip()
+    ]
+    if not recorded:
+        return {}
+    status = "completed" if len(recorded) >= 12 and len(rows) >= 12 else "in_progress"
+    return {
+        "prednisolone_status": status,
+        "prednisolone_weeks_recorded": str(len(recorded)),
+        "prednisolone_table": json.dumps(rows, ensure_ascii=False),
+    }
 
 
 def _treatment(markdown: str) -> dict[str, str]:
@@ -507,8 +521,12 @@ def read_block(image_path: Path, block_id: str) -> Reading:
     markdown = payload.get("markdown") or ""
     values = READERS[block_id](markdown)
     if not values:
-        # A blank back visit table is a valid empty read; a front table is not.
-        if block_id.startswith("visit"):
+        # A blank back visit table, prednisolone grid, nerve table or disability
+        # table is a valid empty read: the card may have that section untouched.
+        # The validation layer still reports the section as missing.
+        if block_id.startswith("visit") or block_id in {
+            "prednisolone", "nerve_assessment", "def_exam"
+        }:
             return Reading(
                 text="{}",
                 latency_ms=latency_ms,

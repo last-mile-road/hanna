@@ -449,6 +449,20 @@ def run_card(
                         item["error"] = f"retry failed: {retry_error}"
                 if block.block_type == "dose_grid" and parsed:
                     parsed.update(derive_treatment_grid(parsed))
+                if block.id == "hand_feet_assessment":
+                    # The model often reads the normal-sensation ticks as values
+                    # (all counts 0) yet still calls the section empty. A section
+                    # with any read value is filled; the human can still confirm
+                    # it in review if every value is blank.
+                    others = [
+                        parsed.get(pair.id) for pair in pairs_in_block
+                        if pair.id != "is_filled"
+                    ]
+                    if any(
+                        value is not None and str(value).strip() != ""
+                        for value in others
+                    ):
+                        parsed["is_filled"] = "true"
                 _apply_box_states(parsed, pairs_in_block)
                 if not parsed and pairs_in_block:
                     if item.get("reader"):
@@ -642,6 +656,12 @@ def run_card(
                 pair_id = (spec_groups.get(concept) or {}).get("pair")
                 if not pair_id:
                     continue
+                if entry["value"] is None and form_variant != "back":
+                    # On the front, no band read means the strip region is not
+                    # trustworthy; keep the block's own read. On the back the
+                    # reaction strips are the sole source, so a blank strip is a
+                    # real blank and must clear any block hallucination.
+                    continue
                 all_values[pair_id] = entry["value"]
                 pair = next((item for item in pairs if item.id == pair_id), None)
                 expected_row = truth.get(pair_id)
@@ -661,6 +681,37 @@ def run_card(
                          "run_id": run_id, "pair_id": pair_id},
                     )
                     conn.commit()
+
+        # The back REACÇÕES section is ten signs; the headline the clinician needs
+        # is "was a reaction diagnosed". Derive it from the signs, not a new model
+        # call, and keep the signs as the evidence.
+        reaction_pairs = [
+            pair for pair in pairs
+            if pair.block_id in {"reactions_history", "reactions_exam"} and not pair.derived
+        ]
+        reaction_values = [all_values.get(pair.id) for pair in reaction_pairs]
+        reaction_known = any(
+            value is not None and str(value).strip() != ""
+            for value in reaction_values
+        )
+        reaction_positive = any(
+            str(value).strip().lower() in {"true", "yes", "sim", "+"}
+            for value in reaction_values
+        )
+        reaction_summary = (
+            "True" if reaction_positive else ("False" if reaction_known else None)
+        )
+        if any(pair.id == "reaction_diagnosed" for pair in pairs):
+            all_values["reaction_diagnosed"] = reaction_summary
+            with connect() as conn:
+                conn.execute(
+                    text(
+                        "UPDATE observations SET value = :value, raw_value = :value "
+                        "WHERE run_id = :run_id AND pair_id = 'reaction_diagnosed'"
+                    ),
+                    {"value": reaction_summary, "run_id": run_id},
+                )
+                conn.commit()
 
         # An age is as-of the visit, not as-of today. Once the diagnosis date is known,
         # re-anchor every age-derived birth year to it and keep the observation honest.

@@ -1167,6 +1167,37 @@ concepts:
   aliases:
   - olhos_vermelhos_e_dolorosos
   - reacções olhos vermelhos e dolorosos
+- id: prednisolone_status
+  who_name: Prednisolone treatment status
+  value_type: choice_single
+  options:
+  - not_started
+  - in_progress
+  - completed
+  sensitivity: clinical
+  tier: local
+  ground_truth: false
+  note: Derived from the 12-week table. Any week with a date or signature means
+    started; all 12 weeks means completed. This is the headline, not the weekly detail.
+- id: prednisolone_weeks_recorded
+  who_name: Prednisolone weeks recorded
+  value_type: integer
+  sensitivity: clinical
+  tier: local
+  ground_truth: false
+  note: Count of weeks with a handwritten date or signature. Used for the silent
+    supervisor flag when treatment started but did not finish.
+- id: reaction_diagnosed
+  who_name: Leprosy reaction diagnosed
+  value_type: choice_single
+  options:
+  - true
+  - false
+  sensitivity: clinical
+  tier: local
+  ground_truth: false
+  note: Derived headline for the back REACÇÕES section; positive when any reaction
+    sign is sim. The individual signs remain the evidence.
 - id: prednisolone_table
   who_name: Prednisolone taper table
   value_type: dose_grid

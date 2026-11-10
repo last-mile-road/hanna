@@ -89,3 +89,25 @@ def test_back_reader_maps_front_pairs_to_visit_pairs():
     assert readers._back_values(
         {"nerve_enlargement_cubital_right": "+"}, 2, {}
     ) == {"v2_nerve_enlargement_cubital_right": "+"}
+
+def _prednisolone_markdown(filled_weeks: int) -> str:
+    lines = ["| data | semana | dose diário | responsável |", "| --- | --- | --- | --- |"]
+    doses = [40, 40, 30, 30, 20, 20, 15, 15, 10, 10, 5, 5]
+    for week in range(1, 13):
+        date = "2026-01-05" if week <= filled_weeks else ""
+        signature = "ok" if week <= filled_weeks else ""
+        lines.append(f"| {date} | {week} | {doses[week - 1]} mg | {signature} |")
+    return "\n".join(lines)
+
+
+def test_prednisolone_is_headline_not_weekly_detail():
+    blank = readers.READERS["prednisolone"](_prednisolone_markdown(0))
+    assert blank == {}, "printed doses alone are not a started course"
+
+    partial = readers.READERS["prednisolone"](_prednisolone_markdown(4))
+    assert partial["prednisolone_status"] == "in_progress"
+    assert partial["prednisolone_weeks_recorded"] == "4"
+
+    complete = readers.READERS["prednisolone"](_prednisolone_markdown(12))
+    assert complete["prednisolone_status"] == "completed"
+    assert complete["prednisolone_weeks_recorded"] == "12"

@@ -66,7 +66,7 @@ def test_block_hints_are_loaded_and_used():
 def test_back_pack_v3_has_the_front_parity_structure():
     pack = load_form_pack("mozambique", "form.back.yaml")
     assert len(pack.blocks) == 20
-    assert len(pack.pairs) == 144
+    assert len(pack.pairs) == 147
     ids = {block.id for block in pack.blocks}
     assert "visit_index" in ids
     assert "visit1_nerve" in ids and "visit1_sensory" in ids
@@ -82,3 +82,10 @@ def test_back_pack_v3_has_the_front_parity_structure():
     # single dropdown, not four booleans to score separately.
     assert outcome.block_type == "value_pairs"
     assert [pair.id for pair in outcome.pairs] == ["outcome_decision"]
+    prednisolone = next(block for block in pack.blocks if block.id == "prednisolone")
+    assert [pair.id for pair in prednisolone.pairs] == [
+        "prednisolone_status", "prednisolone_weeks_recorded", "prednisolone_table",
+    ]
+    reactions = next(block for block in pack.blocks if block.id == "reactions_exam")
+    derived = [pair.id for pair in reactions.pairs if pair.derived]
+    assert derived == ["reaction_diagnosed"]

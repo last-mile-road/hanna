@@ -330,7 +330,34 @@ function render() {
     acceptAll.dataset.acceptBlock = block.id;
     acceptAll.textContent = (block.tables || []).length ? "Verificado" : "Tudo correcto";
     head.append(title, count, reviewed, acceptAll);
+    if (block.confirm_filled) {
+      // Small normal-sensation ticks can be missed. The reviewer can confirm the
+      // section was filled; the server clears the false negative and records it.
+      const confirm = document.createElement("button");
+      confirm.className = "mini";
+      confirm.textContent = "Secção preenchida";
+      confirm.addEventListener("click", async () => {
+        confirm.disabled = true;
+        const response = await fetch(`/api/runs/${runId}/sections/${block.id}/filled`, {
+          method: "POST",
+        });
+        if (!response.ok) {
+          confirm.disabled = false;
+          flash("Não foi possível confirmar a secção");
+          return;
+        }
+        flash("secção confirmada");
+        await load();
+      });
+      head.append(confirm);
+    }
     section.appendChild(head);
+    if (block.issue) {
+      const note = document.createElement("div");
+      note.className = "issue-note" + (block.issue.severity === "info" ? " info" : "");
+      note.textContent = block.issue.advice || block.issue.kind;
+      section.appendChild(note);
+    }
 
     const inTable = new Set();
     (block.tables || []).forEach((table) => {
@@ -577,6 +604,7 @@ function control(pair, compact = false) {
   element.value = extracted;
   element.dataset.extracted = extracted;
   element.className = "control";
+  if (pair.value_type === "date") element.classList.add("wide");
   element.addEventListener("change", () => {
     const value = element.value.trim();
     if (value === extracted.trim()) decide(pair.pair_id, "accepted", null);

@@ -304,6 +304,22 @@ def validate_run(
                     block=block_by_id.get("treatment_follow"),
                 )
 
+    # Prednisolone started but not completed: a silent supervisor note, never a
+    # block. The weekly dates are not reviewed; the count is enough to flag it.
+    pred_status = _key(cv("prednisolone_status"))
+    if pred_status == "in_progress":
+        weeks = _int(cv("prednisolone_weeks_recorded"))
+        count = f"{weeks}/12" if weeks is not None else "menos de 12/12"
+        _issue(
+            issues,
+            "cross_check",
+            "info",
+            f"Prednisolona iniciada mas só {count} semanas registadas. "
+            "Confirmar o seguimento com o supervisor.",
+            audience=["supervisor"],
+            block=block_by_id.get("prednisolone"),
+        )
+
     # No cardinal signs: zero patches and every enlargement is minus.
     patches = _int(cv("skin_patch_count"))
     enlargements = [
