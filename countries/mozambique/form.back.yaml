@@ -5,694 +5,693 @@ form:
   template: template.back.jpg
   status: draft
   reference_year: 2026
-  note: 'Complete follow-up declaration generated from the printed card: 4 visit columns
-    (header, nerve table, sensory, eyes, muscles, grades) plus the REACÇÕES panel.
-    Pairs are boxless inside each section crop.'
+  note: 'v3: one wide visit index; per visit nerve, sensory and def_exam (eye + muscles + grades in one
+    block, like the front); reactions read by strips; outcome date/choice/free text separate. Bboxes measured
+    from template.back.jpg (3229x2303); overlay in docs/diagnostics.'
 blocks:
-- id: visit1_header
+- id: visit_index
   block_type: value_pairs
   bbox:
-  - 3
-  - 114
-  - 617
-  - 224
-  hint: Visita 1 — Registo da visita
+  - 6
+  - 6
+  - 2457
+  - 159
+  hint: 'The card has four visit headers side by side. Each has a handwritten date under Data: and a name
+    under Preenchido por:. Read each visit date and name; an empty header is null. Do not use a printed
+    label as a value.'
   value_pairs:
   - id: v1_visit_date
     concept: visit_date
-    label_local: Visita 1 — visit_date
+    label_local: Visita 1 — Data
   - id: v1_recorded_by
     concept: recorded_by
-    label_local: Visita 1 — recorded_by
+    label_local: Visita 1 — Preenchido por
+  - id: v2_visit_date
+    concept: visit_date
+    label_local: Visita 2 — Data
+  - id: v2_recorded_by
+    concept: recorded_by
+    label_local: Visita 2 — Preenchido por
+  - id: v3_visit_date
+    concept: visit_date
+    label_local: Visita 3 — Data
+  - id: v3_recorded_by
+    concept: recorded_by
+    label_local: Visita 3 — Preenchido por
+  - id: v4_visit_date
+    concept: visit_date
+    label_local: Visita 4 — Data
+  - id: v4_recorded_by
+    concept: recorded_by
+    label_local: Visita 4 — Preenchido por
 - id: visit1_nerve
   block_type: annotated_table
   bbox:
   - 3
-  - 224
+  - 159
   - 617
-  - 520
-  hint: Visita 1 — Palpação dos nervos periféricos
+  - 517
+  hint: Tabela de palpação dos nervos periféricos. Colunas D (direita) e E (esquerda); linhas Grosso (nervo
+    engrossado) e Dor (nervo doloroso). Leia a célula na intersecção; uma célula vazia é null.
   value_pairs:
   - id: v1_nerve_enlargement_cubital_right
     concept: nerve_enlargement_cubital_right
-    label_local: Visita 1 — nerve_enlargement_cubital_right
+    label_local: Cubital D — Grosso
   - id: v1_nerve_enlargement_cubital_left
     concept: nerve_enlargement_cubital_left
-    label_local: Visita 1 — nerve_enlargement_cubital_left
+    label_local: Cubital E — Grosso
   - id: v1_nerve_enlargement_radial_cutaneous_right
     concept: nerve_enlargement_radial_cutaneous_right
-    label_local: Visita 1 — nerve_enlargement_radial_cutaneous_right
+    label_local: Radial D — Grosso
   - id: v1_nerve_enlargement_radial_cutaneous_left
     concept: nerve_enlargement_radial_cutaneous_left
-    label_local: Visita 1 — nerve_enlargement_radial_cutaneous_left
+    label_local: Radial E — Grosso
   - id: v1_nerve_enlargement_popliteal_external_right
     concept: nerve_enlargement_popliteal_external_right
-    label_local: Visita 1 — nerve_enlargement_popliteal_external_right
+    label_local: Poplíteo D — Grosso
   - id: v1_nerve_enlargement_popliteal_external_left
     concept: nerve_enlargement_popliteal_external_left
-    label_local: Visita 1 — nerve_enlargement_popliteal_external_left
+    label_local: Poplíteo E — Grosso
   - id: v1_nerve_pain_cubital_right
     concept: nerve_pain_cubital_right
-    label_local: Visita 1 — nerve_pain_cubital_right
+    label_local: Cubital D — Dor
   - id: v1_nerve_pain_cubital_left
     concept: nerve_pain_cubital_left
-    label_local: Visita 1 — nerve_pain_cubital_left
+    label_local: Cubital E — Dor
   - id: v1_nerve_pain_radial_cutaneous_right
     concept: nerve_pain_radial_cutaneous_right
-    label_local: Visita 1 — nerve_pain_radial_cutaneous_right
+    label_local: Radial D — Dor
   - id: v1_nerve_pain_radial_cutaneous_left
     concept: nerve_pain_radial_cutaneous_left
-    label_local: Visita 1 — nerve_pain_radial_cutaneous_left
+    label_local: Radial E — Dor
   - id: v1_nerve_pain_popliteal_external_right
     concept: nerve_pain_popliteal_external_right
-    label_local: Visita 1 — nerve_pain_popliteal_external_right
+    label_local: Poplíteo D — Dor
   - id: v1_nerve_pain_popliteal_external_left
     concept: nerve_pain_popliteal_external_left
-    label_local: Visita 1 — nerve_pain_popliteal_external_left
+    label_local: Poplíteo E — Dor
 - id: visit1_sensory
   block_type: visual_annotation
   bbox:
   - 3
-  - 520
+  - 517
   - 617
-  - 973
-  hint: Visita 1 — Teste sensitivo das mãos e dos pés
+  - 1614
+  hint: "Rules for this diagram:\n- The left half is column D = the patient's right; the right half is\
+    \ column E = the patient's left.\n- An X marks an insensitive point. A tick, a dot or a printed mark\
+    \ is NOT an X.\n- A filled black circle is an ulcer, not an insensitive point.\n- A blacked-out or\
+    \ amputated digit is a complication, not an X.\n- Count only X marks, separately for the hand and\
+    \ the foot.\n- Also answer is_filled: true if there is at least one handwritten tick or X anywhere\
+    \ in the four drawings.\n- Answer complication_ulcer, complication_amputation, complication_contracture\
+    \ and\n  complication_other with Yes or No. Look at the four drawings: an open sore, a missing\n \
+    \ digit or limb, a claw hand, or anything else marked that is not an X and not a tick.\n  More than\
+    \ one can be Yes.\n- If any complication is Yes, `hand_feet_notes` must be a sentence, not the word\n\
+    \  \"úlcera\" or \"amputação\". Give the location (hand or foot, and which digit if visible)\n  and\
+    \ the approximate size when the card shows one, for example \"úlcera de 2 cm na base\n  do polegar\
+    \ direito\". Never invent a size. If the diagram does not show where it is,\n  write what is visible\
+    \ and nothing more.\n"
   value_pairs:
   - id: v1_insensitive_points_right_hand
     concept: insensitive_points_right_hand
-    label_local: Visita 1 — insensitive_points_right_hand
+    label_local: Mão D — pontos insensíveis
   - id: v1_insensitive_points_left_hand
     concept: insensitive_points_left_hand
-    label_local: Visita 1 — insensitive_points_left_hand
+    label_local: Mão E — pontos insensíveis
   - id: v1_insensitive_points_right_foot
     concept: insensitive_points_right_foot
-    label_local: Visita 1 — insensitive_points_right_foot
+    label_local: Pé D — pontos insensíveis
   - id: v1_insensitive_points_left_foot
     concept: insensitive_points_left_foot
-    label_local: Visita 1 — insensitive_points_left_foot
-- id: visit1_eye
+    label_local: Pé E — pontos insensíveis
+- id: visit1_def_exam
   block_type: annotated_table
   bbox:
   - 3
-  - 973
+  - 1614
   - 617
-  - 1110
-  hint: Visita 1 — Exame dos olhos
+  - 2302
+  hint: 'Três secções: Exame dos olhos (Pestanejo +/-; Lagoftalmia em mm), Testagem dos músculos voluntários
+    (Abdução dos dedos mínimos; Dorsi-flexão dos pés) e Graus de deformidade (0, 1 ou 2). Colunas D/E;
+    leia a linha certa e não desloque valores entre linhas.'
   value_pairs:
   - id: v1_eye_blinking_right
     concept: eye_blinking_right
-    label_local: Visita 1 — eye_blinking_right
-  - id: v1_eye_blinking_left
-    concept: eye_blinking_left
-    label_local: Visita 1 — eye_blinking_left
+    label_local: Pestanejo D (+/-)
   - id: v1_eye_lagophthalmos_right
     concept: eye_lagophthalmos_right
-    label_local: Visita 1 — eye_lagophthalmos_right
+    label_local: Lagoftalmia D (mm)
+  - id: v1_eye_blinking_left
+    concept: eye_blinking_left
+    label_local: Pestanejo E (+/-)
   - id: v1_eye_lagophthalmos_left
     concept: eye_lagophthalmos_left
-    label_local: Visita 1 — eye_lagophthalmos_left
-- id: visit1_muscle
-  block_type: annotated_table
-  bbox:
-  - 3
-  - 1110
-  - 617
-  - 1248
-  hint: Visita 1 — Testagem dos músculos voluntários
-  value_pairs:
+    label_local: Lagoftalmia E (mm)
   - id: v1_finger_abduction_right
     concept: finger_abduction_right
-    label_local: Visita 1 — finger_abduction_right
-  - id: v1_finger_abduction_left
-    concept: finger_abduction_left
-    label_local: Visita 1 — finger_abduction_left
+    label_local: Abdução dedo mínimo D
   - id: v1_foot_dorsiflex_right
     concept: foot_dorsiflex_right
-    label_local: Visita 1 — foot_dorsiflex_right
+    label_local: Dorsi-flexão D
+  - id: v1_finger_abduction_left
+    concept: finger_abduction_left
+    label_local: Abdução dedo mínimo E
   - id: v1_foot_dorsiflex_left
     concept: foot_dorsiflex_left
-    label_local: Visita 1 — foot_dorsiflex_left
-- id: visit1_disability
-  block_type: annotated_table
-  bbox:
-  - 3
-  - 1248
-  - 617
-  - 1523
-  hint: Visita 1 — Graus de deformidade
-  value_pairs:
+    label_local: Dorsi-flexão E
   - id: v1_disability_grade_eye_right
     concept: disability_grade_eye_right
-    label_local: Visita 1 — disability_grade_eye_right
+    label_local: Grau olhos E
   - id: v1_disability_grade_eye_left
     concept: disability_grade_eye_left
-    label_local: Visita 1 — disability_grade_eye_left
+    label_local: Grau olhos D
   - id: v1_disability_grade_hand_right
     concept: disability_grade_hand_right
-    label_local: Visita 1 — disability_grade_hand_right
+    label_local: Grau mãos E
   - id: v1_disability_grade_hand_left
     concept: disability_grade_hand_left
-    label_local: Visita 1 — disability_grade_hand_left
+    label_local: Grau mãos D
   - id: v1_disability_grade_foot_right
     concept: disability_grade_foot_right
-    label_local: Visita 1 — disability_grade_foot_right
+    label_local: Grau pés E
   - id: v1_disability_grade_foot_left
     concept: disability_grade_foot_left
-    label_local: Visita 1 — disability_grade_foot_left
-- id: visit2_header
-  block_type: value_pairs
-  bbox:
-  - 617
-  - 114
-  - 1229
-  - 224
-  hint: Visita 2 — Registo da visita
-  value_pairs:
-  - id: v2_visit_date
-    concept: visit_date
-    label_local: Visita 2 — visit_date
-  - id: v2_recorded_by
-    concept: recorded_by
-    label_local: Visita 2 — recorded_by
+    label_local: Grau pés D
 - id: visit2_nerve
   block_type: annotated_table
   bbox:
   - 617
-  - 224
+  - 159
   - 1229
-  - 520
-  hint: Visita 2 — Palpação dos nervos periféricos
+  - 517
+  hint: Tabela de palpação dos nervos periféricos. Colunas D (direita) e E (esquerda); linhas Grosso (nervo
+    engrossado) e Dor (nervo doloroso). Leia a célula na intersecção; uma célula vazia é null.
   value_pairs:
   - id: v2_nerve_enlargement_cubital_right
     concept: nerve_enlargement_cubital_right
-    label_local: Visita 2 — nerve_enlargement_cubital_right
+    label_local: Cubital D — Grosso
   - id: v2_nerve_enlargement_cubital_left
     concept: nerve_enlargement_cubital_left
-    label_local: Visita 2 — nerve_enlargement_cubital_left
+    label_local: Cubital E — Grosso
   - id: v2_nerve_enlargement_radial_cutaneous_right
     concept: nerve_enlargement_radial_cutaneous_right
-    label_local: Visita 2 — nerve_enlargement_radial_cutaneous_right
+    label_local: Radial D — Grosso
   - id: v2_nerve_enlargement_radial_cutaneous_left
     concept: nerve_enlargement_radial_cutaneous_left
-    label_local: Visita 2 — nerve_enlargement_radial_cutaneous_left
+    label_local: Radial E — Grosso
   - id: v2_nerve_enlargement_popliteal_external_right
     concept: nerve_enlargement_popliteal_external_right
-    label_local: Visita 2 — nerve_enlargement_popliteal_external_right
+    label_local: Poplíteo D — Grosso
   - id: v2_nerve_enlargement_popliteal_external_left
     concept: nerve_enlargement_popliteal_external_left
-    label_local: Visita 2 — nerve_enlargement_popliteal_external_left
+    label_local: Poplíteo E — Grosso
   - id: v2_nerve_pain_cubital_right
     concept: nerve_pain_cubital_right
-    label_local: Visita 2 — nerve_pain_cubital_right
+    label_local: Cubital D — Dor
   - id: v2_nerve_pain_cubital_left
     concept: nerve_pain_cubital_left
-    label_local: Visita 2 — nerve_pain_cubital_left
+    label_local: Cubital E — Dor
   - id: v2_nerve_pain_radial_cutaneous_right
     concept: nerve_pain_radial_cutaneous_right
-    label_local: Visita 2 — nerve_pain_radial_cutaneous_right
+    label_local: Radial D — Dor
   - id: v2_nerve_pain_radial_cutaneous_left
     concept: nerve_pain_radial_cutaneous_left
-    label_local: Visita 2 — nerve_pain_radial_cutaneous_left
+    label_local: Radial E — Dor
   - id: v2_nerve_pain_popliteal_external_right
     concept: nerve_pain_popliteal_external_right
-    label_local: Visita 2 — nerve_pain_popliteal_external_right
+    label_local: Poplíteo D — Dor
   - id: v2_nerve_pain_popliteal_external_left
     concept: nerve_pain_popliteal_external_left
-    label_local: Visita 2 — nerve_pain_popliteal_external_left
+    label_local: Poplíteo E — Dor
 - id: visit2_sensory
   block_type: visual_annotation
   bbox:
   - 617
-  - 520
+  - 517
   - 1229
-  - 973
-  hint: Visita 2 — Teste sensitivo das mãos e dos pés
+  - 1614
+  hint: "Rules for this diagram:\n- The left half is column D = the patient's right; the right half is\
+    \ column E = the patient's left.\n- An X marks an insensitive point. A tick, a dot or a printed mark\
+    \ is NOT an X.\n- A filled black circle is an ulcer, not an insensitive point.\n- A blacked-out or\
+    \ amputated digit is a complication, not an X.\n- Count only X marks, separately for the hand and\
+    \ the foot.\n- Also answer is_filled: true if there is at least one handwritten tick or X anywhere\
+    \ in the four drawings.\n- Answer complication_ulcer, complication_amputation, complication_contracture\
+    \ and\n  complication_other with Yes or No. Look at the four drawings: an open sore, a missing\n \
+    \ digit or limb, a claw hand, or anything else marked that is not an X and not a tick.\n  More than\
+    \ one can be Yes.\n- If any complication is Yes, `hand_feet_notes` must be a sentence, not the word\n\
+    \  \"úlcera\" or \"amputação\". Give the location (hand or foot, and which digit if visible)\n  and\
+    \ the approximate size when the card shows one, for example \"úlcera de 2 cm na base\n  do polegar\
+    \ direito\". Never invent a size. If the diagram does not show where it is,\n  write what is visible\
+    \ and nothing more.\n"
   value_pairs:
   - id: v2_insensitive_points_right_hand
     concept: insensitive_points_right_hand
-    label_local: Visita 2 — insensitive_points_right_hand
+    label_local: Mão D — pontos insensíveis
   - id: v2_insensitive_points_left_hand
     concept: insensitive_points_left_hand
-    label_local: Visita 2 — insensitive_points_left_hand
+    label_local: Mão E — pontos insensíveis
   - id: v2_insensitive_points_right_foot
     concept: insensitive_points_right_foot
-    label_local: Visita 2 — insensitive_points_right_foot
+    label_local: Pé D — pontos insensíveis
   - id: v2_insensitive_points_left_foot
     concept: insensitive_points_left_foot
-    label_local: Visita 2 — insensitive_points_left_foot
-- id: visit2_eye
+    label_local: Pé E — pontos insensíveis
+- id: visit2_def_exam
   block_type: annotated_table
   bbox:
   - 617
-  - 973
+  - 1614
   - 1229
-  - 1110
-  hint: Visita 2 — Exame dos olhos
+  - 2302
+  hint: 'Três secções: Exame dos olhos (Pestanejo +/-; Lagoftalmia em mm), Testagem dos músculos voluntários
+    (Abdução dos dedos mínimos; Dorsi-flexão dos pés) e Graus de deformidade (0, 1 ou 2). Colunas D/E;
+    leia a linha certa e não desloque valores entre linhas.'
   value_pairs:
   - id: v2_eye_blinking_right
     concept: eye_blinking_right
-    label_local: Visita 2 — eye_blinking_right
-  - id: v2_eye_blinking_left
-    concept: eye_blinking_left
-    label_local: Visita 2 — eye_blinking_left
+    label_local: Pestanejo D (+/-)
   - id: v2_eye_lagophthalmos_right
     concept: eye_lagophthalmos_right
-    label_local: Visita 2 — eye_lagophthalmos_right
+    label_local: Lagoftalmia D (mm)
+  - id: v2_eye_blinking_left
+    concept: eye_blinking_left
+    label_local: Pestanejo E (+/-)
   - id: v2_eye_lagophthalmos_left
     concept: eye_lagophthalmos_left
-    label_local: Visita 2 — eye_lagophthalmos_left
-- id: visit2_muscle
-  block_type: annotated_table
-  bbox:
-  - 617
-  - 1110
-  - 1229
-  - 1248
-  hint: Visita 2 — Testagem dos músculos voluntários
-  value_pairs:
+    label_local: Lagoftalmia E (mm)
   - id: v2_finger_abduction_right
     concept: finger_abduction_right
-    label_local: Visita 2 — finger_abduction_right
-  - id: v2_finger_abduction_left
-    concept: finger_abduction_left
-    label_local: Visita 2 — finger_abduction_left
+    label_local: Abdução dedo mínimo D
   - id: v2_foot_dorsiflex_right
     concept: foot_dorsiflex_right
-    label_local: Visita 2 — foot_dorsiflex_right
+    label_local: Dorsi-flexão D
+  - id: v2_finger_abduction_left
+    concept: finger_abduction_left
+    label_local: Abdução dedo mínimo E
   - id: v2_foot_dorsiflex_left
     concept: foot_dorsiflex_left
-    label_local: Visita 2 — foot_dorsiflex_left
-- id: visit2_disability
-  block_type: annotated_table
-  bbox:
-  - 617
-  - 1248
-  - 1229
-  - 1523
-  hint: Visita 2 — Graus de deformidade
-  value_pairs:
+    label_local: Dorsi-flexão E
   - id: v2_disability_grade_eye_right
     concept: disability_grade_eye_right
-    label_local: Visita 2 — disability_grade_eye_right
+    label_local: Grau olhos E
   - id: v2_disability_grade_eye_left
     concept: disability_grade_eye_left
-    label_local: Visita 2 — disability_grade_eye_left
+    label_local: Grau olhos D
   - id: v2_disability_grade_hand_right
     concept: disability_grade_hand_right
-    label_local: Visita 2 — disability_grade_hand_right
+    label_local: Grau mãos E
   - id: v2_disability_grade_hand_left
     concept: disability_grade_hand_left
-    label_local: Visita 2 — disability_grade_hand_left
+    label_local: Grau mãos D
   - id: v2_disability_grade_foot_right
     concept: disability_grade_foot_right
-    label_local: Visita 2 — disability_grade_foot_right
+    label_local: Grau pés E
   - id: v2_disability_grade_foot_left
     concept: disability_grade_foot_left
-    label_local: Visita 2 — disability_grade_foot_left
-- id: visit3_header
-  block_type: value_pairs
-  bbox:
-  - 1229
-  - 114
-  - 1845
-  - 224
-  hint: Visita 3 — Registo da visita
-  value_pairs:
-  - id: v3_visit_date
-    concept: visit_date
-    label_local: Visita 3 — visit_date
-  - id: v3_recorded_by
-    concept: recorded_by
-    label_local: Visita 3 — recorded_by
+    label_local: Grau pés D
 - id: visit3_nerve
   block_type: annotated_table
   bbox:
   - 1229
-  - 224
+  - 159
   - 1845
-  - 520
-  hint: Visita 3 — Palpação dos nervos periféricos
+  - 517
+  hint: Tabela de palpação dos nervos periféricos. Colunas D (direita) e E (esquerda); linhas Grosso (nervo
+    engrossado) e Dor (nervo doloroso). Leia a célula na intersecção; uma célula vazia é null.
   value_pairs:
   - id: v3_nerve_enlargement_cubital_right
     concept: nerve_enlargement_cubital_right
-    label_local: Visita 3 — nerve_enlargement_cubital_right
+    label_local: Cubital D — Grosso
   - id: v3_nerve_enlargement_cubital_left
     concept: nerve_enlargement_cubital_left
-    label_local: Visita 3 — nerve_enlargement_cubital_left
+    label_local: Cubital E — Grosso
   - id: v3_nerve_enlargement_radial_cutaneous_right
     concept: nerve_enlargement_radial_cutaneous_right
-    label_local: Visita 3 — nerve_enlargement_radial_cutaneous_right
+    label_local: Radial D — Grosso
   - id: v3_nerve_enlargement_radial_cutaneous_left
     concept: nerve_enlargement_radial_cutaneous_left
-    label_local: Visita 3 — nerve_enlargement_radial_cutaneous_left
+    label_local: Radial E — Grosso
   - id: v3_nerve_enlargement_popliteal_external_right
     concept: nerve_enlargement_popliteal_external_right
-    label_local: Visita 3 — nerve_enlargement_popliteal_external_right
+    label_local: Poplíteo D — Grosso
   - id: v3_nerve_enlargement_popliteal_external_left
     concept: nerve_enlargement_popliteal_external_left
-    label_local: Visita 3 — nerve_enlargement_popliteal_external_left
+    label_local: Poplíteo E — Grosso
   - id: v3_nerve_pain_cubital_right
     concept: nerve_pain_cubital_right
-    label_local: Visita 3 — nerve_pain_cubital_right
+    label_local: Cubital D — Dor
   - id: v3_nerve_pain_cubital_left
     concept: nerve_pain_cubital_left
-    label_local: Visita 3 — nerve_pain_cubital_left
+    label_local: Cubital E — Dor
   - id: v3_nerve_pain_radial_cutaneous_right
     concept: nerve_pain_radial_cutaneous_right
-    label_local: Visita 3 — nerve_pain_radial_cutaneous_right
+    label_local: Radial D — Dor
   - id: v3_nerve_pain_radial_cutaneous_left
     concept: nerve_pain_radial_cutaneous_left
-    label_local: Visita 3 — nerve_pain_radial_cutaneous_left
+    label_local: Radial E — Dor
   - id: v3_nerve_pain_popliteal_external_right
     concept: nerve_pain_popliteal_external_right
-    label_local: Visita 3 — nerve_pain_popliteal_external_right
+    label_local: Poplíteo D — Dor
   - id: v3_nerve_pain_popliteal_external_left
     concept: nerve_pain_popliteal_external_left
-    label_local: Visita 3 — nerve_pain_popliteal_external_left
+    label_local: Poplíteo E — Dor
 - id: visit3_sensory
   block_type: visual_annotation
   bbox:
   - 1229
-  - 520
+  - 517
   - 1845
-  - 973
-  hint: Visita 3 — Teste sensitivo das mãos e dos pés
+  - 1614
+  hint: "Rules for this diagram:\n- The left half is column D = the patient's right; the right half is\
+    \ column E = the patient's left.\n- An X marks an insensitive point. A tick, a dot or a printed mark\
+    \ is NOT an X.\n- A filled black circle is an ulcer, not an insensitive point.\n- A blacked-out or\
+    \ amputated digit is a complication, not an X.\n- Count only X marks, separately for the hand and\
+    \ the foot.\n- Also answer is_filled: true if there is at least one handwritten tick or X anywhere\
+    \ in the four drawings.\n- Answer complication_ulcer, complication_amputation, complication_contracture\
+    \ and\n  complication_other with Yes or No. Look at the four drawings: an open sore, a missing\n \
+    \ digit or limb, a claw hand, or anything else marked that is not an X and not a tick.\n  More than\
+    \ one can be Yes.\n- If any complication is Yes, `hand_feet_notes` must be a sentence, not the word\n\
+    \  \"úlcera\" or \"amputação\". Give the location (hand or foot, and which digit if visible)\n  and\
+    \ the approximate size when the card shows one, for example \"úlcera de 2 cm na base\n  do polegar\
+    \ direito\". Never invent a size. If the diagram does not show where it is,\n  write what is visible\
+    \ and nothing more.\n"
   value_pairs:
   - id: v3_insensitive_points_right_hand
     concept: insensitive_points_right_hand
-    label_local: Visita 3 — insensitive_points_right_hand
+    label_local: Mão D — pontos insensíveis
   - id: v3_insensitive_points_left_hand
     concept: insensitive_points_left_hand
-    label_local: Visita 3 — insensitive_points_left_hand
+    label_local: Mão E — pontos insensíveis
   - id: v3_insensitive_points_right_foot
     concept: insensitive_points_right_foot
-    label_local: Visita 3 — insensitive_points_right_foot
+    label_local: Pé D — pontos insensíveis
   - id: v3_insensitive_points_left_foot
     concept: insensitive_points_left_foot
-    label_local: Visita 3 — insensitive_points_left_foot
-- id: visit3_eye
+    label_local: Pé E — pontos insensíveis
+- id: visit3_def_exam
   block_type: annotated_table
   bbox:
   - 1229
-  - 973
+  - 1614
   - 1845
-  - 1110
-  hint: Visita 3 — Exame dos olhos
+  - 2302
+  hint: 'Três secções: Exame dos olhos (Pestanejo +/-; Lagoftalmia em mm), Testagem dos músculos voluntários
+    (Abdução dos dedos mínimos; Dorsi-flexão dos pés) e Graus de deformidade (0, 1 ou 2). Colunas D/E;
+    leia a linha certa e não desloque valores entre linhas.'
   value_pairs:
   - id: v3_eye_blinking_right
     concept: eye_blinking_right
-    label_local: Visita 3 — eye_blinking_right
-  - id: v3_eye_blinking_left
-    concept: eye_blinking_left
-    label_local: Visita 3 — eye_blinking_left
+    label_local: Pestanejo D (+/-)
   - id: v3_eye_lagophthalmos_right
     concept: eye_lagophthalmos_right
-    label_local: Visita 3 — eye_lagophthalmos_right
+    label_local: Lagoftalmia D (mm)
+  - id: v3_eye_blinking_left
+    concept: eye_blinking_left
+    label_local: Pestanejo E (+/-)
   - id: v3_eye_lagophthalmos_left
     concept: eye_lagophthalmos_left
-    label_local: Visita 3 — eye_lagophthalmos_left
-- id: visit3_muscle
-  block_type: annotated_table
-  bbox:
-  - 1229
-  - 1110
-  - 1845
-  - 1248
-  hint: Visita 3 — Testagem dos músculos voluntários
-  value_pairs:
+    label_local: Lagoftalmia E (mm)
   - id: v3_finger_abduction_right
     concept: finger_abduction_right
-    label_local: Visita 3 — finger_abduction_right
-  - id: v3_finger_abduction_left
-    concept: finger_abduction_left
-    label_local: Visita 3 — finger_abduction_left
+    label_local: Abdução dedo mínimo D
   - id: v3_foot_dorsiflex_right
     concept: foot_dorsiflex_right
-    label_local: Visita 3 — foot_dorsiflex_right
+    label_local: Dorsi-flexão D
+  - id: v3_finger_abduction_left
+    concept: finger_abduction_left
+    label_local: Abdução dedo mínimo E
   - id: v3_foot_dorsiflex_left
     concept: foot_dorsiflex_left
-    label_local: Visita 3 — foot_dorsiflex_left
-- id: visit3_disability
-  block_type: annotated_table
-  bbox:
-  - 1229
-  - 1248
-  - 1845
-  - 1523
-  hint: Visita 3 — Graus de deformidade
-  value_pairs:
+    label_local: Dorsi-flexão E
   - id: v3_disability_grade_eye_right
     concept: disability_grade_eye_right
-    label_local: Visita 3 — disability_grade_eye_right
+    label_local: Grau olhos E
   - id: v3_disability_grade_eye_left
     concept: disability_grade_eye_left
-    label_local: Visita 3 — disability_grade_eye_left
+    label_local: Grau olhos D
   - id: v3_disability_grade_hand_right
     concept: disability_grade_hand_right
-    label_local: Visita 3 — disability_grade_hand_right
+    label_local: Grau mãos E
   - id: v3_disability_grade_hand_left
     concept: disability_grade_hand_left
-    label_local: Visita 3 — disability_grade_hand_left
+    label_local: Grau mãos D
   - id: v3_disability_grade_foot_right
     concept: disability_grade_foot_right
-    label_local: Visita 3 — disability_grade_foot_right
+    label_local: Grau pés E
   - id: v3_disability_grade_foot_left
     concept: disability_grade_foot_left
-    label_local: Visita 3 — disability_grade_foot_left
-- id: visit4_header
-  block_type: value_pairs
-  bbox:
-  - 1845
-  - 114
-  - 2457
-  - 224
-  hint: Visita 4 — Registo da visita
-  value_pairs:
-  - id: v4_visit_date
-    concept: visit_date
-    label_local: Visita 4 — visit_date
-  - id: v4_recorded_by
-    concept: recorded_by
-    label_local: Visita 4 — recorded_by
+    label_local: Grau pés D
 - id: visit4_nerve
   block_type: annotated_table
   bbox:
   - 1845
-  - 224
+  - 159
   - 2457
-  - 520
-  hint: Visita 4 — Palpação dos nervos periféricos
+  - 517
+  hint: Tabela de palpação dos nervos periféricos. Colunas D (direita) e E (esquerda); linhas Grosso (nervo
+    engrossado) e Dor (nervo doloroso). Leia a célula na intersecção; uma célula vazia é null.
   value_pairs:
   - id: v4_nerve_enlargement_cubital_right
     concept: nerve_enlargement_cubital_right
-    label_local: Visita 4 — nerve_enlargement_cubital_right
+    label_local: Cubital D — Grosso
   - id: v4_nerve_enlargement_cubital_left
     concept: nerve_enlargement_cubital_left
-    label_local: Visita 4 — nerve_enlargement_cubital_left
+    label_local: Cubital E — Grosso
   - id: v4_nerve_enlargement_radial_cutaneous_right
     concept: nerve_enlargement_radial_cutaneous_right
-    label_local: Visita 4 — nerve_enlargement_radial_cutaneous_right
+    label_local: Radial D — Grosso
   - id: v4_nerve_enlargement_radial_cutaneous_left
     concept: nerve_enlargement_radial_cutaneous_left
-    label_local: Visita 4 — nerve_enlargement_radial_cutaneous_left
+    label_local: Radial E — Grosso
   - id: v4_nerve_enlargement_popliteal_external_right
     concept: nerve_enlargement_popliteal_external_right
-    label_local: Visita 4 — nerve_enlargement_popliteal_external_right
+    label_local: Poplíteo D — Grosso
   - id: v4_nerve_enlargement_popliteal_external_left
     concept: nerve_enlargement_popliteal_external_left
-    label_local: Visita 4 — nerve_enlargement_popliteal_external_left
+    label_local: Poplíteo E — Grosso
   - id: v4_nerve_pain_cubital_right
     concept: nerve_pain_cubital_right
-    label_local: Visita 4 — nerve_pain_cubital_right
+    label_local: Cubital D — Dor
   - id: v4_nerve_pain_cubital_left
     concept: nerve_pain_cubital_left
-    label_local: Visita 4 — nerve_pain_cubital_left
+    label_local: Cubital E — Dor
   - id: v4_nerve_pain_radial_cutaneous_right
     concept: nerve_pain_radial_cutaneous_right
-    label_local: Visita 4 — nerve_pain_radial_cutaneous_right
+    label_local: Radial D — Dor
   - id: v4_nerve_pain_radial_cutaneous_left
     concept: nerve_pain_radial_cutaneous_left
-    label_local: Visita 4 — nerve_pain_radial_cutaneous_left
+    label_local: Radial E — Dor
   - id: v4_nerve_pain_popliteal_external_right
     concept: nerve_pain_popliteal_external_right
-    label_local: Visita 4 — nerve_pain_popliteal_external_right
+    label_local: Poplíteo D — Dor
   - id: v4_nerve_pain_popliteal_external_left
     concept: nerve_pain_popliteal_external_left
-    label_local: Visita 4 — nerve_pain_popliteal_external_left
+    label_local: Poplíteo E — Dor
 - id: visit4_sensory
   block_type: visual_annotation
   bbox:
   - 1845
-  - 520
+  - 517
   - 2457
-  - 973
-  hint: Visita 4 — Teste sensitivo das mãos e dos pés
+  - 1614
+  hint: "Rules for this diagram:\n- The left half is column D = the patient's right; the right half is\
+    \ column E = the patient's left.\n- An X marks an insensitive point. A tick, a dot or a printed mark\
+    \ is NOT an X.\n- A filled black circle is an ulcer, not an insensitive point.\n- A blacked-out or\
+    \ amputated digit is a complication, not an X.\n- Count only X marks, separately for the hand and\
+    \ the foot.\n- Also answer is_filled: true if there is at least one handwritten tick or X anywhere\
+    \ in the four drawings.\n- Answer complication_ulcer, complication_amputation, complication_contracture\
+    \ and\n  complication_other with Yes or No. Look at the four drawings: an open sore, a missing\n \
+    \ digit or limb, a claw hand, or anything else marked that is not an X and not a tick.\n  More than\
+    \ one can be Yes.\n- If any complication is Yes, `hand_feet_notes` must be a sentence, not the word\n\
+    \  \"úlcera\" or \"amputação\". Give the location (hand or foot, and which digit if visible)\n  and\
+    \ the approximate size when the card shows one, for example \"úlcera de 2 cm na base\n  do polegar\
+    \ direito\". Never invent a size. If the diagram does not show where it is,\n  write what is visible\
+    \ and nothing more.\n"
   value_pairs:
   - id: v4_insensitive_points_right_hand
     concept: insensitive_points_right_hand
-    label_local: Visita 4 — insensitive_points_right_hand
+    label_local: Mão D — pontos insensíveis
   - id: v4_insensitive_points_left_hand
     concept: insensitive_points_left_hand
-    label_local: Visita 4 — insensitive_points_left_hand
+    label_local: Mão E — pontos insensíveis
   - id: v4_insensitive_points_right_foot
     concept: insensitive_points_right_foot
-    label_local: Visita 4 — insensitive_points_right_foot
+    label_local: Pé D — pontos insensíveis
   - id: v4_insensitive_points_left_foot
     concept: insensitive_points_left_foot
-    label_local: Visita 4 — insensitive_points_left_foot
-- id: visit4_eye
+    label_local: Pé E — pontos insensíveis
+- id: visit4_def_exam
   block_type: annotated_table
   bbox:
   - 1845
-  - 973
+  - 1614
   - 2457
-  - 1110
-  hint: Visita 4 — Exame dos olhos
+  - 2302
+  hint: 'Três secções: Exame dos olhos (Pestanejo +/-; Lagoftalmia em mm), Testagem dos músculos voluntários
+    (Abdução dos dedos mínimos; Dorsi-flexão dos pés) e Graus de deformidade (0, 1 ou 2). Colunas D/E;
+    leia a linha certa e não desloque valores entre linhas.'
   value_pairs:
   - id: v4_eye_blinking_right
     concept: eye_blinking_right
-    label_local: Visita 4 — eye_blinking_right
-  - id: v4_eye_blinking_left
-    concept: eye_blinking_left
-    label_local: Visita 4 — eye_blinking_left
+    label_local: Pestanejo D (+/-)
   - id: v4_eye_lagophthalmos_right
     concept: eye_lagophthalmos_right
-    label_local: Visita 4 — eye_lagophthalmos_right
+    label_local: Lagoftalmia D (mm)
+  - id: v4_eye_blinking_left
+    concept: eye_blinking_left
+    label_local: Pestanejo E (+/-)
   - id: v4_eye_lagophthalmos_left
     concept: eye_lagophthalmos_left
-    label_local: Visita 4 — eye_lagophthalmos_left
-- id: visit4_muscle
-  block_type: annotated_table
-  bbox:
-  - 1845
-  - 1110
-  - 2457
-  - 1248
-  hint: Visita 4 — Testagem dos músculos voluntários
-  value_pairs:
+    label_local: Lagoftalmia E (mm)
   - id: v4_finger_abduction_right
     concept: finger_abduction_right
-    label_local: Visita 4 — finger_abduction_right
-  - id: v4_finger_abduction_left
-    concept: finger_abduction_left
-    label_local: Visita 4 — finger_abduction_left
+    label_local: Abdução dedo mínimo D
   - id: v4_foot_dorsiflex_right
     concept: foot_dorsiflex_right
-    label_local: Visita 4 — foot_dorsiflex_right
+    label_local: Dorsi-flexão D
+  - id: v4_finger_abduction_left
+    concept: finger_abduction_left
+    label_local: Abdução dedo mínimo E
   - id: v4_foot_dorsiflex_left
     concept: foot_dorsiflex_left
-    label_local: Visita 4 — foot_dorsiflex_left
-- id: visit4_disability
-  block_type: annotated_table
-  bbox:
-  - 1845
-  - 1248
-  - 2457
-  - 1523
-  hint: Visita 4 — Graus de deformidade
-  value_pairs:
+    label_local: Dorsi-flexão E
   - id: v4_disability_grade_eye_right
     concept: disability_grade_eye_right
-    label_local: Visita 4 — disability_grade_eye_right
+    label_local: Grau olhos E
   - id: v4_disability_grade_eye_left
     concept: disability_grade_eye_left
-    label_local: Visita 4 — disability_grade_eye_left
+    label_local: Grau olhos D
   - id: v4_disability_grade_hand_right
     concept: disability_grade_hand_right
-    label_local: Visita 4 — disability_grade_hand_right
+    label_local: Grau mãos E
   - id: v4_disability_grade_hand_left
     concept: disability_grade_hand_left
-    label_local: Visita 4 — disability_grade_hand_left
+    label_local: Grau mãos D
   - id: v4_disability_grade_foot_right
     concept: disability_grade_foot_right
-    label_local: Visita 4 — disability_grade_foot_right
+    label_local: Grau pés E
   - id: v4_disability_grade_foot_left
     concept: disability_grade_foot_left
-    label_local: Visita 4 — disability_grade_foot_left
+    label_local: Grau pés D
 - id: reactions_history
   block_type: value_pairs
   bbox:
-  - 2457
-  - 113
-  - 3225
-  - 420
-  hint: Reacções — história clínica
+  - 2460
+  - 112
+  - 3222
+  - 470
+  hint: Três perguntas de sim/não; a marca está dentro da caixa sim ou não. As palavras impressas sim/não
+    são cabeçalhos, não respostas.
   value_pairs:
-  - id: lepra_reaction_present
-    concept: lepra_reaction_present
-  - id: lepra_reaction_type
-    concept: lepra_reaction_type
   - id: nerve_pain_spontaneous
     concept: nerve_pain_spontaneous
+    label_local: Dor espontânea dos nervos?
   - id: recent_sensitivity_change
     concept: recent_sensitivity_change
+    label_local: Mudança recente na sensibilidade?
   - id: recent_patch_change
     concept: recent_patch_change
+    label_local: Mudança recente nas manchas?
 - id: reactions_exam
   block_type: value_pairs
   bbox:
-  - 2457
-  - 420
-  - 3225
-  - 972
-  hint: Reacções — exame clínico
+  - 2460
+  - 470
+  - 3222
+  - 971
+  hint: Sete perguntas de sim/não; a marca está dentro da caixa sim ou não. As palavras impressas sim/não
+    são cabeçalhos, não respostas.
   value_pairs:
   - id: painful_skin_lesions
     concept: painful_skin_lesions
+    label_local: Lesões cutâneas dolorosas?
   - id: infiltrated_skin_lesions
     concept: infiltrated_skin_lesions
+    label_local: Lesões cutâneas com infiltração?
   - id: warm_skin_lesions
     concept: warm_skin_lesions
+    label_local: Lesões cutâneas quentes?
   - id: red_skin_lesions
     concept: red_skin_lesions
+    label_local: Lesões cutâneas vermelhas?
   - id: skin_lesion_ulcerated
     concept: skin_lesion_ulcerated
+    label_local: Ulceração das lesões cutâneas?
   - id: nerve_tenderness_present
     concept: nerve_tenderness_present
+    label_local: Dor/engrossamento dos nervos?
   - id: eye_redness_pain
     concept: eye_redness_pain
+    label_local: Olhos vermelhos e dolorosos?
 - id: prednisolone
   block_type: dose_grid
   bbox:
-  - 2457
-  - 972
-  - 3225
-  - 1710
-  hint: Tratamento com prednisolona
+  - 2460
+  - 971
+  - 3222
+  - 1663
   value_pairs:
   - id: prednisolone_table
     concept: prednisolone_table
-- id: outcome
+- id: outcome_date
   block_type: value_pairs
   bbox:
-  - 2457
-  - 1710
-  - 3225
-  - 2064
-  hint: Tipo de doente saído
+  - 2460
+  - 1663
+  - 3222
+  - 1718
+  hint: Leia a data escrita na linha Data:.
+  value_pairs:
+  - id: outcome_date
+    concept: outcome_date
+    label_local: Data do resultado
+- id: outcome_choice
+  block_type: tick_grid
+  bbox:
+  - 2460
+  - 1760
+  - 3222
+  - 2020
+  hint: Quatro opções de resultado; exactamente uma está marcada. As palavras impressas são rótulos, não
+    valores. Se nenhuma ou mais de uma estiver marcada, responda null.
   value_pairs:
   - id: outcome_released
     concept: outcome_released
+    label_local: Alta de tratamento
   - id: outcome_ltfu
     concept: outcome_ltfu
+    label_local: Abandono
   - id: outcome_died
     concept: outcome_died
+    label_local: Falecido
   - id: outcome_misclassification
     concept: outcome_misclassification
+    label_local: Má classificação
+- id: outcome_free
+  block_type: value_pairs
+  bbox:
+  - 2460
+  - 2020
+  - 3222
+  - 2195
+  hint: 'Leia o texto escrito em Outro: e Transferido para:.'
+  value_pairs:
   - id: outcome_other
     concept: outcome_other
+    label_local: Outro (texto)
+    value_type: text
   - id: transferred_to
     concept: transferred_to
-  - id: outcome_date
-    concept: outcome_date
+    label_local: Transferido para
 - id: self_care
   block_type: value_pairs
   bbox:
-  - 2457
-  - 2156
-  - 3225
-  - 2282
-  hint: Grupo de auto cuidados
+  - 2460
+  - 2195
+  - 3222
+  - 2296
+  hint: Leia o nome do grupo escrito depois de de:.
   value_pairs:
   - id: self_care_group
     concept: self_care_group
+    label_local: Grupo de auto-cuidados
+    value_type: text

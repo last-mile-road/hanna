@@ -18,14 +18,16 @@ import yaml
 
 from . import settings
 
-_CACHE: dict[str, dict] = {}
+_CACHE: dict[tuple[str, str], dict] = {}
 
 
-def load_spec(country: str = "mozambique") -> dict:
-    if country not in _CACHE:
-        path = settings.COUNTRIES_DIR / country / "tick_columns.yaml"
-        _CACHE[country] = yaml.safe_load(path.read_text()) if path.exists() else {}
-    return _CACHE[country]
+def load_spec(country: str = "mozambique", page: str = "front") -> dict:
+    key = (country, page)
+    if key not in _CACHE:
+        name = "tick_columns.yaml" if page in {"front", "draft"} else f"tick_columns.{page}.yaml"
+        path = settings.COUNTRIES_DIR / country / name
+        _CACHE[key] = yaml.safe_load(path.read_text()) if path.exists() else {}
+    return _CACHE[key]
 
 
 def groups(spec: dict) -> list[dict]:
@@ -40,6 +42,8 @@ def groups(spec: dict) -> list[dict]:
             out.append({**block, "concept": key, "kind": "vertical"})
     if spec.get("gender"):
         out.append({**spec["gender"], "concept": "gender", "kind": "horizontal"})
+    for group in (spec.get("reactions") or {}).get("groups") or []:
+        out.append({**group, "kind": group.get("kind", "horizontal")})
     return out
 
 
@@ -48,7 +52,7 @@ def prompt(group: dict) -> str:
     bands = "; ".join(f'band {i + 1} = "{label}"' for i, label in enumerate(labels))
     return (
         f"This image shows {len(labels)} numbered tickboxes from a leprosy clinic card, "
-        f"stacked in the order they are printed.\n"
+        f"arranged in the order they are printed.\n"
         f"Question on the card: \"{group['question']}\"\n{bands}.\n"
         "A band is ticked when there is a handwritten tick, cross or filled mark inside its "
         "box. An empty printed box is not ticked.\n"
@@ -90,11 +94,11 @@ def render(image, group: dict, render_opts: dict | None = None):
                         font=scale, thickness=thick)
 
 
-def read_ticks(aligned, country: str, client, profile: dict, run_dir: Path) -> tuple[dict, dict]:
+def read_ticks(aligned, country: str, client, profile: dict, run_dir: Path, page: str = "front") -> tuple[dict, dict]:
     """One call per group. Returns {concept: {...}}, plus tokens/cost totals and errors."""
     from core.parse import parse_json_response
 
-    spec = load_spec(country)
+    spec = load_spec(country, page)
     opts = spec.get("render") or {}
     values: dict[str, dict] = {}
     usage = {"input_tokens": 0, "output_tokens": 0, "cost_usd": 0.0, "calls": 0, "errors": []}

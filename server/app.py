@@ -1045,18 +1045,32 @@ def get_review(run_id: str):
 
     width, height = _template_size(form["template_path"])
     hide_empty = bool(layout.get("hide_empty_sections"))
+    visit_dates = {
+        n: str((observations.get(f"v{n}_visit_date") or {}).get("value") or "").strip()
+        for n in (1, 2, 3, 4)
+    }
     sections = []
     counts = {"accepted": 0, "corrected": 0, "skipped": 0, "reviewed": 0, "total": 0}
     for block in blocks:
         if not block.pairs:
             continue
-        if (
-            hide_empty
-            and not any(pair.id in observations for pair in block.pairs)
-            and not by_block.get(block.id)
-            and not any(pair.id in by_pair for pair in block.pairs)
-        ):
-            continue
+        visit_match = re.match(r"visit(\d+)_", block.id)
+        if hide_empty:
+            if visit_match and not visit_dates.get(int(visit_match.group(1))):
+                # A blank visit date hides a section only when the section is also
+                # empty; a filled-but-undated column still reaches the reviewer.
+                if not any(
+                    (observations.get(pair.id) or {}).get("value")
+                    for pair in block.pairs
+                ):
+                    continue
+            if (
+                not visit_match
+                and not any(pair.id in observations for pair in block.pairs)
+                and not by_block.get(block.id)
+                and not any(pair.id in by_pair for pair in block.pairs)
+            ):
+                continue
         rows = []
         skipped_hidden = 0
         for pair in block.pairs:

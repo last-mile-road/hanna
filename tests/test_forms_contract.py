@@ -61,3 +61,22 @@ def test_block_hints_are_loaded_and_used():
     clinical_prompt = build_prompt(clinical, clinical.pairs, pack.concepts)
     assert "Count only X marks" in hand_prompt
     assert "six rows" in clinical_prompt
+
+
+def test_back_pack_v3_has_the_front_parity_structure():
+    pack = load_form_pack("mozambique", "form.back.yaml")
+    assert len(pack.blocks) == 20
+    assert len(pack.pairs) == 147
+    ids = {block.id for block in pack.blocks}
+    assert "visit_index" in ids
+    assert "visit1_nerve" in ids and "visit1_sensory" in ids
+    assert "visit1_def_exam" in ids
+    assert "visit1_eye" not in ids and "visit1_muscle" not in ids
+    assert "visit1_disability" not in ids
+    def_exam = next(block for block in pack.blocks if block.id == "visit1_def_exam")
+    assert def_exam.block_type == "annotated_table"
+    assert len(def_exam.pairs) == 14
+    assert "outcome_choice" in ids
+    outcome = next(block for block in pack.blocks if block.id == "outcome_choice")
+    assert outcome.block_type == "tick_grid"
+    assert len(outcome.pairs) == 4

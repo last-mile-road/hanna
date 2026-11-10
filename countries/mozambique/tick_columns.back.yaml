@@ -1,0 +1,102 @@
+# Back-page tick strips — the 10 printed sim/não reaction questions.
+# The boxes sit side by side: band 1 is sim (left), band 2 is não (right).
+# Coordinates measured on template.back.jpg (3229x2303), 2026-11-10.
+
+render:
+  border_px: 12
+  left_margin_px: 56
+  number_scale: 1.2
+  number_thickness: 3
+  stack_gap_px: 70
+
+reactions:
+  groups:
+    - concept: nerve_pain_spontaneous
+      pair: nerve_pain_spontaneous
+      question: "Dor espontânea dos nervos?"
+      strip: [3060, 297, 3195, 332]
+      bands: [[3070, 301, 3097, 328], [3156, 301, 3182, 328]]
+      options: [Yes, No]
+      labels: [sim, não]
+      kind: horizontal
+
+    - concept: recent_sensitivity_change
+      pair: recent_sensitivity_change
+      question: "Mudança recente na sensibilidade?"
+      strip: [3060, 361, 3195, 397]
+      bands: [[3070, 365, 3097, 393], [3156, 365, 3182, 393]]
+      options: [Yes, No]
+      labels: [sim, não]
+      kind: horizontal
+
+    - concept: recent_patch_change
+      pair: recent_patch_change
+      question: "Mudança recente nas manchas?"
+      strip: [3060, 425, 3195, 460]
+      bands: [[3070, 429, 3097, 456], [3156, 429, 3182, 456]]
+      options: [Yes, No]
+      labels: [sim, não]
+      kind: horizontal
+
+    - concept: painful_skin_lesions
+      pair: painful_skin_lesions
+      question: "Lesões cutâneas dolorosas?"
+      strip: [3060, 539, 3195, 573]
+      bands: [[3070, 543, 3097, 569], [3156, 543, 3182, 569]]
+      options: [Yes, No]
+      labels: [sim, não]
+      kind: horizontal
+
+    - concept: infiltrated_skin_lesions
+      pair: infiltrated_skin_lesions
+      question: "Lesões cutâneas com infiltração?"
+      strip: [3060, 605, 3195, 640]
+      bands: [[3070, 609, 3097, 636], [3156, 609, 3182, 636]]
+      options: [Yes, No]
+      labels: [sim, não]
+      kind: horizontal
+
+    - concept: warm_skin_lesions
+      pair: warm_skin_lesions
+      question: "Lesões cutâneas quentes?"
+      strip: [3060, 668, 3195, 704]
+      bands: [[3070, 672, 3097, 700], [3156, 672, 3182, 700]]
+      options: [Yes, No]
+      labels: [sim, não]
+      kind: horizontal
+
+    - concept: red_skin_lesions
+      pair: red_skin_lesions
+      question: "Lesões cutâneas vermelhas?"
+      strip: [3060, 733, 3195, 768]
+      bands: [[3070, 737, 3097, 764], [3156, 737, 3182, 764]]
+      options: [Yes, No]
+      labels: [sim, não]
+      kind: horizontal
+
+    - concept: skin_lesion_ulcerated
+      pair: skin_lesion_ulcerated
+      question: "Ulceração das lesões cutâneas?"
+      strip: [3060, 797, 3195, 833]
+      bands: [[3070, 801, 3097, 829], [3156, 801, 3182, 829]]
+      options: [Yes, No]
+      labels: [sim, não]
+      kind: horizontal
+
+    - concept: nerve_tenderness_present
+      pair: nerve_tenderness_present
+      question: "Dor/engrossamento dos nervos?"
+      strip: [3060, 862, 3195, 898]
+      bands: [[3070, 866, 3097, 894], [3156, 866, 3182, 894]]
+      options: [Yes, No]
+      labels: [sim, não]
+      kind: horizontal
+
+    - concept: eye_redness_pain
+      pair: eye_redness_pain
+      question: "Olhos vermelhos e dolorosos?"
+      strip: [3060, 927, 3195, 963]
+      bands: [[3070, 931, 3097, 959], [3156, 931, 3182, 959]]
+      options: [Yes, No]
+      labels: [sim, não]
+      kind: horizontal

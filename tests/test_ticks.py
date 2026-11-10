@@ -35,3 +35,24 @@ def test_decode_accepts_an_array_a_number_and_a_string():
     assert ticks.decode(2) == [2]
     assert ticks.decode("1, 3") == [1, 3]
     assert ticks.decode(None) == []
+
+
+def test_back_reaction_strips_are_ten_horizontal_pairs():
+    from core import ticks
+
+    spec = ticks.load_spec("mozambique", "back")
+    groups = ticks.groups(spec)
+    assert len(groups) == 10
+    assert all(group["kind"] == "horizontal" for group in groups)
+    assert [group["concept"] for group in groups] == [
+        "nerve_pain_spontaneous",
+        "recent_sensitivity_change",
+        "recent_patch_change",
+        "painful_skin_lesions",
+        "infiltrated_skin_lesions",
+        "warm_skin_lesions",
+        "red_skin_lesions",
+        "skin_lesion_ulcerated",
+        "nerve_tenderness_present",
+        "eye_redness_pain",
+    ]

@@ -319,14 +319,15 @@ def run_card(
         # Tick strips are measured on the front template. The back page has its own
         # layout and no strip spec, so running them there would read the wrong pixels.
         form_variant = str((form["definition"] or {}).get("variant") or "draft")
-        is_front = form_variant in {"draft", "front"}
         age_derived: dict[str, int] = {}
         selected = [
             b for b in blocks
             if (not only_blocks or b.id in only_blocks) and b.pairs
         ]
-        if form_variant == "back":
-            selected = _skip_empty_visits(selected, alignment.image, alignment.template)
+        # The ink filter was unreliable on the first real back photo (print and paper
+        # tone produced false ink). The wide visit index is the filled/empty signal;
+        # review hides a visit section whose date is blank and whose values are all
+        # null. The planner will use the visit index to skip reads later.
         prepared: list[dict[str, Any]] = []
         all_values: dict[str, Any] = {}
         for block in selected:
@@ -592,7 +593,7 @@ def run_card(
         # Tick groups: one strip per printed question, overriding the block values for the
         # tick fields. Measured 49/49 for strips against 30/35 for the block prompt.
         tick_values: dict = {}
-        if routing and is_front:
+        if routing:
             tick_profile_id = routing_map.get("strips", profile_id)
             tick_profile = profiles_by_id.get(tick_profile_id, profile)
             try:
@@ -602,6 +603,7 @@ def run_card(
                     client_for(tick_profile),
                     tick_profile,
                     run_dir,
+                    page=form_variant,
                 )
                 result["input_tokens"] += tick_usage["input_tokens"]
                 result["output_tokens"] += tick_usage["output_tokens"]
@@ -613,8 +615,15 @@ def run_card(
                 print("  warning: tick strips failed:", exc)
 
         if tick_values:
-            spec_groups = {g["concept"]: g for g in ticks.groups(ticks.load_spec(
-                str(form["definition"].get("country", "mozambique")).lower()))}
+            spec_groups = {
+                g["concept"]: g
+                for g in ticks.groups(
+                    ticks.load_spec(
+                        str(form["definition"].get("country", "mozambique")).lower(),
+                        form_variant,
+                    )
+                )
+            }
             for concept, entry in tick_values.items():
                 pair_id = (spec_groups.get(concept) or {}).get("pair")
                 if not pair_id:
