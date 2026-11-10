@@ -5,7 +5,7 @@ The running version of HANNA for testing and iteration. Design lives in
 
 **Status:** working vertical slice with a validation layer and the first case
 model. PostgreSQL 18.6 run ledger, form contract, alignment, prompt generation,
-OpenRouter extraction, scoring and a required/parameter validator; 187 tests
+OpenRouter extraction, scoring and a required/parameter validator; 190 tests
 pass. Phase 1 adds a job worker, an HTTP/SSE surface and signed image links, with
 no UI or auth yet. Renamed from `objective-2-server` on 2026-10-23.
 
@@ -227,10 +227,11 @@ curl -s -X POST localhost:8100/api/captures \
 Page templates and form variants come from `countries/mozambique/pages.yaml`;
 `GET /api/captures/{id}/page/{n}?sig=...` serves a page through a signed URL.
 
-Default routing is OpenRouter Qwen3.5 9B with the Qwen3-VL 8B fallback. For the
-two table blocks on the local MinerU, start `mineru-api` and run the server and
-worker with `HANNA_ROUTING_FILE=routing-local.yaml` and `MINERU_LOCAL_BASE`.
-MinerU has no VLM fallback: a failed table block fails visibly and is fixed
+Default routing is OpenRouter Qwen3.5 9B with the Qwen3-VL 8B fallback. The
+printed tables — front `def_exam`/`nerve_assessment` and back
+`visitN_def_exam`/`visitN_nerve` — go to the **local** MinerU
+(`MINERU_LOCAL_BASE=http://127.0.0.1:8001`); no Modal.com box is used. MinerU
+has no VLM fallback: a failed table block fails visibly and is fixed
 structurally.
 
 Still missing: the UI (Phase 2), login and country scoping (Phase 3), and the form

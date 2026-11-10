@@ -1057,13 +1057,10 @@ def get_review(run_id: str):
         visit_match = re.match(r"visit(\d+)_", block.id)
         if hide_empty:
             if visit_match and not visit_dates.get(int(visit_match.group(1))):
-                # A blank visit date hides a section only when the section is also
-                # empty; a filled-but-undated column still reaches the reviewer.
-                if not any(
-                    (observations.get(pair.id) or {}).get("value")
-                    for pair in block.pairs
-                ):
-                    continue
+                # A visit exists when the visit date is written. A section with a
+                # blank date is hidden even if the reader produced a value; the
+                # missing date is the data-quality issue, not a visit to review.
+                continue
             if (
                 not visit_match
                 and not any(pair.id in observations for pair in block.pairs)

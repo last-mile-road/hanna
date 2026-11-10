@@ -18,3 +18,11 @@ blocks:
   treatment_follow: or-qwen3vl-8b-v1
   def_exam: mineru-standard
   nerve_assessment: mineru-standard
+  visit1_nerve: mineru-standard
+  visit2_nerve: mineru-standard
+  visit3_nerve: mineru-standard
+  visit4_nerve: mineru-standard
+  visit1_def_exam: mineru-standard
+  visit2_def_exam: mineru-standard
+  visit3_def_exam: mineru-standard
+  visit4_def_exam: mineru-standard

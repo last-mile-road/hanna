@@ -30,7 +30,11 @@ from typing import Any
 
 from . import settings
 
-SUPPORTED_BLOCKS = {"def_exam", "nerve_assessment"}
+SUPPORTED_BLOCKS = {
+    "def_exam", "nerve_assessment",
+    "visit1_nerve", "visit2_nerve", "visit3_nerve", "visit4_nerve",
+    "visit1_def_exam", "visit2_def_exam", "visit3_def_exam", "visit4_def_exam",
+}
 
 # The treatment grid is deliberately NOT routed here. MinerU at tier=advanced returns
 # the grid as a table (standard returns an image), and `_treatment` below maps a clean
@@ -39,6 +43,8 @@ SUPPORTED_BLOCKS = {"def_exam", "nerve_assessment"}
 # treatment at 21/23, so it keeps that block.
 READER_TIERS = {"def_exam": "standard", "nerve_assessment": "standard",
                 "treatment_follow": "advanced"}
+READER_TIERS.update({f"visit{n}_nerve": "standard" for n in (1, 2, 3, 4)})
+READER_TIERS.update({f"visit{n}_def_exam": "standard" for n in (1, 2, 3, 4)})
 
 
 @dataclass
@@ -107,7 +113,8 @@ DEF_EXAM_ROWS = [
     (("lagoftalmia",), ("right_eye_lagoft", "left_eye_lagoft"), {}),
     (("abducao", "dedos"), ("right_hipothenar", "left_hipothenar"), {}),
     (("dorsi",), ("right_foot_dorsiflex", "left_foot_dorsiflex"), {}),
-    (("exame dos olhos",), ("ehf_right_eye", "ehf_left_eye"), {}),
+    # The eye section header is not a value row; the grade rows carry ehf_*.
+    (("exame dos olhos",), None, {}),
     (("testagem",), None, {}),  # section header; no values
     (("graus de deformidade",), None, {}),
 ]
@@ -127,8 +134,17 @@ NERVE_NAMES = [
 
 
 def _sides(row: list[str]) -> tuple[str, str] | None:
-    """First and last non-empty cell of a row: the D and E value columns."""
-    values = [cell for cell in row if cell.strip()]
+    """First and last non-empty value cell: the D and E value columns.
+
+    The D/E column headings are repeated in some MinerU tables; they are labels,
+    not values, and must not become a grade or a muscle result.
+    """
+    values = [
+        cell for cell in row
+        if cell.strip()
+        and cell.strip() not in {"—", "–"}
+        and _fold(cell) not in {"d", "e", "direito", "esquerdo"}
+    ]
     if len(values) < 2:
         return None
     return values[0], values[-1]
@@ -213,6 +229,10 @@ def _nerve(markdown: str) -> dict[str, str]:
             continue
         for index, (_, concept_name) in enumerate(order):
             right, left = cells[index * 2], cells[index * 2 + 1]
+            if right.strip() in {"—", "–"}:
+                right = ""
+            if left.strip() in {"—", "–"}:
+                left = ""
             out[f"nerve_{kind}_{concept_name}_right"] = right
             out[f"nerve_{kind}_{concept_name}_left"] = left
     return out
@@ -298,8 +318,43 @@ def _treatment(markdown: str) -> dict[str, str]:
     return {"treatment_grid": json.dumps({"rows": values}, ensure_ascii=False)}
 
 
+# The back visit tables are the same printed tables as the front. Map the front
+# parser keys to the back pair ids; only the visit prefix and the eye/muscle/grade
+# names change.
+BACK_DEF_MAP = {
+    "right_eye_blinking": "eye_blinking_right",
+    "left_eye_blinking": "eye_blinking_left",
+    "right_eye_lagoft": "eye_lagophthalmos_right",
+    "left_eye_lagoft": "eye_lagophthalmos_left",
+    "right_hipothenar": "finger_abduction_right",
+    "left_hipothenar": "finger_abduction_left",
+    "right_foot_dorsiflex": "foot_dorsiflex_right",
+    "left_foot_dorsiflex": "foot_dorsiflex_left",
+    "ehf_right_eye": "disability_grade_eye_right",
+    "ehf_left_eye": "disability_grade_eye_left",
+    "ehf_right_hand": "disability_grade_hand_right",
+    "ehf_left_hand": "disability_grade_hand_left",
+    "ehf_right_foot": "disability_grade_foot_right",
+    "ehf_left_foot": "disability_grade_foot_left",
+}
+
+
+def _back_values(values: dict[str, str], visit: int, mapping: dict[str, str]) -> dict[str, str]:
+    return {
+        f"v{visit}_{mapping.get(key, key)}": value
+        for key, value in values.items()
+    }
+
+
 READERS = {"def_exam": _def_exam, "nerve_assessment": _nerve,
            "treatment_follow": _treatment}
+for _n in (1, 2, 3, 4):
+    READERS[f"visit{_n}_nerve"] = (
+        lambda markdown, n=_n: _back_values(_nerve(markdown), n, {})
+    )
+    READERS[f"visit{_n}_def_exam"] = (
+        lambda markdown, n=_n: _back_values(_def_exam(markdown), n, BACK_DEF_MAP)
+    )
 # `_treatment` stays callable and tested even though the block is routed to the 9B: it is
 # the only clean-grid mapper we have, and it works when MinerU's cells are right.
 
@@ -408,6 +463,14 @@ def read_block(image_path: Path, block_id: str) -> Reading:
     markdown = payload.get("markdown") or ""
     values = READERS[block_id](markdown)
     if not values:
+        # A blank back visit table is a valid empty read; a front table is not.
+        if block_id.startswith("visit"):
+            return Reading(
+                text="{}",
+                latency_ms=latency_ms,
+                usage={"reader": "mineru", "seconds": payload.get("seconds"),
+                       "chars": len(markdown)},
+            )
         raise RuntimeError(
             f"{block_id}: MinerU returned no table "
             f"({len(markdown)} chars; first 120: {markdown[:120]!r})"
@@ -416,14 +479,25 @@ def read_block(image_path: Path, block_id: str) -> Reading:
     # read: it stores a confident nonsense value. Grades are 0/1/2 and nerve
     # marks are +/-, nothing else. Anything else means the parser took a header
     # row (D/E) or shifted a column — refuse it so the block falls back.
-    if block_id == "def_exam":
-        bad = {k: v for k, v in values.items() if str(v).strip() not in {"0", "1", "2"}}
+    if block_id.endswith("def_exam"):
+        # Only the grade rows are 0/1/2; the eye and muscle rows are +/- and N/F/A.
+        bad = {
+            k: v
+            for k, v in values.items()
+            if ("disability_grade" in k or k.startswith("ehf_"))
+            and str(v).strip() not in {"0", "1", "2"}
+        }
         if bad:
-            raise RuntimeError(f"def_exam: reader returned non-grades {bad}")
-    if block_id == "nerve_assessment":
-        bad = {k: v for k, v in values.items() if str(v).strip() not in {"+", "-"}}
+            raise RuntimeError(f"{block_id}: reader returned non-grades {bad}")
+    if block_id.endswith("nerve") or block_id == "nerve_assessment":
+        bad = {
+            k: v
+            for k, v in values.items()
+            if "nerve_" in k
+            and str(v).strip() not in {"", "+", "-", "—", "–"}
+        }
         if bad:
-            raise RuntimeError(f"nerve_assessment: reader returned non-marks {bad}")
+            raise RuntimeError(f"{block_id}: reader returned non-marks {bad}")
     return Reading(
         text=json.dumps(values, ensure_ascii=False),
         latency_ms=latency_ms,

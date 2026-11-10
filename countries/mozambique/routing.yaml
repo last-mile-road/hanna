@@ -1,11 +1,17 @@
-# Testing default: OpenRouter Qwen3.5 9B for every block, Qwen3-VL 8B as the
-# fallback. The Modal box is out of the loop until the rest of the infrastructure
-# is in place. For local MinerU on the two table blocks, run the server and worker
-# with HANNA_ROUTING_FILE=routing-local.yaml and MINERU_LOCAL_BASE set.
-#
-# A controlled reader (MinerU) has no fallback by design: a failure is surfaced
-# and fixed structurally, not hidden behind a different model.
+# Agreed default: OpenRouter Qwen3.5 9B for the VLM blocks, Qwen3-VL 8B as the
+# fallback, and the local MinerU instance for the printed tables (front and back).
+# No Modal.com box in the loop.
 strips: or-qwen35-9b-v1
 fallback: or-qwen3vl-8b-v1
 default: or-qwen35-9b-v1
-blocks: {}
+blocks:
+  def_exam: mineru-standard
+  nerve_assessment: mineru-standard
+  visit1_nerve: mineru-standard
+  visit2_nerve: mineru-standard
+  visit3_nerve: mineru-standard
+  visit4_nerve: mineru-standard
+  visit1_def_exam: mineru-standard
+  visit2_def_exam: mineru-standard
+  visit3_def_exam: mineru-standard
+  visit4_def_exam: mineru-standard

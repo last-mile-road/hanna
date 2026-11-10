@@ -447,8 +447,13 @@ def run_card(
                     parsed.update(derive_treatment_grid(parsed))
                 _apply_box_states(parsed, pairs_in_block)
                 if not parsed and pairs_in_block:
-                    block_values["status"] = "empty"
-                    result["errors"].append(f"{block.id}: empty response")
+                    if item.get("reader"):
+                        # A blank back visit table is a valid empty read, not a
+                        # failure; the review hides a visit with no date and no values.
+                        block_values["status"] = "done"
+                    else:
+                        block_values["status"] = "empty"
+                        result["errors"].append(f"{block.id}: empty response")
                 result["input_tokens"] += completion.input_tokens or 0
                 result["output_tokens"] += completion.output_tokens or 0
                 result["cost_usd"] += completion.cost_usd or 0.0
@@ -572,7 +577,12 @@ def run_card(
                 for future in as_completed(futures):
                     item = futures[future]
                     try:
-                        item["completion"], item["used_profile"] = future.result()
+                        result = future.result()
+                        if item.get("reader"):
+                            item["completion"] = result
+                            item["used_profile"] = item["profile"]["id"]
+                        else:
+                            item["completion"], item["used_profile"] = result
                     except Exception as exc:
                         # A controlled reader that fails is surfaced, not silently
                         # replaced: the block fails and the run says so.

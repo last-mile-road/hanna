@@ -15,12 +15,17 @@ import yaml
 from core import readers, settings
 
 COUNTRY = settings.COUNTRIES_DIR / "mozambique"
-VISUAL_BLOCKS = {"hand_feet_assessment", "skin_patch"}
-TABLE_BLOCKS = {"def_exam", "nerve_assessment"}
+VISUAL_BLOCKS = {"hand_feet_assessment", "skin_patch", "visit1_sensory", "visit2_sensory",
+                 "visit3_sensory", "visit4_sensory"}
+TABLE_BLOCKS = {
+    "def_exam", "nerve_assessment",
+    "visit1_nerve", "visit2_nerve", "visit3_nerve", "visit4_nerve",
+    "visit1_def_exam", "visit2_def_exam", "visit3_def_exam", "visit4_def_exam",
+}
 
 
 def test_routing_sends_only_tables_to_mineru():
-    routing = yaml.safe_load((COUNTRY / "routing-box.yaml").read_text())
+    routing = yaml.safe_load((COUNTRY / "routing.yaml").read_text())
     mineru_blocks = {b for b, p in routing["blocks"].items() if p == "mineru-standard"}
     assert mineru_blocks == TABLE_BLOCKS
     assert not (mineru_blocks & VISUAL_BLOCKS)
@@ -40,8 +45,8 @@ def test_supported_blocks_match_the_routing():
 
 def test_treatment_is_routed_to_the_model_not_the_reader():
     """MinerU sees the grid's structure at advanced but not its handwriting."""
-    routing = yaml.safe_load((COUNTRY / "routing-box.yaml").read_text())
-    assert routing["blocks"]["treatment_follow"] == "box-qwen35-9b-v1"
+    routing = yaml.safe_load((COUNTRY / "routing.yaml").read_text())
+    assert routing["blocks"].get("treatment_follow") is None
     with pytest.raises(ValueError, match="no table reader"):
         readers.read_block(Path("/dev/null"), "treatment_follow")
 
@@ -68,3 +73,19 @@ def test_treatment_grid_maps_months_to_doses_and_misses():
     assert row["year"] == 2025
     assert row["doses"] == [{"month": 5, "day": 31}]
     assert row["missed_months"] == []
+
+
+def test_back_reader_maps_front_pairs_to_visit_pairs():
+    raw = {
+        "right_eye_blinking": "+",
+        "ehf_right_eye": "2",
+        "right_hipothenar": "N",
+    }
+    assert readers._back_values(raw, 1, readers.BACK_DEF_MAP) == {
+        "v1_eye_blinking_right": "+",
+        "v1_disability_grade_eye_right": "2",
+        "v1_finger_abduction_right": "N",
+    }
+    assert readers._back_values(
+        {"nerve_enlargement_cubital_right": "+"}, 2, {}
+    ) == {"v2_nerve_enlargement_cubital_right": "+"}
