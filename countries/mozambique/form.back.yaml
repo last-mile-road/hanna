@@ -97,19 +97,26 @@ blocks:
   - 517
   - 617
   - 1614
-  hint: "Rules for this diagram:\n- The left half is column D = the patient's right; the right half is\
-    \ column E = the patient's left.\n- An X marks an insensitive point. A tick, a dot or a printed mark\
-    \ is NOT an X.\n- A filled black circle is an ulcer, not an insensitive point.\n- A blacked-out or\
-    \ amputated digit is a complication, not an X.\n- Count only X marks, separately for the hand and\
-    \ the foot.\n- Also answer is_filled: true if there is at least one handwritten tick or X anywhere\
-    \ in the four drawings.\n- Answer complication_ulcer, complication_amputation, complication_contracture\
-    \ and\n  complication_other with Yes or No. Look at the four drawings: an open sore, a missing\n \
-    \ digit or limb, a claw hand, or anything else marked that is not an X and not a tick.\n  More than\
-    \ one can be Yes.\n- If any complication is Yes, `hand_feet_notes` must be a sentence, not the word\n\
-    \  \"úlcera\" or \"amputação\". Give the location (hand or foot, and which digit if visible)\n  and\
-    \ the approximate size when the card shows one, for example \"úlcera de 2 cm na base\n  do polegar\
-    \ direito\". Never invent a size. If the diagram does not show where it is,\n  write what is visible\
-    \ and nothing more.\n"
+  hint: 'Rules for this diagram:
+
+    - The left half is column D = the patient''s right; the right half is column E = the patient''s left.
+
+    - An X marks an insensitive point. A tick, a dot or a printed mark is NOT an X.
+
+    - A filled black circle is an ulcer, not an insensitive point.
+
+    - A blacked-out or amputated digit is a complication, not an X.
+
+    - Count only X marks, separately for the hand and the foot.
+
+    - Answer the four complication fields with Yes or No. Look at the four drawings: an open sore, a missing
+    digit or limb, a claw hand, or anything else marked that is not an X and not a tick. More than one
+    can be Yes.
+
+    - If any complication is Yes, the notes field must be a sentence, not the word ''úlcera'' or ''amputação''.
+    Give the location (hand or foot, and which digit if visible) and the approximate size when the card
+    shows one, for example ''úlcera de 2 cm na base do polegar direito''. Never invent a size. If the
+    diagram does not show where it is, write what is visible and nothing more.'
   value_pairs:
   - id: v1_insensitive_points_right_hand
     concept: insensitive_points_right_hand
@@ -123,6 +130,21 @@ blocks:
   - id: v1_insensitive_points_left_foot
     concept: insensitive_points_left_foot
     label_local: Pé E — pontos insensíveis
+  - id: v1_complication_ulcer
+    concept: complication_ulcer
+    label_local: Úlcera
+  - id: v1_complication_amputation
+    concept: complication_amputation
+    label_local: Amputação
+  - id: v1_complication_contracture
+    concept: complication_contracture
+    label_local: Contratura / mão em garra
+  - id: v1_complication_other
+    concept: complication_other
+    label_local: Outra complicação
+  - id: v1_hand_foot_exam_notes
+    concept: hand_foot_exam_notes
+    label_local: Notas de mãos e pés
 - id: visit1_def_exam
   block_type: annotated_table
   bbox:
@@ -229,19 +251,26 @@ blocks:
   - 517
   - 1229
   - 1614
-  hint: "Rules for this diagram:\n- The left half is column D = the patient's right; the right half is\
-    \ column E = the patient's left.\n- An X marks an insensitive point. A tick, a dot or a printed mark\
-    \ is NOT an X.\n- A filled black circle is an ulcer, not an insensitive point.\n- A blacked-out or\
-    \ amputated digit is a complication, not an X.\n- Count only X marks, separately for the hand and\
-    \ the foot.\n- Also answer is_filled: true if there is at least one handwritten tick or X anywhere\
-    \ in the four drawings.\n- Answer complication_ulcer, complication_amputation, complication_contracture\
-    \ and\n  complication_other with Yes or No. Look at the four drawings: an open sore, a missing\n \
-    \ digit or limb, a claw hand, or anything else marked that is not an X and not a tick.\n  More than\
-    \ one can be Yes.\n- If any complication is Yes, `hand_feet_notes` must be a sentence, not the word\n\
-    \  \"úlcera\" or \"amputação\". Give the location (hand or foot, and which digit if visible)\n  and\
-    \ the approximate size when the card shows one, for example \"úlcera de 2 cm na base\n  do polegar\
-    \ direito\". Never invent a size. If the diagram does not show where it is,\n  write what is visible\
-    \ and nothing more.\n"
+  hint: 'Rules for this diagram:
+
+    - The left half is column D = the patient''s right; the right half is column E = the patient''s left.
+
+    - An X marks an insensitive point. A tick, a dot or a printed mark is NOT an X.
+
+    - A filled black circle is an ulcer, not an insensitive point.
+
+    - A blacked-out or amputated digit is a complication, not an X.
+
+    - Count only X marks, separately for the hand and the foot.
+
+    - Answer the four complication fields with Yes or No. Look at the four drawings: an open sore, a missing
+    digit or limb, a claw hand, or anything else marked that is not an X and not a tick. More than one
+    can be Yes.
+
+    - If any complication is Yes, the notes field must be a sentence, not the word ''úlcera'' or ''amputação''.
+    Give the location (hand or foot, and which digit if visible) and the approximate size when the card
+    shows one, for example ''úlcera de 2 cm na base do polegar direito''. Never invent a size. If the
+    diagram does not show where it is, write what is visible and nothing more.'
   value_pairs:
   - id: v2_insensitive_points_right_hand
     concept: insensitive_points_right_hand
@@ -255,6 +284,21 @@ blocks:
   - id: v2_insensitive_points_left_foot
     concept: insensitive_points_left_foot
     label_local: Pé E — pontos insensíveis
+  - id: v2_complication_ulcer
+    concept: complication_ulcer
+    label_local: Úlcera
+  - id: v2_complication_amputation
+    concept: complication_amputation
+    label_local: Amputação
+  - id: v2_complication_contracture
+    concept: complication_contracture
+    label_local: Contratura / mão em garra
+  - id: v2_complication_other
+    concept: complication_other
+    label_local: Outra complicação
+  - id: v2_hand_foot_exam_notes
+    concept: hand_foot_exam_notes
+    label_local: Notas de mãos e pés
 - id: visit2_def_exam
   block_type: annotated_table
   bbox:
@@ -361,19 +405,26 @@ blocks:
   - 517
   - 1845
   - 1614
-  hint: "Rules for this diagram:\n- The left half is column D = the patient's right; the right half is\
-    \ column E = the patient's left.\n- An X marks an insensitive point. A tick, a dot or a printed mark\
-    \ is NOT an X.\n- A filled black circle is an ulcer, not an insensitive point.\n- A blacked-out or\
-    \ amputated digit is a complication, not an X.\n- Count only X marks, separately for the hand and\
-    \ the foot.\n- Also answer is_filled: true if there is at least one handwritten tick or X anywhere\
-    \ in the four drawings.\n- Answer complication_ulcer, complication_amputation, complication_contracture\
-    \ and\n  complication_other with Yes or No. Look at the four drawings: an open sore, a missing\n \
-    \ digit or limb, a claw hand, or anything else marked that is not an X and not a tick.\n  More than\
-    \ one can be Yes.\n- If any complication is Yes, `hand_feet_notes` must be a sentence, not the word\n\
-    \  \"úlcera\" or \"amputação\". Give the location (hand or foot, and which digit if visible)\n  and\
-    \ the approximate size when the card shows one, for example \"úlcera de 2 cm na base\n  do polegar\
-    \ direito\". Never invent a size. If the diagram does not show where it is,\n  write what is visible\
-    \ and nothing more.\n"
+  hint: 'Rules for this diagram:
+
+    - The left half is column D = the patient''s right; the right half is column E = the patient''s left.
+
+    - An X marks an insensitive point. A tick, a dot or a printed mark is NOT an X.
+
+    - A filled black circle is an ulcer, not an insensitive point.
+
+    - A blacked-out or amputated digit is a complication, not an X.
+
+    - Count only X marks, separately for the hand and the foot.
+
+    - Answer the four complication fields with Yes or No. Look at the four drawings: an open sore, a missing
+    digit or limb, a claw hand, or anything else marked that is not an X and not a tick. More than one
+    can be Yes.
+
+    - If any complication is Yes, the notes field must be a sentence, not the word ''úlcera'' or ''amputação''.
+    Give the location (hand or foot, and which digit if visible) and the approximate size when the card
+    shows one, for example ''úlcera de 2 cm na base do polegar direito''. Never invent a size. If the
+    diagram does not show where it is, write what is visible and nothing more.'
   value_pairs:
   - id: v3_insensitive_points_right_hand
     concept: insensitive_points_right_hand
@@ -387,6 +438,21 @@ blocks:
   - id: v3_insensitive_points_left_foot
     concept: insensitive_points_left_foot
     label_local: Pé E — pontos insensíveis
+  - id: v3_complication_ulcer
+    concept: complication_ulcer
+    label_local: Úlcera
+  - id: v3_complication_amputation
+    concept: complication_amputation
+    label_local: Amputação
+  - id: v3_complication_contracture
+    concept: complication_contracture
+    label_local: Contratura / mão em garra
+  - id: v3_complication_other
+    concept: complication_other
+    label_local: Outra complicação
+  - id: v3_hand_foot_exam_notes
+    concept: hand_foot_exam_notes
+    label_local: Notas de mãos e pés
 - id: visit3_def_exam
   block_type: annotated_table
   bbox:
@@ -493,19 +559,26 @@ blocks:
   - 517
   - 2457
   - 1614
-  hint: "Rules for this diagram:\n- The left half is column D = the patient's right; the right half is\
-    \ column E = the patient's left.\n- An X marks an insensitive point. A tick, a dot or a printed mark\
-    \ is NOT an X.\n- A filled black circle is an ulcer, not an insensitive point.\n- A blacked-out or\
-    \ amputated digit is a complication, not an X.\n- Count only X marks, separately for the hand and\
-    \ the foot.\n- Also answer is_filled: true if there is at least one handwritten tick or X anywhere\
-    \ in the four drawings.\n- Answer complication_ulcer, complication_amputation, complication_contracture\
-    \ and\n  complication_other with Yes or No. Look at the four drawings: an open sore, a missing\n \
-    \ digit or limb, a claw hand, or anything else marked that is not an X and not a tick.\n  More than\
-    \ one can be Yes.\n- If any complication is Yes, `hand_feet_notes` must be a sentence, not the word\n\
-    \  \"úlcera\" or \"amputação\". Give the location (hand or foot, and which digit if visible)\n  and\
-    \ the approximate size when the card shows one, for example \"úlcera de 2 cm na base\n  do polegar\
-    \ direito\". Never invent a size. If the diagram does not show where it is,\n  write what is visible\
-    \ and nothing more.\n"
+  hint: 'Rules for this diagram:
+
+    - The left half is column D = the patient''s right; the right half is column E = the patient''s left.
+
+    - An X marks an insensitive point. A tick, a dot or a printed mark is NOT an X.
+
+    - A filled black circle is an ulcer, not an insensitive point.
+
+    - A blacked-out or amputated digit is a complication, not an X.
+
+    - Count only X marks, separately for the hand and the foot.
+
+    - Answer the four complication fields with Yes or No. Look at the four drawings: an open sore, a missing
+    digit or limb, a claw hand, or anything else marked that is not an X and not a tick. More than one
+    can be Yes.
+
+    - If any complication is Yes, the notes field must be a sentence, not the word ''úlcera'' or ''amputação''.
+    Give the location (hand or foot, and which digit if visible) and the approximate size when the card
+    shows one, for example ''úlcera de 2 cm na base do polegar direito''. Never invent a size. If the
+    diagram does not show where it is, write what is visible and nothing more.'
   value_pairs:
   - id: v4_insensitive_points_right_hand
     concept: insensitive_points_right_hand
@@ -519,6 +592,21 @@ blocks:
   - id: v4_insensitive_points_left_foot
     concept: insensitive_points_left_foot
     label_local: Pé E — pontos insensíveis
+  - id: v4_complication_ulcer
+    concept: complication_ulcer
+    label_local: Úlcera
+  - id: v4_complication_amputation
+    concept: complication_amputation
+    label_local: Amputação
+  - id: v4_complication_contracture
+    concept: complication_contracture
+    label_local: Contratura / mão em garra
+  - id: v4_complication_other
+    concept: complication_other
+    label_local: Outra complicação
+  - id: v4_hand_foot_exam_notes
+    concept: hand_foot_exam_notes
+    label_local: Notas de mãos e pés
 - id: visit4_def_exam
   block_type: annotated_table
   bbox:

@@ -56,7 +56,9 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 @app.get("/review", include_in_schema=False)
 def review_page():
     """Review screen: one row per declared pair, accept or correct, submit once."""
-    return FileResponse(STATIC_DIR / "review.html")
+    return FileResponse(
+        STATIC_DIR / "review.html", headers={"Cache-Control": "no-store"}
+    )
 
 
 @app.get("/", include_in_schema=False)
@@ -68,7 +70,9 @@ def index():
 @app.get("/capture", include_in_schema=False)
 def capture_page():
     """Phone route: front and back, admission gate, extraction, HANNA number."""
-    return FileResponse(STATIC_DIR / "capture.html")
+    return FileResponse(
+        STATIC_DIR / "capture.html", headers={"Cache-Control": "no-store"}
+    )
 
 
 @app.get("/studio", include_in_schema=False)

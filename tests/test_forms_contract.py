@@ -66,7 +66,7 @@ def test_block_hints_are_loaded_and_used():
 def test_back_pack_v3_has_the_front_parity_structure():
     pack = load_form_pack("mozambique", "form.back.yaml")
     assert len(pack.blocks) == 20
-    assert len(pack.pairs) == 147
+    assert len(pack.pairs) == 167
     ids = {block.id for block in pack.blocks}
     assert "visit_index" in ids
     assert "visit1_nerve" in ids and "visit1_sensory" in ids
@@ -89,3 +89,15 @@ def test_back_pack_v3_has_the_front_parity_structure():
     reactions = next(block for block in pack.blocks if block.id == "reactions_exam")
     derived = [pair.id for pair in reactions.pairs if pair.derived]
     assert derived == ["reaction_diagnosed"]
+    sensory = next(block for block in pack.blocks if block.id == "visit1_sensory")
+    assert [pair.id for pair in sensory.pairs] == [
+        "v1_insensitive_points_right_hand",
+        "v1_insensitive_points_left_hand",
+        "v1_insensitive_points_right_foot",
+        "v1_insensitive_points_left_foot",
+        "v1_complication_ulcer",
+        "v1_complication_amputation",
+        "v1_complication_contracture",
+        "v1_complication_other",
+        "v1_hand_foot_exam_notes",
+    ]

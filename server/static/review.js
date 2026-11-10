@@ -17,7 +17,7 @@ const BLOCK_LABELS = {
 };
 
 let data = null;
-let devMode = localStorage.getItem("hanna.devMode") !== "off";
+let devMode = localStorage.getItem("hanna.devMode") === "on";
 const decisions = new Map();   // pair_id -> {mode, value}
 const timers = new Map();      // pair_id -> debounce
 let saveQueue = Promise.resolve();

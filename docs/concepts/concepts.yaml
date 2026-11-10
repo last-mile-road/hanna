@@ -806,6 +806,7 @@ concepts:
   ground_truth: false
   derived: true
   internal: true
+  cardinality: many
   aliases:
   - hand_feet_notes
   note: A VLM description of the hand/foot diagram, including ulcers, contractures

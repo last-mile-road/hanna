@@ -7,16 +7,16 @@ dev_only:
 block_titles:
   visit_index: Registo das visitas
   visit1_nerve: Visita 1 — Palpação dos nervos
-  visit1_sensory: Visita 1 — Teste sensitivo
+  visit1_sensory: Visita 1 — Mãos e pés
   visit1_def_exam: Visita 1 — Olhos, músculos e graus
   visit2_nerve: Visita 2 — Palpação dos nervos
-  visit2_sensory: Visita 2 — Teste sensitivo
+  visit2_sensory: Visita 2 — Mãos e pés
   visit2_def_exam: Visita 2 — Olhos, músculos e graus
   visit3_nerve: Visita 3 — Palpação dos nervos
-  visit3_sensory: Visita 3 — Teste sensitivo
+  visit3_sensory: Visita 3 — Mãos e pés
   visit3_def_exam: Visita 3 — Olhos, músculos e graus
   visit4_nerve: Visita 4 — Palpação dos nervos
-  visit4_sensory: Visita 4 — Teste sensitivo
+  visit4_sensory: Visita 4 — Mãos e pés
   visit4_def_exam: Visita 4 — Olhos, músculos e graus
   reactions_history: Reacções — história clínica
   reactions_exam: Reacções — exame clínico
@@ -446,3 +446,23 @@ labels:
   prednisolone_status: Estado da prednisolona
   prednisolone_weeks_recorded: Semanas de prednisolona registadas
   reaction_diagnosed: Reacção diagnosticada
+  v1_complication_ulcer: Úlcera
+  v1_complication_amputation: Amputação
+  v1_complication_contracture: Contratura / mão em garra
+  v1_complication_other: Outra complicação
+  v1_hand_foot_exam_notes: Notas de mãos e pés
+  v2_complication_ulcer: Úlcera
+  v2_complication_amputation: Amputação
+  v2_complication_contracture: Contratura / mão em garra
+  v2_complication_other: Outra complicação
+  v2_hand_foot_exam_notes: Notas de mãos e pés
+  v3_complication_ulcer: Úlcera
+  v3_complication_amputation: Amputação
+  v3_complication_contracture: Contratura / mão em garra
+  v3_complication_other: Outra complicação
+  v3_hand_foot_exam_notes: Notas de mãos e pés
+  v4_complication_ulcer: Úlcera
+  v4_complication_amputation: Amputação
+  v4_complication_contracture: Contratura / mão em garra
+  v4_complication_other: Outra complicação
+  v4_hand_foot_exam_notes: Notas de mãos e pés
