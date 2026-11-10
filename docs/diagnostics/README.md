@@ -15,3 +15,20 @@ Blank-template overlays of the block boxes the extractor uses. Generated from
     at the top of a large block and was missed.
 - `.json` files hold the same boxes as `[number, block_id, type, bbox]` for
   measurement scripts.
+
+## Proposed back boxes and strips — 2026-11-10
+
+Measured from the template's printed rules (row/column projections), **not yet
+applied** to `form.back.yaml`. Awaiting owner confirmation.
+
+- `back-blocks-proposed-2026-11-10.jpg` / `.json` — 4 visits × 6 sections plus
+  the 5 reaction/outcome panels. The visit header now includes the title, `Data:`
+  and `Preenchido por:`; the nerve block includes the printed `Palpação` header
+  and `+/-` legend; the sensory block includes hands **and** feet; eye, muscle and
+  disability sit at the bottom of each column, not inside the feet.
+- `back-reaction-strips-2026-11-10.jpg` / `.json` — the 10 printed sim/não
+  questions (3 history + 7 exam), one strip per question with `sim` and `não`
+  bands. The question text is carried by the prompt; the strip is the two boxes.
+- `back-outcome-ticks-2026-11-10.jpg` — the outcome `Data:` line and the four
+  outcome checkboxes (Alta, Abandono, Falecido, Má classificação); `Outro` and
+  `Transferido para` are free-text lines.

@@ -1,0 +1,292 @@
+[
+  {
+    "label": "Q1",
+    "concept": "nerve_pain_spontaneous",
+    "question": "Dor espont\u00e2nea dos nervos?",
+    "strip": [
+      3060,
+      297,
+      3195,
+      332
+    ],
+    "bands": [
+      [
+        3070,
+        301,
+        3097,
+        328
+      ],
+      [
+        3156,
+        301,
+        3182,
+        328
+      ]
+    ],
+    "options": [
+      "Yes",
+      "No"
+    ]
+  },
+  {
+    "label": "Q2",
+    "concept": "recent_sensitivity_change",
+    "question": "Mudan\u00e7a recente na sensibilidade?",
+    "strip": [
+      3060,
+      361,
+      3195,
+      397
+    ],
+    "bands": [
+      [
+        3070,
+        365,
+        3097,
+        393
+      ],
+      [
+        3156,
+        365,
+        3182,
+        393
+      ]
+    ],
+    "options": [
+      "Yes",
+      "No"
+    ]
+  },
+  {
+    "label": "Q3",
+    "concept": "recent_patch_change",
+    "question": "Mudan\u00e7a recente nas manchas?",
+    "strip": [
+      3060,
+      425,
+      3195,
+      460
+    ],
+    "bands": [
+      [
+        3070,
+        429,
+        3097,
+        456
+      ],
+      [
+        3156,
+        429,
+        3182,
+        456
+      ]
+    ],
+    "options": [
+      "Yes",
+      "No"
+    ]
+  },
+  {
+    "label": "Q4",
+    "concept": "painful_skin_lesions",
+    "question": "Les\u00f5es cut\u00e2neas dolorosas?",
+    "strip": [
+      3060,
+      539,
+      3195,
+      573
+    ],
+    "bands": [
+      [
+        3070,
+        543,
+        3097,
+        569
+      ],
+      [
+        3156,
+        543,
+        3182,
+        569
+      ]
+    ],
+    "options": [
+      "Yes",
+      "No"
+    ]
+  },
+  {
+    "label": "Q5",
+    "concept": "infiltrated_skin_lesions",
+    "question": "Les\u00f5es cut\u00e2neas com infiltra\u00e7\u00e3o?",
+    "strip": [
+      3060,
+      605,
+      3195,
+      640
+    ],
+    "bands": [
+      [
+        3070,
+        609,
+        3097,
+        636
+      ],
+      [
+        3156,
+        609,
+        3182,
+        636
+      ]
+    ],
+    "options": [
+      "Yes",
+      "No"
+    ]
+  },
+  {
+    "label": "Q6",
+    "concept": "warm_skin_lesions",
+    "question": "Les\u00f5es cut\u00e2neas quentes?",
+    "strip": [
+      3060,
+      668,
+      3195,
+      704
+    ],
+    "bands": [
+      [
+        3070,
+        672,
+        3097,
+        700
+      ],
+      [
+        3156,
+        672,
+        3182,
+        700
+      ]
+    ],
+    "options": [
+      "Yes",
+      "No"
+    ]
+  },
+  {
+    "label": "Q7",
+    "concept": "red_skin_lesions",
+    "question": "Les\u00f5es cut\u00e2neas vermelhas?",
+    "strip": [
+      3060,
+      733,
+      3195,
+      768
+    ],
+    "bands": [
+      [
+        3070,
+        737,
+        3097,
+        764
+      ],
+      [
+        3156,
+        737,
+        3182,
+        764
+      ]
+    ],
+    "options": [
+      "Yes",
+      "No"
+    ]
+  },
+  {
+    "label": "Q8",
+    "concept": "skin_lesion_ulcerated",
+    "question": "Ulcera\u00e7\u00e3o das les\u00f5es cut\u00e2neas?",
+    "strip": [
+      3060,
+      797,
+      3195,
+      833
+    ],
+    "bands": [
+      [
+        3070,
+        801,
+        3097,
+        829
+      ],
+      [
+        3156,
+        801,
+        3182,
+        829
+      ]
+    ],
+    "options": [
+      "Yes",
+      "No"
+    ]
+  },
+  {
+    "label": "Q9",
+    "concept": "nerve_tenderness_present",
+    "question": "Dor/engrossamento dos nervos?",
+    "strip": [
+      3060,
+      862,
+      3195,
+      898
+    ],
+    "bands": [
+      [
+        3070,
+        866,
+        3097,
+        894
+      ],
+      [
+        3156,
+        866,
+        3182,
+        894
+      ]
+    ],
+    "options": [
+      "Yes",
+      "No"
+    ]
+  },
+  {
+    "label": "Q10",
+    "concept": "eye_redness_pain",
+    "question": "Olhos vermelhos e dolorosos?",
+    "strip": [
+      3060,
+      927,
+      3195,
+      963
+    ],
+    "bands": [
+      [
+        3070,
+        931,
+        3097,
+        959
+      ],
+      [
+        3156,
+        931,
+        3182,
+        959
+      ]
+    ],
+    "options": [
+      "Yes",
+      "No"
+    ]
+  }
+]
