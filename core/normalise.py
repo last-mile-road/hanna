@@ -219,8 +219,18 @@ def canonical(
         for mark, term in (concept.get("card_marks") or {}).items():
             lookup.setdefault(key(mark), str(term))
             lookup.setdefault(key(term), str(term))
-        if k in YES_NO and any(key(o) in {"yes", "no"} for o in lookup):
-            return YES_NO[k]
+        if k in YES_NO:
+            # The model may answer in English while the card/options are in
+            # Portuguese (sim/não) or booleans (true/false). Keep the label the
+            # concept declares, whichever language family it uses.
+            positive = {"yes", "sim", "true", "1"}
+            negative = {"no", "nao", "não", "false", "0"}
+            wanted = positive if YES_NO[k] == "Yes" else negative
+            for label in lookup.values():
+                if key(label) in wanted:
+                    return label
+            if any(key(o) in {"yes", "no"} for o in lookup):
+                return YES_NO[k]
         if k in GENDER and any(key(o) in {"m", "f", "male", "female"} for o in lookup):
             return GENDER[k]
         return lookup.get(k, text)

@@ -112,27 +112,27 @@ def _field_line(pair: Pair, concept: dict[str, Any]) -> str:
 
 TREATMENT_GRID_PROMPT = """You are reading the treatment grid of a {country} leprosy clinic card.
 
-The grid has three rows, one per calendar year. Each row has the year written on
-the left, then twelve month columns from Janeiro to Dezembro. Under the day
-number is a signature line (Rubrica/Faltou).
+The grid has up to three year blocks. Each block has TWO lines:
+- "Dia": the day of the month the supervised dose was given.
+- "Rubrica/Faltou": a signature for that dose, or a large F when the month was missed.
 
-**Read every row that carries handwriting.** A course that started in July 2024
-and continued into January 2025 returns TWO rows. An empty row is null, not a
-row with no doses. Do not stop after the first filled row.
+Read the Dia line first, month by month. A number in Dia is a dose, even when it is
+the only number on the card and even when the signature line below is empty or hard
+to read. Do not let a signature or any other mark in Rubrica/Faltou hide a day number
+above it. A month is missed only when Rubrica/Faltou carries a large F and Dia has no
+day number (or F). Do not shift a day into the next month because an earlier month
+carries an F.
 
-For each row read:
-- the year in the left column (as written, e.g. 20.24 means 2024)
-- every month cell that contains a day number (the day the supervised blister
-  pack was given); a signature or mark under the day confirms the dose
-- a large F written in a month cell means the patient missed that month
+Read every year block that carries handwriting. An empty block is null, not a row
+with no doses. The year is written on the left, e.g. 20.22 means 2022.
 
 Return one JSON object and nothing else, in this shape:
 {{"treatment_grid": {{"rows": [
   {{"year": 2024, "doses": [{{"month": 7, "day": 24}}, {{"month": 8, "day": 20}}], "missed_months": [11, 12]}},
-  {{"year": 2025, "doses": [{{"month": 1, "day": 7}}, {{"month": 2, "day": 28}}], "missed_months": []}}
+  {{"year": 2025, "doses": [{{"month": 1, "day": 7}}], "missed_months": []}}
 ]}}}}
 
-Use month numbers 1-12. Omit empty months. Use null for an empty row. Do not
+Use month numbers 1-12. Omit empty months. Use null for an empty year block. Do not
 invent doses. If a date has no year, use null for the year. The handwriting is
 {language}.
 """

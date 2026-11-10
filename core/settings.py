@@ -68,6 +68,11 @@ OSM_DATABASE_URL = os.environ.get(
     "OSM_DATABASE_URL", "postgresql+pg8000://sam@127.0.0.1:55432/hanna_osm"
 )
 
+# The self-hosted box (modal profiles). Primary for the VLM blocks; OpenRouter
+# remains the fallback provider.
+MODAL_BOX_URL = os.environ.get("HANNA_BOX_URL", "")
+MODAL_BOX_KEY = os.environ.get("HANNA_BOX_KEY", "")
+
 # Which routing file a run uses. The box deployment points this at the box
 # routing; OpenRouter stays the default so a plain checkout behaves as before.
 ROUTING_FILE = os.environ.get("HANNA_ROUTING_FILE", "routing.yaml")

@@ -65,8 +65,18 @@ class OpenRouter:
             extra_body: dict[str, Any] = {}
         else:
             extra_body = {"usage": {"include": True}}
-            if model_settings.get("reasoning_effort"):
+            # OpenRouter's reasoning control: either a full map
+            # ({"enabled": false} or {"effort": "low"}) or the short effort key.
+            if model_settings.get("reasoning") is not None:
+                extra_body["reasoning"] = model_settings["reasoning"]
+            elif model_settings.get("reasoning_effort"):
                 extra_body["reasoning"] = {"effort": model_settings["reasoning_effort"]}
+            # Some Qwen templates (Qwen3.5 included) only honour the switch in the
+            # chat template. OpenRouter passes this through to the upstream server.
+            if "enable_thinking" in model_settings:
+                extra_body["chat_template_kwargs"] = {
+                    "enable_thinking": bool(model_settings["enable_thinking"])
+                }
         kwargs: dict[str, Any] = {
             "model": model,
             "messages": [{"role": "user", "content": content}],

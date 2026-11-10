@@ -66,7 +66,7 @@ def test_block_hints_are_loaded_and_used():
 def test_back_pack_v3_has_the_front_parity_structure():
     pack = load_form_pack("mozambique", "form.back.yaml")
     assert len(pack.blocks) == 20
-    assert len(pack.pairs) == 147
+    assert len(pack.pairs) == 144
     ids = {block.id for block in pack.blocks}
     assert "visit_index" in ids
     assert "visit1_nerve" in ids and "visit1_sensory" in ids
@@ -78,5 +78,7 @@ def test_back_pack_v3_has_the_front_parity_structure():
     assert len(def_exam.pairs) == 14
     assert "outcome_choice" in ids
     outcome = next(block for block in pack.blocks if block.id == "outcome_choice")
-    assert outcome.block_type == "tick_grid"
-    assert len(outcome.pairs) == 4
+    # One final outcome, one pair: the four printed boxes are options on a
+    # single dropdown, not four booleans to score separately.
+    assert outcome.block_type == "value_pairs"
+    assert [pair.id for pair in outcome.pairs] == ["outcome_decision"]

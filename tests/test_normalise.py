@@ -38,6 +38,19 @@ def test_yes_no_portuguese():
     assert n.canonical("choice_single", "não", concept) == "No"
 
 
+def test_yes_no_keeps_the_card_vocabulary():
+    # The 8B answers in English even when the card and options are Portuguese.
+    # The stored value must stay the option the concept declares, or validation
+    # rejects a correct read as "fora das opções permitidas".
+    concept = {"id": "itching", "value_type": "choice_single", "observed": ["sim", "não"]}
+    assert n.canonical("choice_single", "Yes", concept) == "sim"
+    assert n.canonical("choice_single", "No", concept) == "não"
+    assert n.canonical("choice_single", True, concept) == "sim"
+    boolean = {"id": "itching", "value_type": "choice_single", "options": [True, False]}
+    assert n.canonical("choice_single", "sim", boolean) == "True"
+    assert n.canonical("choice_single", "No", boolean) == "False"
+
+
 def test_numbers_and_dates():
     assert n.canonical("integer", "4 patches") == "4"
     assert n.canonical("integer", "2.0") == "2"

@@ -409,24 +409,6 @@ tables:
     cells:
     - v4_disability_grade_foot_right
     - v4_disability_grade_foot_left
-- id: outcome_options
-  block: outcome_choice
-  title: Resultado do tratamento
-  columns:
-  - Marcado
-  rows:
-  - label: Alta de tratamento
-    cells:
-    - outcome_released
-  - label: Abandono
-    cells:
-    - outcome_ltfu
-  - label: Falecido
-    cells:
-    - outcome_died
-  - label: Má classificação
-    cells:
-    - outcome_misclassification
 option_labels:
   new_case: Caso novo
   re_entry: Reentrada após abandono

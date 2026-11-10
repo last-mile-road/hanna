@@ -31,7 +31,7 @@ from typing import Any
 from . import settings
 
 SUPPORTED_BLOCKS = {
-    "def_exam", "nerve_assessment",
+    "def_exam", "nerve_assessment", "prednisolone",
     "visit1_nerve", "visit2_nerve", "visit3_nerve", "visit4_nerve",
     "visit1_def_exam", "visit2_def_exam", "visit3_def_exam", "visit4_def_exam",
 }
@@ -42,7 +42,7 @@ SUPPORTED_BLOCKS = {
 # dose is absent from the parse, and form25's year lives in the header row. The 9B reads
 # treatment at 21/23, so it keeps that block.
 READER_TIERS = {"def_exam": "standard", "nerve_assessment": "standard",
-                "treatment_follow": "advanced"}
+                "prednisolone": "standard", "treatment_follow": "advanced"}
 READER_TIERS.update({f"visit{n}_nerve": "standard" for n in (1, 2, 3, 4)})
 READER_TIERS.update({f"visit{n}_def_exam": "standard" for n in (1, 2, 3, 4)})
 
@@ -129,7 +129,8 @@ DEF_EXAM_GRADES = [
 NERVE_NAMES = [
     ("cubital", "cubital"),
     ("radial", "radial_cutaneous"),
-    ("poplite", "popliteal_external"),
+    # The card spells it "Popilíteo"; fold() keeps the i, so match the stem.
+    ("popil", "popliteal_external"),
 ]
 
 
@@ -228,13 +229,57 @@ def _nerve(markdown: str) -> dict[str, str]:
         if len(cells) < 2 * len(order):
             continue
         for index, (_, concept_name) in enumerate(order):
-            right, left = cells[index * 2], cells[index * 2 + 1]
-            # The table uses + and -; a short dash or tilde is a negative mark.
-            right = "-" if right.strip() in {"~", "~", "−", "–", "—", "¬"} else right
-            left = "-" if left.strip() in {"~", "~", "−", "–", "—", "¬"} else left
-            out[f"nerve_{kind}_{concept_name}_right"] = right
-            out[f"nerve_{kind}_{concept_name}_left"] = left
+            right = cells[index * 2] if index * 2 < len(cells) else ""
+            left = cells[index * 2 + 1] if index * 2 + 1 < len(cells) else ""
+            # The clinic's rule: only a clear plus (or a cross/tick) is positive.
+            # Everything else — blank, dot, dash, tilde, smudge — is negative.
+            out[f"nerve_{kind}_{concept_name}_right"] = (
+                "+" if any(mark in right for mark in "+xX✗✓") else "-"
+            )
+            out[f"nerve_{kind}_{concept_name}_left"] = (
+                "+" if any(mark in left for mark in "+xX✗✓") else "-"
+            )
     return out
+
+
+def pipe_table(markdown: str) -> list[list[str]]:
+    """Parse a MinerU pipe table (some local outputs use markdown, not HTML)."""
+    rows: list[list[str]] = []
+    for line in (markdown or "").splitlines():
+        line = line.strip()
+        if not (line.startswith("|") and line.endswith("|")):
+            continue
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        if cells and all(set(cell) <= set("-: ") for cell in cells):
+            continue
+        rows.append(cells)
+    return rows
+
+
+def _prednisolone(markdown: str) -> dict[str, str]:
+    """The 12-week prednisolone taper table: date, week, daily dose, responsible."""
+    grid = table_matrix(markdown) or pipe_table(markdown)
+    if not grid:
+        return {}
+    rows: list[dict[str, str]] = []
+    for row in grid:
+        folded = " ".join(_fold(cell) for cell in row)
+        if "semana" in folded and "dose" in folded:
+            continue
+        if not any(cell.strip() for cell in row):
+            continue
+        cells = (row + [""] * 4)[:4]
+        if not (cells[1].strip().isdigit() or cells[2].strip()):
+            continue
+        rows.append({
+            "data": cells[0].strip(),
+            "semana": cells[1].strip(),
+            "dose": cells[2].strip(),
+            "responsavel": cells[3].strip(),
+        })
+    if not rows:
+        return {}
+    return {"prednisolone_table": json.dumps(rows, ensure_ascii=False)}
 
 
 def _treatment(markdown: str) -> dict[str, str]:
@@ -346,7 +391,7 @@ def _back_values(values: dict[str, str], visit: int, mapping: dict[str, str]) ->
 
 
 READERS = {"def_exam": _def_exam, "nerve_assessment": _nerve,
-           "treatment_follow": _treatment}
+           "prednisolone": _prednisolone, "treatment_follow": _treatment}
 for _n in (1, 2, 3, 4):
     READERS[f"visit{_n}_nerve"] = (
         lambda markdown, n=_n: _back_values(_nerve(markdown), n, {})

@@ -1,11 +1,14 @@
 # Agreed default: OpenRouter for the VLM, local MinerU for the printed tables.
-# The 8B is the fast pass for the blocks measured to read well with it; the 9B
-# stays the default/fallback and is used for demographics. No Modal.com box.
+# The 8B reads every VLM block; it has no thinking tokens and is 3-6x faster.
+# The 9B is the fallback only. Measured: 9B thinking averaged 402 output tokens
+# and 12.4 s per block; 8B 82 tokens and 4.3 s. Thinking off (or-qwen35-9b-nothink)
+# is 3x faster than thinking but still missed the visible age and a ticked M box
+# on the test card, so it is not the default. No Modal.com box.
 strips: or-qwen3vl-8b-v1
 fallback: or-qwen35-9b-v1
 default: or-qwen35-9b-v1
 blocks:
-  general_demographic: or-qwen35-9b-v1
+  general_demographic: or-qwen3vl-8b-v1
   clinical_history: or-qwen3vl-8b-v1
   classification: or-qwen3vl-8b-v1
   skin_patch: or-qwen3vl-8b-v1
@@ -18,7 +21,7 @@ blocks:
   visit4_sensory: or-qwen3vl-8b-v1
   reactions_history: or-qwen3vl-8b-v1
   reactions_exam: or-qwen3vl-8b-v1
-  prednisolone: or-qwen3vl-8b-v1
+  prednisolone: mineru-standard
   outcome_date: or-qwen3vl-8b-v1
   outcome_choice: or-qwen3vl-8b-v1
   outcome_free: or-qwen3vl-8b-v1

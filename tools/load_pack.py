@@ -46,6 +46,22 @@ PROFILES = [
         "notes": "Qwen 3.5 9B with capped reasoning; closest available to the 8B class.",
     },
     {
+        "id": "or-qwen35-9b-nothink",
+        "provider": "openrouter",
+        "model": "qwen/qwen3.5-9b",
+        "settings": {
+            "temperature": 0,
+            "max_tokens": 1500,
+            "reasoning": {"enabled": False},
+            "enable_thinking": False,
+            "parallel": 1,
+        },
+        "prompt_version": "v1",
+        "crop_strategy": "block",
+        "notes": "9B with thinking disabled at the provider and the chat template. "
+                 "For blocks where the 8B is weak and the 9B thinking tail is not worth it.",
+    },
+    {
         "id": "or-qwen35-9b-v1",
         "provider": "openrouter",
         "model": "qwen/qwen3.5-9b",

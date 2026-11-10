@@ -497,6 +497,61 @@ function control(pair, compact = false) {
     return wrap;
   }
 
+  if (pair.value_type === "json" || pair.value_type === "dose_grid") {
+    // A grid reader returns a list of rows (the prednisolone taper). Show the
+    // rows as a table; keep the JSON in a textarea so a correction is still one
+    // field. One long JSON string in a single-line input hides the result.
+    let rows = [];
+    try {
+      const parsed = JSON.parse(extracted || "[]");
+      if (Array.isArray(parsed)) rows = parsed.filter((row) => row && typeof row === "object");
+    } catch (error) {
+      rows = [];
+    }
+    if (rows.length) {
+      const keys = Object.keys(rows[0]);
+      const table = document.createElement("table");
+      table.className = "form-table";
+      const head = document.createElement("tr");
+      keys.forEach((key) => {
+        const th = document.createElement("th");
+        th.textContent = key;
+        head.appendChild(th);
+      });
+      const thead = document.createElement("thead");
+      thead.appendChild(head);
+      table.appendChild(thead);
+      const tbody = document.createElement("tbody");
+      rows.forEach((row) => {
+        const tr = document.createElement("tr");
+        keys.forEach((key) => {
+          const td = document.createElement("td");
+          td.textContent = row[key] ?? "";
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      const scroll = document.createElement("div");
+      scroll.className = "table-wrap";
+      scroll.appendChild(table);
+      wrap.appendChild(scroll);
+    }
+    const area = document.createElement("textarea");
+    area.rows = 2;
+    area.value = extracted;
+    area.dataset.extracted = extracted;
+    area.className = "control";
+    area.addEventListener("change", () => {
+      const value = area.value.trim();
+      if (value === extracted.trim()) decide(pair.pair_id, "accepted", null);
+      else if (value) decide(pair.pair_id, "corrected", value);
+      else clearDecision(pair.pair_id);
+    });
+    wrap.appendChild(area);
+    return wrap;
+  }
+
   const options = pair.options || [];
   let element;
   if (options.length && options.length <= 8) {

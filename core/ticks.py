@@ -50,9 +50,10 @@ def groups(spec: dict) -> list[dict]:
 def prompt(group: dict) -> str:
     labels = group["labels"]
     bands = "; ".join(f'band {i + 1} = "{label}"' for i, label in enumerate(labels))
+    layout = "side by side, left to right" if group.get("kind") == "horizontal" else "top to bottom"
     return (
         f"This image shows {len(labels)} numbered tickboxes from a leprosy clinic card, "
-        f"arranged in the order they are printed.\n"
+        f"arranged {layout} in the order they are printed.\n"
         f"Question on the card: \"{group['question']}\"\n{bands}.\n"
         "A band is ticked when there is a handwritten tick, cross or filled mark inside its "
         "box. An empty printed box is not ticked.\n"

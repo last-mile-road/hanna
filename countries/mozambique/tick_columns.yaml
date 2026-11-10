@@ -10,7 +10,7 @@ clinical_history:
       question: "As lesões da pele dão comichão?"
       strip: [1340, 1194, 1411, 1314]
       bands: [[1360, 1214, 31, 30], [1360, 1263, 30, 31]]
-      options: ["Yes", "No"]
+      options: ['Yes', 'No']
       labels: [sim, "não"]
 
     - concept: leprosy_contact
@@ -18,7 +18,7 @@ clinical_history:
       question: "O doente tem familiares/vizinhos/amigos com Lepra?"
       strip: [1340, 1388, 1412, 1508]
       bands: [[1360, 1408, 32, 32], [1360, 1458, 32, 30]]
-      options: ["Yes", "No"]
+      options: ['Yes', 'No']
       labels: [sim, "não"]
 
     - concept: previous_leprosy_treatment
@@ -26,7 +26,7 @@ clinical_history:
       question: "O doente já teve o diagnóstico e tratamento de Lepra no passado?"
       strip: [1341, 1535, 1412, 1654]
       bands: [[1361, 1555, 31, 31], [1361, 1604, 31, 30]]
-      options: ["Yes", "No"]
+      options: ['Yes', 'No']
       labels: [sim, "não"]
 
     - concept: referred_by

@@ -78,8 +78,9 @@ concepts:
   tier: core
   aliases:
   - birth_year
-  note: Card records a birth year only. Age derives only with an explicit reference_year
-    (CONSTRAINTS §1.6).
+  note: The card prints "Ano de nascimento/Idade"; the clinic writes either a birth
+    year (1991) or an age (35). Return it exactly as written. An age becomes a birth
+    year only when the reference year is known (CONSTRAINTS §1.6).
 - id: gender
   who_name: Gender
   value_type: choice_single
@@ -1241,6 +1242,26 @@ concepts:
   value_type: date
   sensitivity: administrative
   tier: extended
+- id: outcome_decision
+  who_name: Final treatment outcome
+  value_type: choice_single
+  options:
+  - Alta de tratamento
+  - Abandono
+  - Falecido
+  - Má classificação
+  - Outro
+  - Transferido
+  observed:
+  - Alta de tratamento
+  - Abandono
+  - Falecido
+  - Má classificação
+  - Outro
+  - Transferido
+  sensitivity: administrative
+  tier: local
+  note: One final outcome; the card has four checkboxes plus Outro/Transferido.
 - id: self_care_group
   who_name: Member of a self-care group
   value_type: choice_single

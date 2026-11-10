@@ -11,7 +11,7 @@ strips: or-qwen3vl-8b-v1
 fallback: or-qwen35-9b-v1
 default: or-qwen35-9b-v1
 blocks:
-  general_demographic: or-qwen35-9b-v1
+  general_demographic: or-qwen3vl-8b-v1
   clinical_history: or-qwen3vl-8b-v1
   classification: or-qwen3vl-8b-v1
   skin_patch: or-qwen3vl-8b-v1
@@ -24,7 +24,7 @@ blocks:
   visit4_sensory: or-qwen3vl-8b-v1
   reactions_history: or-qwen3vl-8b-v1
   reactions_exam: or-qwen3vl-8b-v1
-  prednisolone: or-qwen3vl-8b-v1
+  prednisolone: mineru-standard
   outcome_date: or-qwen3vl-8b-v1
   outcome_choice: or-qwen3vl-8b-v1
   outcome_free: or-qwen3vl-8b-v1

@@ -18,7 +18,7 @@ COUNTRY = settings.COUNTRIES_DIR / "mozambique"
 VISUAL_BLOCKS = {"hand_feet_assessment", "skin_patch", "visit1_sensory", "visit2_sensory",
                  "visit3_sensory", "visit4_sensory"}
 TABLE_BLOCKS = {
-    "def_exam", "nerve_assessment",
+    "def_exam", "nerve_assessment", "prednisolone",
     "visit1_nerve", "visit2_nerve", "visit3_nerve", "visit4_nerve",
     "visit1_def_exam", "visit2_def_exam", "visit3_def_exam", "visit4_def_exam",
 }

@@ -623,7 +623,7 @@ blocks:
     concept: eye_redness_pain
     label_local: Olhos vermelhos e dolorosos?
 - id: prednisolone
-  block_type: dose_grid
+  block_type: annotated_table
   bbox:
   - 2460
   - 971
@@ -645,27 +645,20 @@ blocks:
     concept: outcome_date
     label_local: Data do resultado
 - id: outcome_choice
-  block_type: tick_grid
+  block_type: value_pairs
   bbox:
   - 2460
   - 1760
   - 3222
   - 2020
-  hint: Quatro opções de resultado; exactamente uma está marcada. As palavras impressas são rótulos, não
-    valores. Se nenhuma ou mais de uma estiver marcada, responda null.
+  hint: Quatro opções de resultado; exactamente uma está marcada. Devolva a opção marcada; se nenhuma
+    ou mais de uma estiver marcada, devolva null.
   value_pairs:
-  - id: outcome_released
-    concept: outcome_released
-    label_local: Alta de tratamento
-  - id: outcome_ltfu
-    concept: outcome_ltfu
-    label_local: Abandono
-  - id: outcome_died
-    concept: outcome_died
-    label_local: Falecido
-  - id: outcome_misclassification
-    concept: outcome_misclassification
-    label_local: Má classificação
+  - id: outcome_decision
+    concept: outcome_decision
+    value_type: choice_single
+    label_local: Resultado final
+    sensitivity: administrative
 - id: outcome_free
   block_type: value_pairs
   bbox:

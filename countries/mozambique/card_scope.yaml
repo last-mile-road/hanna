@@ -51,6 +51,9 @@ absent_concepts:
     Back card only: REACÇÕES, exame clínico.
   prednisolone_table: >
     Back card only: REACÇÕES, treatment grid (12 weeks, dose printed).
+  outcome_decision: >
+    Back card only: one final outcome, chosen from the card's four boxes plus
+    Outro / Transferido. It replaces the four individual outcome flags here.
   outcome_released: >
     Back card only: tipo de doente saído.
   outcome_ltfu: >
