@@ -32,3 +32,13 @@ applied** to `form.back.yaml`. Awaiting owner confirmation.
 - `back-outcome-ticks-2026-11-10.jpg` — the outcome `Data:` line and the four
   outcome checkboxes (Alta, Abandono, Falecido, Má classificação); `Outro` and
   `Transferido para` are free-text lines.
+
+### v2 after owner review
+
+- Eye exam ends at 1754, not 1839; the muscle-test header starts at 1754.
+- Muscle test ends at 1949; the `Grau de deformidade` header starts at 1949.
+- Outcome ends at 2195, leaving writing/descender space below the
+  `Transferido para:` line and stopping above the `Integrado...` header.
+- Self-care starts at 2195 and ends at 2296, below the `de:` response line.
+- `back-blocks-proposed-2026-11-10-v2.jpg` / `.json`;
+  `back-outcome-ticks-2026-11-10-v2.jpg`.
