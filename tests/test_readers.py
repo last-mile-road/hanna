@@ -46,7 +46,7 @@ def test_supported_blocks_match_the_routing():
 def test_treatment_is_routed_to_the_model_not_the_reader():
     """MinerU sees the grid's structure at advanced but not its handwriting."""
     routing = yaml.safe_load((COUNTRY / "routing.yaml").read_text())
-    assert routing["blocks"].get("treatment_follow") is None
+    assert routing["blocks"]["treatment_follow"] == "or-qwen3vl-8b-v1"
     with pytest.raises(ValueError, match="no table reader"):
         readers.read_block(Path("/dev/null"), "treatment_follow")
 

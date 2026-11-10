@@ -340,7 +340,11 @@ def run_card(
             align.save_jpeg(crop, raw_path)
             send = crop
             image_path = raw_path
-            if block.block_type in OCR_BLOCK_TYPES:
+            # The table readers (MinerU) want the raw colour crop. The adaptive
+            # threshold used for VLM text blocks makes the local MinerU treat the
+            # table as a figure and return a base64 image instead of a table.
+            is_table_reader = block_profile["id"] == MINERU_PROFILE
+            if block.block_type in OCR_BLOCK_TYPES and not is_table_reader:
                 send = align.ocr_preprocess(crop)
                 image_path = run_dir / f"block_{block.id}_ocr.jpg"
                 align.save_jpeg(send, image_path)

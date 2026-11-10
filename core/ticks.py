@@ -95,15 +95,17 @@ def render(image, group: dict, render_opts: dict | None = None):
 
 
 def read_ticks(aligned, country: str, client, profile: dict, run_dir: Path, page: str = "front") -> tuple[dict, dict]:
-    """One call per group. Returns {concept: {...}}, plus tokens/cost totals and errors."""
+    """One call per group, in parallel. Returns values plus tokens/cost and errors."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     from core.parse import parse_json_response
 
     spec = load_spec(country, page)
     opts = spec.get("render") or {}
+    groups_list = groups(spec)
     values: dict[str, dict] = {}
     usage = {"input_tokens": 0, "output_tokens": 0, "cost_usd": 0.0, "calls": 0, "errors": []}
 
-    for group in groups(spec):
+    def one(group: dict) -> tuple[str, dict, dict | None, str | None]:
         concept = group["concept"]
         image = render(aligned, group, opts)
         path = run_dir / f"tick_{concept}.jpg"
@@ -113,18 +115,33 @@ def read_ticks(aligned, country: str, client, profile: dict, run_dir: Path, page
             parsed = parse_json_response(completion.text, ["ticked"])
             ticked = decode(parsed.get("ticked") if isinstance(parsed, dict) else parsed)
             if len(ticked) == 1 and 1 <= ticked[0] <= len(group["labels"]):
-                values[concept] = {
+                entry = {
                     "value": group["options"][ticked[0] - 1],
                     "band": ticked[0],
                     "raw": f"band {ticked[0]}",
                 }
             else:
-                values[concept] = {"value": None, "band": None, "raw": f"bands {ticked}"}
-            usage["input_tokens"] += completion.input_tokens or 0
-            usage["output_tokens"] += completion.output_tokens or 0
-            usage["cost_usd"] += completion.cost_usd or 0.0
-            usage["calls"] += 1
-        except Exception as exc:  # a strip that fails keeps the block's value
-            values[concept] = {"value": None, "band": None, "raw": None}
-            usage["errors"].append(f"tick {concept}: {exc}")
+                entry = {"value": None, "band": None, "raw": f"bands {ticked}"}
+            return concept, entry, {
+                "input_tokens": completion.input_tokens or 0,
+                "output_tokens": completion.output_tokens or 0,
+                "cost_usd": completion.cost_usd or 0.0,
+            }, None
+        except Exception as exc:
+            return concept, {"value": None, "band": None, "raw": None}, None, f"tick {concept}: {exc}"
+
+    workers = max(1, min(int((profile.get("settings") or {}).get("parallel", 4)), len(groups_list) or 1))
+    if groups_list:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = [pool.submit(one, group) for group in groups_list]
+            for future in as_completed(futures):
+                concept, entry, used, error = future.result()
+                values[concept] = entry
+                usage["calls"] += 1
+                if used:
+                    usage["input_tokens"] += used["input_tokens"]
+                    usage["output_tokens"] += used["output_tokens"]
+                    usage["cost_usd"] += used["cost_usd"]
+                if error:
+                    usage["errors"].append(error)
     return values, usage

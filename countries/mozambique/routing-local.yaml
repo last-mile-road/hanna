@@ -1,21 +1,34 @@
 # Local experimentation: OpenRouter for the language work, MinerU on this machine for the
 # two tables. No Modal box, no GPU rental.
-#
 # Start the reader once:
 #   mineru-api --host 127.0.0.1 --port 8001 --tier standard --allow-local-source --preload-models
 # Then, for the server and the worker:
 #   MINERU_LOCAL_BASE=http://127.0.0.1:8001 HANNA_ROUTING_FILE=routing-local.yaml ...
-strips: or-qwen35-9b-v1
+# Agreed default: OpenRouter for the VLM, local MinerU for the printed tables.
+# The 8B is the fast pass for the blocks measured to read well with it; the 9B
+# stays the default/fallback and is used for demographics. No Modal.com box.
+strips: or-qwen3vl-8b-v1
 fallback: or-qwen35-9b-v1
-
 default: or-qwen35-9b-v1
 blocks:
   general_demographic: or-qwen35-9b-v1
-  clinical_history: or-qwen35-9b-v1
-  skin_patch: or-qwen3vl-8b-v1
-  hand_feet_assessment: or-qwen35-9b-v1
+  clinical_history: or-qwen3vl-8b-v1
   classification: or-qwen3vl-8b-v1
+  skin_patch: or-qwen3vl-8b-v1
+  hand_feet_assessment: or-qwen3vl-8b-v1
   treatment_follow: or-qwen3vl-8b-v1
+  visit_index: or-qwen3vl-8b-v1
+  visit1_sensory: or-qwen3vl-8b-v1
+  visit2_sensory: or-qwen3vl-8b-v1
+  visit3_sensory: or-qwen3vl-8b-v1
+  visit4_sensory: or-qwen3vl-8b-v1
+  reactions_history: or-qwen3vl-8b-v1
+  reactions_exam: or-qwen3vl-8b-v1
+  prednisolone: or-qwen3vl-8b-v1
+  outcome_date: or-qwen3vl-8b-v1
+  outcome_choice: or-qwen3vl-8b-v1
+  outcome_free: or-qwen3vl-8b-v1
+  self_care: or-qwen3vl-8b-v1
   def_exam: mineru-standard
   nerve_assessment: mineru-standard
   visit1_nerve: mineru-standard

@@ -229,10 +229,9 @@ def _nerve(markdown: str) -> dict[str, str]:
             continue
         for index, (_, concept_name) in enumerate(order):
             right, left = cells[index * 2], cells[index * 2 + 1]
-            if right.strip() in {"—", "–"}:
-                right = ""
-            if left.strip() in {"—", "–"}:
-                left = ""
+            # The table uses + and -; a short dash or tilde is a negative mark.
+            right = "-" if right.strip() in {"~", "~", "−", "–", "—", "¬"} else right
+            left = "-" if left.strip() in {"~", "~", "−", "–", "—", "¬"} else left
             out[f"nerve_{kind}_{concept_name}_right"] = right
             out[f"nerve_{kind}_{concept_name}_left"] = left
     return out
