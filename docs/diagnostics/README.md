@@ -42,3 +42,17 @@ applied** to `form.back.yaml`. Awaiting owner confirmation.
 - Self-care starts at 2195 and ends at 2296, below the `de:` response line.
 - `back-blocks-proposed-2026-11-10-v2.jpg` / `.json`;
   `back-outcome-ticks-2026-11-10-v2.jpg`.
+
+### v3 — front parity, final proposal
+
+- One wide `visit_index` block across the four headers (6–159).
+- Per visit: `nerve` 159–517, `sensory` 517–1614, **`def_exam` 1614–2302**.
+  `def_exam` is one block per visit, exactly like the front: eye exam + muscle
+  test + disability scores in one `annotated_table`, routed with the front
+  `def_exam` profile (MinerU on the local route). The internal review tables
+  still split eye / muscle / disability.
+- Outcome: one `outcome_choice` strip 1760–2020 with the four checkboxes;
+  `outcome_date` 1663–1718; `outcome_free` 2020–2195 (`Outro`,
+  `Transferido para`).
+- Reaction strips unchanged.
+- `back-blocks-proposed-2026-11-10-v3.jpg` / `.json`.
