@@ -31,7 +31,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from sqlalchemy import select, text, update
 
-from core import admission, caseid, cases as cases_mod, jobs, settings, store
+from core import admission, caseid, cases as cases_mod, decision, jobs, settings, store
 from core.forms import prompt_options
 from core.validate import load_contract, validate_run
 from core.db import connect
@@ -583,72 +583,6 @@ OUTCOME_CODES = {
 }
 
 
-def _case_readings(conn, case_id: uuid.UUID) -> dict[str, str]:
-    """Latest non-null value per concept across every page of a case."""
-    rows = conn.execute(
-        text(
-            "SELECT o.concept_id, COALESCE(o.reviewed_value, o.value) AS value, "
-            "       r.started_at "
-            "  FROM observations o "
-            "  JOIN runs r ON r.id = o.run_id "
-            "  JOIN capture_pages p ON p.run_id = r.id "
-            "  JOIN captures c ON c.id = p.capture_id "
-            " WHERE c.case_id = :case_id "
-            " ORDER BY r.started_at DESC"
-        ),
-        {"case_id": case_id},
-    ).mappings().all()
-    readings: dict[str, str] = {}
-    for row in rows:
-        value = row["value"]
-        if row["concept_id"] in readings or value is None or str(value).strip() == "":
-            continue
-        readings[row["concept_id"]] = str(value).strip()
-    return readings
-
-
-def _add_months(value: date, months: int) -> date:
-    year = value.year + (value.month - 1 + months) // 12
-    month = (value.month - 1 + months) % 12 + 1
-    day = min(value.day, calendar.monthrange(year, month)[1])
-    return date(year, month, day)
-
-
-def _outcome_required(readings: dict[str, str]) -> str | None:
-    """Why a missing outcome blocks the number, or None while treatment is running."""
-    classification = (readings.get("classification") or "").upper()
-    if classification.startswith("PB"):
-        months = 6
-    elif classification.startswith("MB"):
-        months = 12
-    else:
-        return None
-    start = readings.get("treatment_start_date")
-    if start:
-        try:
-            started = date.fromisoformat(start[:10])
-        except ValueError:
-            return None
-        ended = _add_months(started, months)
-        if date.today() >= ended:
-            return (
-                f"Resultado do tratamento em falta: o regime {'PB' if months == 6 else 'MB'} "
-                f"terminou em {ended.isoformat()}. Registe o resultado no verso."
-            )
-        return None
-    recorded = readings.get("treatment_months_total")
-    try:
-        recorded_months = int(float(recorded)) if recorded is not None else None
-    except (TypeError, ValueError):
-        recorded_months = None
-    if recorded_months is not None and recorded_months >= months:
-        return (
-            f"Resultado do tratamento em falta: a ficha regista {recorded_months} meses "
-            f"de tratamento ({months} esperados). Registe o resultado no verso."
-        )
-    return None
-
-
 @app.post("/api/cases/{case_id}/allocate")
 def allocate_case_number(case_id: str):
     """Allocate the HANNA number only after both pages are read and clear.
@@ -706,37 +640,33 @@ def allocate_case_number(case_id: str):
             raise HTTPException(
                 409, "Ainda há condições bloqueantes: " + "; ".join(problems) + "."
             )
-        # The treatment outcome is not chosen on the phone any more. It comes from
-        # the back page, where the reviewer sees and corrects it. If the back is
-        # blank and the regimen has already run its course, the number is held.
-        readings = _case_readings(conn, uuid.UUID(case_id))
-        outcome = readings.get("outcome_decision")
-        if outcome:
-            outcome_date = readings.get("outcome_date")
-            if not outcome_date:
-                raise HTTPException(
-                    409,
-                    "Resultado do tratamento em falta no verso: falta a data do resultado.",
-                )
-            try:
-                closed_on = date.fromisoformat(outcome_date[:10])
-            except ValueError as exc:
-                raise HTTPException(
-                    409, "A data do resultado no verso não é uma data válida."
-                ) from exc
+        # The case decision needs both pages. It decides closed / in treatment /
+        # overdue, and lists the blocking reasons before any number is issued.
+        verdict = decision.decide_case(conn, uuid.UUID(case_id))
+        if not verdict["review_ready"]:
+            raise HTTPException(409, "Ainda a ler as duas páginas. Aguarde a decisão do caso.")
+        if verdict["blocking"]:
+            raise HTTPException(
+                409,
+                "Ainda há condições bloqueantes: "
+                + "; ".join(item["message"] for item in verdict["blocking"]),
+            )
+        if verdict["state"] == "closed":
             conn.execute(
                 update(cases_t)
                 .where(cases_t.c.id == uuid.UUID(case_id))
                 .values(
                     status="closed",
-                    outcome=OUTCOME_CODES.get(outcome, outcome),
-                    outcome_date=closed_on,
+                    outcome=OUTCOME_CODES.get(verdict["outcome"], verdict["outcome"]),
+                    outcome_date=date.fromisoformat(verdict["outcome_date"]),
                 )
             )
-        else:
-            reason = _outcome_required(readings)
-            if reason:
-                raise HTTPException(409, reason)
+        elif verdict["state"] == "in_treatment":
+            conn.execute(
+                update(cases_t)
+                .where(cases_t.c.id == uuid.UUID(case_id))
+                .values(status="open", outcome="in_treatment")
+            )
 
         allocated = cases_mod.allocate_number(conn, uuid.UUID(case_id))
         conn.commit()
@@ -1118,6 +1048,16 @@ def _template_size(path: str) -> tuple[int, int]:
     return _TEMPLATE_SIZE[path]
 
 
+@app.get("/api/cases/{case_id}/decision")
+def case_decision(case_id: str):
+    """Case-level decision after both pages: state, blocking, review readiness."""
+    case_id = _uuid(case_id)
+    with connect() as conn:
+        if cases_mod.find_case(conn, case_id=uuid.UUID(case_id)) is None:
+            raise HTTPException(404, "caso não encontrado")
+        return decision.decide_case(conn, uuid.UUID(case_id))
+
+
 @app.get("/api/runs/{run_id}/review")
 def get_review(run_id: str):
     """Everything a reviewer needs: each declared pair, what was read, and the issue."""
@@ -1126,6 +1066,14 @@ def get_review(run_id: str):
         run = events.run_row(conn, run_id)
         if run is None:
             raise HTTPException(404, "run não encontrado")
+        case_id = conn.execute(
+            text(
+                "SELECT c.case_id FROM capture_pages p "
+                "JOIN captures c ON c.id = p.capture_id "
+                "WHERE p.run_id = CAST(:run_id AS uuid) LIMIT 1"
+            ),
+            {"run_id": run_id},
+        ).scalar()
         blocks, pairs, concepts = store.form_rows(conn, run["form_id"])
         form = conn.execute(select(forms_t).where(forms_t.c.id == run["form_id"])).mappings().one()
         observations = {
@@ -1142,6 +1090,12 @@ def get_review(run_id: str):
         card = conn.execute(
             select(cards_t).where(cards_t.c.id == run["card_id"])
         ).mappings().one()
+        if case_id is not None and "outcome_decision" in {p.id for p in pairs}:
+            verdict = decision.decide_case(conn, case_id)
+            if verdict.get("outcome_default") and verdict.get("outcome"):
+                row = observations.get("outcome_decision")
+                if row is not None and row.get("value") in (None, ""):
+                    row["value"] = verdict["outcome"]
 
     layout = _ui_layout((form["definition"] or {}))
     hidden = set(layout.get("hidden") or [])

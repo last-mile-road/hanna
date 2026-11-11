@@ -1,0 +1,50 @@
+# Case-level rules, read after both pages have been extracted and validated.
+# These are the decisions that need the whole card, not one block:
+# identity, treatment state, what review is shown, and what blocks the number.
+version: 1
+country: mozambique
+
+identity:
+  # The card's government number. A non-empty value means this is a known card,
+  # even when the HANNA number has not been written yet.
+  government_id_concept: patient_id
+  # Read the HANNA number written on the card when the front form gains that
+  # field; until then the case's allocated number is the only HANNA identity.
+  hanna_number_concept: hanna_number
+
+treatment:
+  # WHO MDT regimen length. PB 6 months, MB 12 months.
+  durations_months:
+    PB: 6
+    MB: 12
+  # The value stored when the card is active and no outcome is written.
+  default_outcome: Em tratamento
+  closed_outcomes:
+    - Alta de tratamento
+    - Abandono
+    - Falecido
+    - Má classificação
+    - Outro
+    - Transferido
+  require_outcome_date: true
+
+review:
+  # Review opens only when both pages have reached a terminal state (done,
+  # partial or failed). A front review is not offered while the back is still
+  # being read.
+  ready_when: both_pages_terminal
+  hide_empty_sections: true
+
+blocking:
+  # A blocked page validation, or an outcome overdue after the regimen, holds the
+  # HANNA number. The decision object lists the reasons for the phone screen.
+  page_validation: true
+  outcome_overdue: true
+  # A closed/old card does not need today's follow-up detail to be notified. These
+  # block patterns are ignored once the case has a final outcome or an existing
+  # HANNA number; identity and outcome-date problems still block.
+  closed_case_ignore_blocks:
+    - visit*
+    - reactions_*
+    - prednisolone
+    - self_care

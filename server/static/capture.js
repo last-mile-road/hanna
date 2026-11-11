@@ -429,6 +429,8 @@ function startProgress(body) {
     watchRun(run, panel);
   });
   $("finalise").classList.add("hidden");
+  $("case-decision").classList.add("hidden");
+  $("decision-message").textContent = "";
   $("number-note").textContent = "";
 }
 
@@ -436,7 +438,6 @@ function watchRun(run, panel) {
   let gotAny = false;
   const statusEl = panel.querySelector("[data-status]");
   const detailEl = panel.querySelector("[data-detail]");
-  const linkEl = panel.querySelector("[data-link]");
   let done = 0;
   const es = new EventSource(run.events_url);
 
@@ -454,11 +455,8 @@ function watchRun(run, panel) {
     statusEl.className = `badge ${validation}`;
     const total = data.blocks_done ? `${data.blocks_done} blocos` : "leitura terminada";
     detailEl.textContent = `${total}${data.error ? " · " + data.error : ""}`;
-    linkEl.innerHTML = `<a href="/review?run=${run.run_id}&from=capture" target="_blank" rel="noopener">Rever valores</a>`;
     runStates[run.side] = data;
-    if (Object.keys(runStates).length === (captureBody.runs || []).length) {
-      $("finalise").classList.remove("hidden");
-    }
+    maybeDecide();
   };
 
   es.addEventListener("status", (e) => {
@@ -485,7 +483,6 @@ function watchRun(run, panel) {
 async function pollRun(run, panel) {
   const statusEl = panel.querySelector("[data-status]");
   const detailEl = panel.querySelector("[data-detail]");
-  const linkEl = panel.querySelector("[data-link]");
   for (;;) {
     let data;
     try {
@@ -502,15 +499,40 @@ async function pollRun(run, panel) {
       const validation = data.validation_status || (data.status === "failed" ? "failed" : "review");
       statusEl.textContent = validation;
       statusEl.className = `badge ${validation}`;
-      linkEl.innerHTML = `<a href="/review?run=${run.run_id}&from=capture" target="_blank" rel="noopener">Rever valores</a>`;
       runStates[run.side] = data;
-      if (Object.keys(runStates).length === (captureBody.runs || []).length) {
-        $("finalise").classList.remove("hidden");
-      }
+      maybeDecide();
       return;
     }
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }
+}
+
+async function maybeDecide() {
+  if (!captureBody) return;
+  if (Object.keys(runStates).length !== (captureBody.runs || []).length) return;
+  let verdict;
+  try {
+    const response = await fetch(`/api/cases/${captureBody.case_id}/decision`, { cache: "no-store" });
+    if (!response.ok) throw new Error("decision");
+    verdict = await response.json();
+  } catch {
+    $("case-decision").classList.remove("hidden");
+    $("decision-message").textContent = "A decisão do caso não está disponível. Recarregue a página.";
+    return;
+  }
+  $("case-decision").classList.remove("hidden");
+  (captureBody.runs || []).forEach((run) => {
+    const panel = document.getElementById(`run-${run.side}`);
+    if (!panel) return;
+    const link = panel.querySelector("[data-link]");
+    link.innerHTML = verdict.review_ready
+      ? `<a href="/review?run=${run.run_id}&from=capture" target="_blank" rel="noopener">Rever valores</a>`
+      : "";
+  });
+  const messages = (verdict.feedback || []).map((item) => item.message).filter(Boolean);
+  $("decision-message").innerHTML = messages.join("<br>");
+  if (verdict.can_allocate) $("finalise").classList.remove("hidden");
+  else $("finalise").classList.add("hidden");
 }
 
 $("btn-finalise").addEventListener("click", finalise);

@@ -205,17 +205,8 @@ def test_case_capture_page_visit_and_confirmed_values_round_trip():
             conn.rollback()
 
 
-def test_outcome_is_required_only_after_the_regimen():
-    from server.app import _add_months, _outcome_required
+def test_add_months_clamps_the_day():
+    from core.decision import _add_months
 
     assert _add_months(date(2025, 1, 31), 1) == date(2025, 2, 28)
-    assert _outcome_required(
-        {"classification": "MB_adult", "treatment_start_date": "2020-01-01"}
-    )
-    assert _outcome_required(
-        {"classification": "PB_adult", "treatment_start_date": "2099-01-01"}
-    ) is None
-    assert _outcome_required(
-        {"classification": "MB_adult", "treatment_months_total": "12"}
-    )
-    assert _outcome_required({"classification": "unknown"}) is None
+    assert _add_months(date(2024, 1, 31), 1) == date(2024, 2, 29)

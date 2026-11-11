@@ -1,0 +1,32 @@
+# The pipeline in compartments. Each stage has one config that a new country
+# must supply; the code stays generic over these contracts.
+version: 1
+country: mozambique
+
+stages:
+  admission:
+    config: pages.yaml
+    decides: which side each photo is, and whether to accept or retake.
+  extraction:
+    config: [form.studio.yaml, form.back.yaml, routing.yaml]
+    decides: block crops, prompts, reader/model per block.
+  page_validation:
+    config: validation.yaml
+    decides: blocking and info conditions for one page.
+  case_decision:
+    config: case_rules.yaml
+    decides: >
+      identity (new / known NIL / existing HANNA), treatment state
+      (in_treatment / closed / outcome_overdue / unknown), review readiness,
+      which blocking conditions survive for an old closed case, and the
+      feedback message for the phone.
+  review:
+    config: [ui.yaml, ui.back.yaml]
+    decides: which fields and tables the reviewer sees, and which are dev-only.
+  allocation:
+    config: case_rules.yaml
+    decides: whether the case closes or stays in treatment, and whether the
+      HANNA number can be issued.
+  reporting:
+    config: null
+    decides: future country-facing report/export; not built yet.

@@ -114,3 +114,11 @@ def test_a_mangled_three_digit_value_is_not_mistaken_for_an_age():
     assert n.age_from_text("284") is None
     assert n.age_from_text("28A") == 28
     assert n.canonical("date_or_age", "284", None, reference_year=2026) == "284"
+
+
+def test_tick_box_blank_is_a_minus():
+    # The clinic rule: only a clear plus is positive; a blank cell in a printed
+    # nerve table is a minus, not an unread value.
+    assert n.canonical("tick_box", None) == "-"
+    assert n.canonical("tick_box", "·") == "-"
+    assert n.canonical("tick_box", "+") == "+"

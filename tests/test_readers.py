@@ -111,3 +111,15 @@ def test_prednisolone_is_headline_not_weekly_detail():
     complete = readers.READERS["prednisolone"](_prednisolone_markdown(12))
     assert complete["prednisolone_status"] == "completed"
     assert complete["prednisolone_weeks_recorded"] == "12"
+
+
+def test_nerve_header_accepts_both_portuguese_spellings():
+    rows = ("<table><tr><td></td><td colspan=\"2\">Nervocubital</td>"
+            "<td colspan=\"2\">Radialcutâneo</td><td colspan=\"2\">{pop}</td></tr>"
+            "<tr><td></td><td>D</td><td>E</td><td>D</td><td>E</td><td>D</td><td>E</td></tr>"
+            "<tr><td>Grosso</td><td>-</td><td>+</td><td>-</td><td>-</td><td>+</td><td>-</td></tr>"
+            "<tr><td>Dor</td><td>-</td><td>+</td><td>-</td><td>-</td><td>-</td><td>-</td></tr></table>")
+    for spelling in ("Popliteoexterno", "Popilíteoexterno"):
+        values = readers._nerve(rows.format(pop=spelling))
+        assert len(values) == 12
+        assert values["nerve_enlargement_popliteal_external_right"] == "+"

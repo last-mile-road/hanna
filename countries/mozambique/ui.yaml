@@ -14,7 +14,6 @@ dev_only:
   - body_area_percentage
   - skinpatch_notes
   - hand_feet_notes
-  - treatment_grid
   - is_filled
   - unique_nr
 

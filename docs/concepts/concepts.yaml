@@ -973,6 +973,15 @@ concepts:
 - id: finger_abduction_right
   who_name: Little finger abduction, right
   value_type: choice_single
+  options:
+  - Normal
+  - Weak
+  - Paralysed
+  options_source: standard
+  card_marks:
+    N: Normal
+    F: Weak
+    A: Paralysed
   sensitivity: clinical
   tier: core
   note: Voluntary muscle test. Grade follows the card's legend (the disability table
@@ -983,6 +992,15 @@ concepts:
 - id: finger_abduction_left
   who_name: Little finger abduction, left
   value_type: choice_single
+  options:
+  - Normal
+  - Weak
+  - Paralysed
+  options_source: standard
+  card_marks:
+    N: Normal
+    F: Weak
+    A: Paralysed
   sensitivity: clinical
   tier: core
   note: Voluntary muscle test. Grade follows the card's legend.
@@ -1278,6 +1296,7 @@ concepts:
   who_name: Final treatment outcome
   value_type: choice_single
   options:
+  - Em tratamento
   - Alta de tratamento
   - Abandono
   - Falecido
@@ -1285,6 +1304,7 @@ concepts:
   - Outro
   - Transferido
   observed:
+  - Em tratamento
   - Alta de tratamento
   - Abandono
   - Falecido
@@ -1294,6 +1314,7 @@ concepts:
   sensitivity: administrative
   tier: local
   note: One final outcome; the card has four checkboxes plus Outro/Transferido.
+    Em tratamento is the default while the regimen is still running.
 - id: self_care_group
   who_name: Member of a self-care group
   value_type: choice_single

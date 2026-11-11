@@ -157,22 +157,29 @@ def canonical(
 ) -> str | None:
     concept = concept or {}
     text = _clean(value)
-    if text is None:
-        return None
-    k = key(text)
 
     if value_type == "tick_box":
         # Clinically a nerve is enlarged or it is not: only a clear plus is positive.
-        # A tilde, a tick, a dot or a smudge all mean "not enlarged", and scoring them
-        # as errors punishes the reader for a mark the clinic treats as a minus.
-        return "+" if TICK.get(k) == "+" else "-"
+        # A blank cell, tilde, tick, dot or smudge all mean "not enlarged". A blank
+        # cell in a printed nerve table is a minus, not an unread value.
+        if text is None:
+            return "-"
+        return "+" if TICK.get(key(text)) == "+" else "-"
+
+    if text is None:
+        return None
+    k = key(text)
 
     concept_id = concept.get("id", "")
 
     if concept_id == "gender":
         return GENDER.get(k, text)
 
-    if concept_id.startswith("hand_ulnar") or concept_id.startswith("foot_dorsiflex"):
+    if (
+        concept_id.startswith("hand_ulnar")
+        or concept_id.startswith("foot_dorsiflex")
+        or concept_id.startswith("finger_abduction")
+    ):
         return MUSCLE.get(k, text)
 
     if concept_id.startswith("eye_lagophthalmos"):

@@ -737,7 +737,9 @@ blocks:
   - 1663
   - 3222
   - 1718
-  hint: Leia a data escrita na linha Data:.
+  hint: A data está escrita à mão como DD/MM/AAAA (dia primeiro). Devolva os números exactamente como
+    estão escritos, por exemplo 4/09/2023; não troque o dia e o mês nem converta para AAAA-MM-DD. O sistema
+    converte.
   value_pairs:
   - id: outcome_date
     concept: outcome_date

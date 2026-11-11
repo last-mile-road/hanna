@@ -129,8 +129,9 @@ DEF_EXAM_GRADES = [
 NERVE_NAMES = [
     ("cubital", "cubital"),
     ("radial", "radial_cutaneous"),
-    # The card spells it "Popilíteo"; fold() keeps the i, so match the stem.
-    ("popil", "popliteal_external"),
+    # The card spells it both "Poplíteo" and "Popilíteo". Normalise the second
+    # spelling below, then match the shared stem.
+    ("popl", "popliteal_external"),
 ]
 
 
@@ -209,7 +210,9 @@ def _nerve(markdown: str) -> dict[str, str]:
     grid = table_matrix(markdown)
     if not grid:
         return {}
-    header = " ".join(_fold(cell) for cell in grid[0])
+    header = " ".join(_fold(cell) for cell in grid[0]).replace(
+        "popiliteo", "popliteo"
+    )
     order: list[tuple[str, str]] = []
     for fragment, concept_name in NERVE_NAMES:
         if fragment in header:
