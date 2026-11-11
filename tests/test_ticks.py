@@ -68,28 +68,19 @@ def test_back_band_geometry_is_xywh_not_xyxy():
             assert x + w <= x2 and y + h <= y2
 
 
-def test_ink_decides_blank_and_single_tick_without_a_model_call(tmp_path):
+def test_reaction_grid_prompt_names_rows_and_blank():
+    text = ticks.reaction_prompt(1, 5)
+    assert "rows 1 to 5" in text
+    assert "sim" in text and "não" in text and "blank" in text
+    assert "even spacing" in text
+
+
+def test_reaction_grid_render_is_numbered_and_spaced(tmp_path):
     import numpy as np
+    from tools.render_tick_strip import render_rows
 
-    class NeverCalled:
-        def complete(self, *args, **kwargs):
-            raise AssertionError("the model must not be called for blank/single ink")
-
-    groups = ticks.groups(ticks.load_spec())
-    ink = {group["concept"]: [0.0] * len(group["bands"]) for group in groups}
-    ink["itching"][1] = 0.2  # band 2 is ticked
-    values, usage = ticks.read_ticks(
-        np.zeros((20, 20, 3), dtype=np.uint8),
-        "mozambique",
-        NeverCalled(),
-        {"id": "fake", "model": "fake", "settings": {}},
-        tmp_path,
-        page="front",
-        ink_by_concept=ink,
-    )
-    assert values["itching"]["value"] == "No"
-    assert values["itching"]["band"] == 2
-    assert values["leprosy_contact"]["blank"] is True
-    assert values["leprosy_contact"]["value"] is None
-    assert usage["calls"] == len(groups)
-    assert usage["output_tokens"] == 0
+    image = np.full((120, 200, 3), 180, dtype=np.uint8)
+    rows = [[20, 10, 80, 40], [20, 50, 80, 80], [20, 90, 80, 118]]
+    rendered = render_rows(image, rows, start=1, gap=12)
+    assert rendered.shape[0] > 3 * (30 + 12)
+    assert rendered.shape[1] >= 80

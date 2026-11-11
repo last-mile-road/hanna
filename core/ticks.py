@@ -85,14 +85,108 @@ def render(image, group: dict, render_opts: dict | None = None):
     opts = render_opts or {}
     left = int(opts.get("left_margin_px", 56))
     pad = int(opts.get("border_px", 12))
-    scale = float(opts.get("number_scale", 1.2))
+    font_scale = float(opts.get("number_scale", 1.2))
     thick = int(opts.get("number_thickness", 3))
     gap = int(opts.get("stack_gap_px", 70))
     if group.get("kind") == "horizontal":
         return stack_bands(image, group["strip"], group["bands"], gap=gap, left=left,
-                           pad=pad, font=scale, thickness=thick)
+                           pad=pad, font=font_scale, thickness=thick)
     return render_strip(image, group["strip"], group["bands"], left=left, pad=pad,
-                        font=scale, thickness=thick)
+                        font=font_scale, thickness=thick)
+
+
+def reaction_prompt(start: int, end: int) -> str:
+    return (
+        f"This image shows rows {start} to {end} from a leprosy clinic card, stacked "
+        "with even spacing and numbered in the left margin. Each row has two printed "
+        "boxes side by side: left = SIM, right = NÃO.\n"
+        "A box is ticked when there is a handwritten tick, cross or filled mark inside "
+        "it. An empty printed box is not ticked. If neither box in a row is marked, "
+        "that row is blank.\n"
+        "For every row number, answer exactly one of: \"sim\", \"não\", \"blank\".\n"
+        'Return one JSON object and nothing else, for example '
+        '{"1": "sim", "2": "não", "3": "blank"}.'
+    )
+
+
+def _read_reaction_grid(aligned, groups_list, client, profile, run_dir, opts):
+    """Two VLM calls: rows 1–5 and 6–10, each as a regular numbered stack."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    from core.parse import parse_json_response
+    from tools.render_tick_strip import render_rows
+
+    values: dict[str, dict] = {}
+    usage = {"input_tokens": 0, "output_tokens": 0, "cost_usd": 0.0, "calls": 0, "errors": []}
+    left = int(opts.get("left_margin_px", 80))
+    pad = int(opts.get("border_px", 12))
+    gap = int(opts.get("reaction_gap_px", opts.get("stack_gap_px", 20)))
+    font_scale = float(opts.get("number_scale", 1.2))
+    image_scale = float(opts.get("reaction_scale", 2.5))
+    inset = int(opts.get("reaction_inset_px", 3))
+    headers = ("SIM", "NÃO") if opts.get("reaction_headers", True) else None
+    thick = int(opts.get("number_thickness", 3))
+
+    def one(start: int, end: int):
+        rows = [group["strip"] for group in groups_list[start:end]]
+        image = render_rows(
+            aligned, rows, left=left, pad=pad, gap=gap,
+            font=font_scale, thickness=thick, start=start + 1,
+            inset=inset, scale=image_scale, headers=headers,
+        )
+        threshold = int(opts.get("reaction_threshold", 0) or 0)
+        if threshold:
+            # Remove the printed grey box outline; keep the dark handwritten mark.
+            # The VLM still makes the yes/no/blank choice from the cleaned layout.
+            grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            _, binary = cv2.threshold(grey, threshold, 255, cv2.THRESH_BINARY)
+            image = cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR)
+        path = run_dir / f"tick_reactions_{start + 1}_{end}.jpg"
+        cv2.imwrite(str(path), image, [cv2.IMWRITE_JPEG_QUALITY, 92])
+        try:
+            completion = client.complete(
+                reaction_prompt(start + 1, end), [path], profile["model"], profile["settings"]
+            )
+            parsed = parse_json_response(
+                completion.text, [str(n) for n in range(start + 1, end + 1)]
+            )
+            entries = {}
+            for n, group in enumerate(groups_list[start:end], start + 1):
+                answer = str(parsed.get(str(n)) or "").strip().lower()
+                if answer in {"sim", "s", "yes", "left"}:
+                    value = group["options"][0]
+                elif answer in {"não", "nao", "n", "no", "right"}:
+                    value = group["options"][1]
+                else:
+                    value = None
+                entries[group["concept"]] = {
+                    "value": value,
+                    "band": None,
+                    "raw": f"row {n} = {answer or 'blank'}",
+                }
+            return entries, {
+                "input_tokens": completion.input_tokens or 0,
+                "output_tokens": completion.output_tokens or 0,
+                "cost_usd": completion.cost_usd or 0.0,
+            }, None
+        except Exception as exc:
+            return {
+                group["concept"]: {"value": None, "band": None, "raw": None}
+                for group in groups_list[start:end]
+            }, None, f"reaction rows {start + 1}-{end}: {exc}"
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [pool.submit(one, start, start + 5) for start in (0, 5)]
+        for future in as_completed(futures):
+            entries, used, error = future.result()
+            values.update(entries)
+            usage["calls"] += 1
+            if used:
+                usage["input_tokens"] += used["input_tokens"]
+                usage["output_tokens"] += used["output_tokens"]
+                usage["cost_usd"] += used["cost_usd"]
+            if error:
+                usage["errors"].append(error)
+    return values, usage
 
 
 def read_ticks(
@@ -102,38 +196,24 @@ def read_ticks(
     profile: dict,
     run_dir: Path,
     page: str = "front",
-    ink_by_concept: dict[str, list[float]] | None = None,
 ) -> tuple[dict, dict]:
-    """Read the strips. Ink decides empty/single-tick groups; the model breaks ties.
-
-    A printed tick box has no ink difference against the blank template. A tick,
-    cross or filled mark does. That makes "no box ticked" and "one box ticked"
-    deterministic; only two or more inked bands need the VLM, and its answer must
-    be one of the inked bands.
-    """
+    """Read tick groups. Front uses one strip per question; back uses two 5-row grids."""
     from concurrent.futures import ThreadPoolExecutor, as_completed
     from core.parse import parse_json_response
 
     spec = load_spec(country, page)
     opts = spec.get("render") or {}
     groups_list = groups(spec)
+    if page == "back" and groups_list and all(
+        group.get("kind") == "horizontal" for group in groups_list
+    ):
+        return _read_reaction_grid(aligned, groups_list, client, profile, run_dir, opts)
+
     values: dict[str, dict] = {}
     usage = {"input_tokens": 0, "output_tokens": 0, "cost_usd": 0.0, "calls": 0, "errors": []}
 
     def one(group: dict) -> tuple[str, dict, dict | None, str | None]:
         concept = group["concept"]
-        inks = (ink_by_concept or {}).get(concept)
-        inked = [i + 1 for i, value in enumerate(inks or []) if value >= 0.01]
-        if ink_by_concept is not None and not inked:
-            return concept, {"value": None, "band": None, "raw": "blank", "blank": True}, None, None
-        if ink_by_concept is not None and len(inked) == 1:
-            band = inked[0]
-            return concept, {
-                "value": group["options"][band - 1],
-                "band": band,
-                "raw": f"ink band {band}",
-            }, None, None
-
         image = render(aligned, group, opts)
         path = run_dir / f"tick_{concept}.jpg"
         cv2.imwrite(str(path), image, [cv2.IMWRITE_JPEG_QUALITY, 92])
@@ -142,21 +222,13 @@ def read_ticks(
             parsed = parse_json_response(completion.text, ["ticked"])
             ticked = decode(parsed.get("ticked") if isinstance(parsed, dict) else parsed)
             if len(ticked) == 1 and 1 <= ticked[0] <= len(group["labels"]):
-                if ink_by_concept is not None and ticked[0] not in inked:
-                    return concept, {
-                        "value": None, "band": None,
-                        "raw": f"ink {inked} vs model {ticked}", "unreadable": True,
-                    }, None, None
                 entry = {
                     "value": group["options"][ticked[0] - 1],
                     "band": ticked[0],
                     "raw": f"band {ticked[0]}",
                 }
             else:
-                entry = {
-                    "value": None, "band": None, "raw": f"bands {ticked}",
-                    "unreadable": bool(ink_by_concept is not None and inked),
-                }
+                entry = {"value": None, "band": None, "raw": f"bands {ticked}"}
             return concept, entry, {
                 "input_tokens": completion.input_tokens or 0,
                 "output_tokens": completion.output_tokens or 0,

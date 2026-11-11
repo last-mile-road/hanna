@@ -4,6 +4,11 @@ render:
   number_scale: 1.2
   number_thickness: 3
   stack_gap_px: 70
+  reaction_scale: 2.5
+  reaction_inset_px: 3
+  reaction_gap_px: 24
+  reaction_headers: true
+  reaction_threshold: 130
 reactions:
   groups:
   - concept: nerve_pain_spontaneous

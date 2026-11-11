@@ -78,3 +78,66 @@ def stack_bands(
         if index < len(padded) - 1:
             parts.append(np.full((gap, width, 3), 255, np.uint8))
     return np.vstack(parts)
+
+
+def render_rows(
+    image: np.ndarray,
+    rows: list[list[int]],
+    left: int = 80,
+    pad: int = 14,
+    gap: int = 24,
+    font: float = 1.1,
+    thickness: int = 3,
+    colour: tuple[int, int, int] = (30, 30, 30),
+    start: int = 1,
+    inset: int = 3,
+    scale: float = 2.5,
+    headers: tuple[str, str] | None = ("SIM", "NÃO"),
+) -> np.ndarray:
+    """Stack whole rows, crop inside the printed box, enlarge, number and space them.
+
+    The printed box outline looks like a mark to a small VLM. Cropping a few pixels
+    inside it leaves a plain white tile when the box is empty; a tick or cross still
+    crosses the tile. Headers name the two columns.
+    """
+    pieces = []
+    for n, (x1, y1, x2, y2) in enumerate(rows, start=start):
+        crop = image[y1 + inset:y2 - inset, x1 + inset:x2 - inset].copy()
+        if scale != 1.0:
+            crop = cv2.resize(crop, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+        canvas = cv2.copyMakeBorder(crop, pad, pad, left, pad, cv2.BORDER_CONSTANT, value=WHITE)
+        text = str(n)
+        (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, font, thickness)
+        cv2.putText(
+            canvas,
+            text,
+            (max(2, (left - tw) // 2), pad + crop.shape[0] // 2 + th // 2),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            font,
+            colour,
+            thickness,
+            cv2.LINE_AA,
+        )
+        pieces.append(canvas)
+    width = max(piece.shape[1] for piece in pieces)
+    padded = [
+        cv2.copyMakeBorder(piece, 0, 0, 0, width - piece.shape[1], cv2.BORDER_CONSTANT, value=WHITE)
+        for piece in pieces
+    ]
+    parts = []
+    for index, piece in enumerate(padded):
+        parts.append(piece)
+        if index < len(padded) - 1:
+            parts.append(np.full((gap, width, 3), 255, np.uint8))
+    body = np.vstack(parts)
+    if headers:
+        header = np.full((42, width, 3), 255, np.uint8)
+        half = width // 2
+        for label, centre in ((headers[0], half // 2), (headers[1], half + half // 2)):
+            (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+            cv2.putText(
+                header, label, (centre - tw // 2, 28),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, colour, 2, cv2.LINE_AA,
+            )
+        body = np.vstack([header, body])
+    return body

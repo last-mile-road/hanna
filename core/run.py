@@ -632,17 +632,6 @@ def run_card(
                         ),
                     }
                 )
-            elif not parsed and not parsed_retry and not block.id.startswith("visit"):
-                table_warnings.append(
-                    {
-                        "block_id": block.id,
-                        "pair_id": None,
-                        "message": (
-                            "Há tinta nesta tabela mas nenhuma célula foi lida. "
-                            "Corrija a fotografia e digitalize de novo."
-                        ),
-                    }
-                )
             return reading
 
         def process_group(items):
@@ -710,24 +699,9 @@ def run_card(
         # Tick groups: one strip per printed question, overriding the block values for the
         # tick fields. Measured 49/49 for strips against 30/35 for the block prompt.
         tick_values: dict = {}
-        tick_warnings: list[dict] = []
         if routing:
             tick_profile_id = routing_map.get("strips", profile_id)
             tick_profile = profiles_by_id.get(tick_profile_id, profile)
-            tick_ink: dict[str, list[float]] = {}
-            tick_spec = ticks.load_spec(
-                str(form["definition"].get("country", "mozambique")).lower(),
-                form_variant,
-            )
-            for group in ticks.groups(tick_spec):
-                tick_ink[group["concept"]] = [
-                    _block_ink(
-                        alignment.image,
-                        alignment.template,
-                        [x, y, x + w, y + h],
-                    )
-                    for x, y, w, h in group.get("bands", [])
-                ]
             try:
                 tick_values, tick_usage = ticks.read_ticks(
                     alignment.image,
@@ -736,7 +710,6 @@ def run_card(
                     tick_profile,
                     run_dir,
                     page=form_variant,
-                    ink_by_concept=tick_ink,
                 )
                 result["input_tokens"] += tick_usage["input_tokens"]
                 result["output_tokens"] += tick_usage["output_tokens"]
@@ -761,17 +734,6 @@ def run_card(
                 pair_id = (spec_groups.get(concept) or {}).get("pair")
                 if not pair_id:
                     continue
-                if entry.get("unreadable"):
-                    # Ink is inside a box but the strip did not resolve it. Do
-                    # not fall back to the block prompt; that is where the
-                    # invented ticks came from. Hold the field for review.
-                    tick_warnings.append(
-                        {
-                            "pair_id": pair_id,
-                            "block_id": (spec_groups.get(concept) or {}).get("block"),
-                            "message": "Caixa marcada mas não legível. Corrija e digitalize de novo.",
-                        }
-                    )
                 all_values[pair_id] = entry["value"]
                 pair = next((item for item in pairs if item.id == pair_id), None)
                 expected_row = truth.get(pair_id)
@@ -866,28 +828,6 @@ def run_card(
             country=form["definition"].get("country", "mozambique"),
             as_of=date.today(),
         )
-        if tick_warnings:
-            for warning in tick_warnings:
-                validation["issues"].append(
-                    {
-                        "pair_id": warning["pair_id"],
-                        "block_id": warning.get("block_id"),
-                        "kind": "tick_unreadable",
-                        "severity": "blocking",
-                        "audience": ["clinician"],
-                        "advice": warning["message"],
-                        "bbox": None,
-                    }
-                )
-            validation["blocking"] = sum(
-                1 for issue in validation["issues"] if issue["severity"] == "blocking"
-            )
-            validation["info"] = sum(
-                1 for issue in validation["issues"] if issue["severity"] == "info"
-            )
-            validation["status"] = "blocked" if validation["blocking"] else (
-                "review" if validation["info"] else "ok"
-            )
         if table_warnings:
             for warning in table_warnings:
                 validation["issues"].append(
