@@ -41,10 +41,10 @@ def test_back_reaction_strips_are_ten_horizontal_pairs():
     from core import ticks
 
     spec = ticks.load_spec("mozambique", "back")
-    groups = ticks.groups(spec)
-    assert len(groups) == 10
-    assert all(group["kind"] == "horizontal" for group in groups)
-    assert [group["concept"] for group in groups] == [
+    reactions = [g for g in ticks.groups(spec) if g["kind"] == "horizontal"]
+    outcome = [g for g in ticks.groups(spec) if g["kind"] == "vertical"]
+    assert len(reactions) == 10
+    assert [group["concept"] for group in reactions] == [
         "nerve_pain_spontaneous",
         "recent_sensitivity_change",
         "recent_patch_change",
@@ -56,6 +56,7 @@ def test_back_reaction_strips_are_ten_horizontal_pairs():
         "nerve_tenderness_present",
         "eye_redness_pain",
     ]
+    assert [g["concept"] for g in outcome] == ["outcome_decision"]
 
 
 def test_back_band_geometry_is_xywh_not_xyxy():

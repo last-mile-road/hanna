@@ -399,7 +399,6 @@ def run_card(
                     },
                     "completion": None,
                     "error": None,
-                    "ink": _block_ink(alignment.image, alignment.template, block.bbox),
                 }
             )
 
@@ -427,15 +426,7 @@ def run_card(
                 parsed = parse_json_response(
                     completion.text, [p.id for p in pairs_in_block]
                 )
-                blank_by_ink = (
-                    not item.get("reader")
-                    and float(item.get("ink", 1.0)) < INK_MIN
-                )
-                if blank_by_ink:
-                    # No handwriting in this block. Printed options are not
-                    # answers; drop anything the model invented from them.
-                    parsed = {}
-                if not parsed and pairs_in_block and not item.get("reader") and not blank_by_ink:
+                if not parsed and pairs_in_block and not item.get("reader"):
                     # An empty answer is not a result. One retry, then say so out loud:
                     # the 13:48 card lost its whole demographics block this way and looked
                     # like a completed run with every field blank.
@@ -485,7 +476,7 @@ def run_card(
                         parsed["is_filled"] = "true"
                 _apply_box_states(parsed, pairs_in_block)
                 if not parsed and pairs_in_block:
-                    if item.get("reader") or blank_by_ink:
+                    if item.get("reader"):
                         # A blank table or a block with no handwriting is a valid
                         # empty read, not a failure.
                         block_values["status"] = "done"

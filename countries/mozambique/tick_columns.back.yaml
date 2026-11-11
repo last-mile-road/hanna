@@ -251,3 +251,40 @@ reactions:
     - sim
     - não
     kind: horizontal
+outcome:
+  concept: outcome_decision
+  pair: outcome_decision
+  question: Resultado do tratamento
+  strip:
+  - 2990
+  - 1770
+  - 3050
+  - 2008
+  bands:
+  - - 3005
+    - 1779
+    - 30
+    - 30
+  - - 3005
+    - 1847
+    - 30
+    - 29
+  - - 3005
+    - 1909
+    - 30
+    - 30
+  - - 3005
+    - 1975
+    - 30
+    - 29
+  options:
+  - Alta de tratamento
+  - Abandono
+  - Falecido
+  - Má classificação
+  labels:
+  - Alta de tratamento
+  - Abandono
+  - Falecido
+  - Má classificação
+  kind: vertical
