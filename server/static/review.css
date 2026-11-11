@@ -114,3 +114,10 @@ body:not(.show-dev) .dev-row { display: none; }
 .picker-map { flex: 1; min-height: 0; }
 .picker-foot { display: flex; align-items: center; gap: .6rem; padding: .7rem 1rem; border-top: 1px solid var(--line); }
 .picker-foot .hint { flex: 1; font-size: .75rem; }
+
+/* Blocked cards: show the fields that must be corrected, not the whole form. */
+body.blocked-only .pair:not(.has-blocking) { display: none; }
+body.blocked-only .section:not(.has-blocking-section) { display: none; }
+.has-blocking .pair-top .label { color: var(--bad); font-weight: 600; }
+#blocking-banner { color: var(--bad); font-weight: 600; margin: .2rem 0 .6rem; }
+body.blocked-only .mini.accept { display: none; }

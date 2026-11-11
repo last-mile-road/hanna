@@ -399,9 +399,9 @@ function showAdmission(body) {
     div.innerHTML = `<strong>${page.label || page.side || "página"}${page.rotation ? ` · ${page.rotation}°` : ""}</strong><span>${reasons || (page.admission === "good" ? "Aceite." : "")}</span>`;
     box.appendChild(div);
   });
-  const retake = !admitted;
-  $("btn-retake-front").classList.toggle("hidden", !retake);
-  $("btn-retake-back").classList.toggle("hidden", !retake);
+  const needsRetake = !admitted;
+  $("btn-retake-front").classList.toggle("hidden", !needsRetake);
+  $("btn-retake-back").classList.toggle("hidden", !needsRetake);
   $("btn-retake-front").onclick = () => retake("front");
   $("btn-retake-back").onclick = () => retake("back");
 }

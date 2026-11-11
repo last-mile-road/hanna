@@ -56,3 +56,40 @@ def test_back_reaction_strips_are_ten_horizontal_pairs():
         "nerve_tenderness_present",
         "eye_redness_pain",
     ]
+
+
+def test_back_band_geometry_is_xywh_not_xyxy():
+    spec = ticks.load_spec("mozambique", "back")
+    for group in ticks.groups(spec):
+        x1, y1, x2, y2 = group["strip"]
+        for x, y, w, h in group["bands"]:
+            assert 0 < w <= x2 - x1
+            assert 0 < h <= y2 - y1
+            assert x + w <= x2 and y + h <= y2
+
+
+def test_ink_decides_blank_and_single_tick_without_a_model_call(tmp_path):
+    import numpy as np
+
+    class NeverCalled:
+        def complete(self, *args, **kwargs):
+            raise AssertionError("the model must not be called for blank/single ink")
+
+    groups = ticks.groups(ticks.load_spec())
+    ink = {group["concept"]: [0.0] * len(group["bands"]) for group in groups}
+    ink["itching"][1] = 0.2  # band 2 is ticked
+    values, usage = ticks.read_ticks(
+        np.zeros((20, 20, 3), dtype=np.uint8),
+        "mozambique",
+        NeverCalled(),
+        {"id": "fake", "model": "fake", "settings": {}},
+        tmp_path,
+        page="front",
+        ink_by_concept=ink,
+    )
+    assert values["itching"]["value"] == "No"
+    assert values["itching"]["band"] == 2
+    assert values["leprosy_contact"]["blank"] is True
+    assert values["leprosy_contact"]["value"] is None
+    assert usage["calls"] == len(groups)
+    assert usage["output_tokens"] == 0

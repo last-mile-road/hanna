@@ -782,7 +782,8 @@ blocks:
   - 2195
   - 3222
   - 2296
-  hint: Leia o nome do grupo escrito depois de de:.
+  hint: Leia apenas o nome escrito à mão depois de 'de:'. Se a linha estiver vazia, devolva null. Nunca
+    devolva 'Auto Cuidados' nem o texto impresso.
   value_pairs:
   - id: self_care_group
     concept: self_care_group

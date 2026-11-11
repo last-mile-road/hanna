@@ -95,8 +95,22 @@ def render(image, group: dict, render_opts: dict | None = None):
                         font=scale, thickness=thick)
 
 
-def read_ticks(aligned, country: str, client, profile: dict, run_dir: Path, page: str = "front") -> tuple[dict, dict]:
-    """One call per group, in parallel. Returns values plus tokens/cost and errors."""
+def read_ticks(
+    aligned,
+    country: str,
+    client,
+    profile: dict,
+    run_dir: Path,
+    page: str = "front",
+    ink_by_concept: dict[str, list[float]] | None = None,
+) -> tuple[dict, dict]:
+    """Read the strips. Ink decides empty/single-tick groups; the model breaks ties.
+
+    A printed tick box has no ink difference against the blank template. A tick,
+    cross or filled mark does. That makes "no box ticked" and "one box ticked"
+    deterministic; only two or more inked bands need the VLM, and its answer must
+    be one of the inked bands.
+    """
     from concurrent.futures import ThreadPoolExecutor, as_completed
     from core.parse import parse_json_response
 
@@ -108,6 +122,18 @@ def read_ticks(aligned, country: str, client, profile: dict, run_dir: Path, page
 
     def one(group: dict) -> tuple[str, dict, dict | None, str | None]:
         concept = group["concept"]
+        inks = (ink_by_concept or {}).get(concept)
+        inked = [i + 1 for i, value in enumerate(inks or []) if value >= 0.01]
+        if ink_by_concept is not None and not inked:
+            return concept, {"value": None, "band": None, "raw": "blank", "blank": True}, None, None
+        if ink_by_concept is not None and len(inked) == 1:
+            band = inked[0]
+            return concept, {
+                "value": group["options"][band - 1],
+                "band": band,
+                "raw": f"ink band {band}",
+            }, None, None
+
         image = render(aligned, group, opts)
         path = run_dir / f"tick_{concept}.jpg"
         cv2.imwrite(str(path), image, [cv2.IMWRITE_JPEG_QUALITY, 92])
@@ -116,13 +142,21 @@ def read_ticks(aligned, country: str, client, profile: dict, run_dir: Path, page
             parsed = parse_json_response(completion.text, ["ticked"])
             ticked = decode(parsed.get("ticked") if isinstance(parsed, dict) else parsed)
             if len(ticked) == 1 and 1 <= ticked[0] <= len(group["labels"]):
+                if ink_by_concept is not None and ticked[0] not in inked:
+                    return concept, {
+                        "value": None, "band": None,
+                        "raw": f"ink {inked} vs model {ticked}", "unreadable": True,
+                    }, None, None
                 entry = {
                     "value": group["options"][ticked[0] - 1],
                     "band": ticked[0],
                     "raw": f"band {ticked[0]}",
                 }
             else:
-                entry = {"value": None, "band": None, "raw": f"bands {ticked}"}
+                entry = {
+                    "value": None, "band": None, "raw": f"bands {ticked}",
+                    "unreadable": bool(ink_by_concept is not None and inked),
+                }
             return concept, entry, {
                 "input_tokens": completion.input_tokens or 0,
                 "output_tokens": completion.output_tokens or 0,

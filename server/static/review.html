@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="light">
 <title>HANNA — rever valores</title>
 <link rel="stylesheet" href="/static/bench.css?v=14">
-<link rel="stylesheet" href="/static/review.css?v=17">
+<link rel="stylesheet" href="/static/review.css?v=19">
 </head>
 <body class="review">
 <header>
@@ -22,8 +22,10 @@
   <div id="topline" class="hidden">
     <span id="verdict-badge" class="badge"></span>
     <button id="next-issue" class="link-button">Ir para o primeiro problema</button>
+    <button id="blocked-only" class="link-button hidden">Só bloqueios</button>
     <span id="saved" class="saved"></span>
   </div>
+  <p id="blocking-banner" class="hint hidden"></p>
   <section id="sections"></section>
   <div class="card" id="truth-card" style="margin-top:1rem">
     <p class="hint">Depois de rever os valores, pode guardar este cartão como verdade de teste.</p>
@@ -36,6 +38,6 @@
   <span id="progress">0 revistos</span>
   <button id="finish">Terminar</button>
 </footer>
-<script src="/static/review.js?v=24"></script>
+<script src="/static/review.js?v=25"></script>
 </body>
 </html>

@@ -18,6 +18,7 @@ const BLOCK_LABELS = {
 
 let data = null;
 let devMode = localStorage.getItem("hanna.devMode") === "on";
+let blockedOnly = false;
 const decisions = new Map();   // pair_id -> {mode, value}
 const timers = new Map();      // pair_id -> debounce
 let saveQueue = Promise.resolve();
@@ -31,6 +32,12 @@ if (!runId) {
 
 $("dev-mode").checked = devMode;
 document.body.classList.toggle("show-dev", devMode);
+$("blocked-only").addEventListener("click", () => {
+  blockedOnly = !blockedOnly;
+  document.body.classList.toggle("blocked-only", blockedOnly);
+  $("blocked-only").textContent = blockedOnly ? "Mostrar todos" : "Só bloqueios";
+});
+
 $("dev-mode").addEventListener("change", (event) => {
   devMode = event.target.checked;
   localStorage.setItem("hanna.devMode", devMode ? "on" : "off");
@@ -55,6 +62,13 @@ async function load() {
   const badge = $("verdict-badge");
   badge.className = `badge ${data.validation_status || "review"}`;
   badge.textContent = data.validation_status || data.status;
+  const blocking = (data.issues || []).filter((issue) => issue.severity === "blocking");
+  blockedOnly = data.validation_status === "blocked" && blocking.length > 0;
+  $("blocked-only").classList.toggle("hidden", blocking.length === 0);
+  $("blocking-banner").classList.toggle("hidden", !blockedOnly);
+  if (blocking.length) {
+    $("blocking-banner").textContent = `${blocking.length} campo(s) bloqueante(s). Corrija os assinalados e digitalize de novo.`;
+  }
   render();
   const firstIssue = document.querySelector(".has-issue");
   $("next-issue").classList.toggle("hidden", !firstIssue);
@@ -314,6 +328,10 @@ function render() {
   data.blocks.forEach((block) => {
     const section = document.createElement("section");
     section.className = "section";
+    const sectionBlocking = (block.pairs || []).some(
+      (pair) => pair.issue && pair.issue.severity === "blocking"
+    ) || (block.issue && block.issue.severity === "blocking");
+    if (sectionBlocking) section.classList.add("has-blocking-section");
 
     const head = document.createElement("div");
     head.className = "section-head";
@@ -389,6 +407,8 @@ function render() {
 
     container.appendChild(section);
   });
+  document.body.classList.toggle("blocked-only", blockedOnly);
+  $("blocked-only").textContent = blockedOnly ? "Mostrar todos" : "Só bloqueios";
   paint();
   updateProgress();
 }
@@ -396,6 +416,7 @@ function render() {
 function renderPair(pair) {
   const row = document.createElement("div");
   row.className = "pair" + (pair.dev_only ? " dev-row" : "") + (pair.issue ? " has-issue" : "");
+  if (pair.issue && pair.issue.severity === "blocking") row.classList.add("has-blocking");
   row.dataset.pair = pair.pair_id;
 
   const top = document.createElement("div");
@@ -647,6 +668,7 @@ function renderTable(table, block) {
       } else {
         tr.dataset.rows = tr.dataset.rows ? `${tr.dataset.rows},${pairId}` : pairId;
         if (pair.issue) tr.classList.add("has-issue");
+        if (pair.issue && pair.issue.severity === "blocking") tr.classList.add("has-blocking");
         td.appendChild(control(pair, true));
       }
       tr.appendChild(td);

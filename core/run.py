@@ -290,6 +290,7 @@ def run_card(
     }
 
     _clients: dict[str, OpenRouter] = {}
+    table_warnings: list[dict] = []
 
     def client_for(profile) -> OpenRouter:
         """One client per provider: the box for modal profiles, the hosted
@@ -398,6 +399,7 @@ def run_card(
                     },
                     "completion": None,
                     "error": None,
+                    "ink": _block_ink(alignment.image, alignment.template, block.bbox),
                 }
             )
 
@@ -425,7 +427,15 @@ def run_card(
                 parsed = parse_json_response(
                     completion.text, [p.id for p in pairs_in_block]
                 )
-                if not parsed and pairs_in_block and not item.get("reader"):
+                blank_by_ink = (
+                    not item.get("reader")
+                    and float(item.get("ink", 1.0)) < INK_MIN
+                )
+                if blank_by_ink:
+                    # No handwriting in this block. Printed options are not
+                    # answers; drop anything the model invented from them.
+                    parsed = {}
+                if not parsed and pairs_in_block and not item.get("reader") and not blank_by_ink:
                     # An empty answer is not a result. One retry, then say so out loud:
                     # the 13:48 card lost its whole demographics block this way and looked
                     # like a completed run with every field blank.
@@ -449,6 +459,16 @@ def run_card(
                         item["error"] = f"retry failed: {retry_error}"
                 if block.block_type == "dose_grid" and parsed:
                     parsed.update(derive_treatment_grid(parsed))
+                if block.id == "self_care" and isinstance(
+                    parsed.get("self_care_group"), str
+                ):
+                    printed = _label_norm(parsed["self_care_group"])
+                    if printed in {
+                        "auto cuidados",
+                        "grupo de auto cuidados",
+                        "integrado num grupo de auto cuidados",
+                    }:
+                        parsed["self_care_group"] = None
                 if block.id == "hand_feet_assessment":
                     # The model often reads the normal-sensation ticks as values
                     # (all counts 0) yet still calls the section empty. A section
@@ -465,9 +485,9 @@ def run_card(
                         parsed["is_filled"] = "true"
                 _apply_box_states(parsed, pairs_in_block)
                 if not parsed and pairs_in_block:
-                    if item.get("reader"):
-                        # A blank back visit table is a valid empty read, not a
-                        # failure; the review hides a visit with no date and no values.
+                    if item.get("reader") or blank_by_ink:
+                        # A blank table or a block with no handwriting is a valid
+                        # empty read, not a failure.
                         block_values["status"] = "done"
                     else:
                         block_values["status"] = "empty"
@@ -552,6 +572,79 @@ def run_card(
                 f"{block_values.get('latency_ms', '-')} ms"
             )
 
+        def read_table_checked(item: dict):
+            """Read a table once; retry at 2x when ink is present but cells are missing.
+
+            MinerU is fast. The retry is for the failure mode the owner saw:
+            handwriting is there, but a row or column was dropped. Two different
+            complete reads are surfaced for review, never silently averaged.
+            """
+            block = item["block"]
+            path = Path(item["image_paths"][0])
+            expected = len([pair for pair in item["pairs"] if not pair.derived])
+            ink = _block_ink(alignment.image, alignment.template, block.bbox)
+            first_error = None
+            try:
+                reading = read_table_block(path, block.id)
+            except Exception as exc:
+                if ink < INK_MIN:
+                    raise
+                reading = None
+                first_error = exc
+            parsed = json.loads(reading.text or "{}") if reading is not None else {}
+            if len(parsed) >= expected or ink < INK_MIN:
+                return reading
+
+            retry_path = run_dir / f"block_{block.id}_retry2x.jpg"
+            image = cv2.imread(str(path))
+            retry = None
+            if image is not None:
+                image = cv2.resize(
+                    image, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC
+                )
+                align.save_jpeg(image, retry_path)
+                try:
+                    retry = read_table_block(retry_path, block.id)
+                except Exception:
+                    retry = None
+            if retry is None:
+                if reading is None and first_error is not None:
+                    raise first_error
+                return reading
+            parsed_retry = json.loads(retry.text or "{}")
+            if len(parsed_retry) > len(parsed):
+                reading = retry
+                parsed = parsed_retry
+            if (
+                parsed
+                and parsed_retry
+                and parsed != parsed_retry
+                and len(parsed) == len(parsed_retry)
+                and not block.id.startswith("visit")
+            ):
+                table_warnings.append(
+                    {
+                        "block_id": block.id,
+                        "pair_id": None,
+                        "message": (
+                            "Duas leituras MinerU diferentes para esta tabela. "
+                            "Confirme as células assinaladas e digitalize de novo."
+                        ),
+                    }
+                )
+            elif not parsed and not parsed_retry and not block.id.startswith("visit"):
+                table_warnings.append(
+                    {
+                        "block_id": block.id,
+                        "pair_id": None,
+                        "message": (
+                            "Há tinta nesta tabela mas nenhuma célula foi lida. "
+                            "Corrija a fotografia e digitalize de novo."
+                        ),
+                    }
+                )
+            return reading
+
         def process_group(items):
             """One profile group: its blocks in parallel, then persist each.
 
@@ -573,11 +666,7 @@ def run_card(
                     for item in items:
                         item["reader"] = True
                     futures = {
-                        pool.submit(
-                            read_table_block,
-                            Path(item["image_paths"][0]),
-                            item["block"].id,
-                        ): item
+                        pool.submit(read_table_checked, item): item
                         for item in items
                     }
                 else:
@@ -621,9 +710,24 @@ def run_card(
         # Tick groups: one strip per printed question, overriding the block values for the
         # tick fields. Measured 49/49 for strips against 30/35 for the block prompt.
         tick_values: dict = {}
+        tick_warnings: list[dict] = []
         if routing:
             tick_profile_id = routing_map.get("strips", profile_id)
             tick_profile = profiles_by_id.get(tick_profile_id, profile)
+            tick_ink: dict[str, list[float]] = {}
+            tick_spec = ticks.load_spec(
+                str(form["definition"].get("country", "mozambique")).lower(),
+                form_variant,
+            )
+            for group in ticks.groups(tick_spec):
+                tick_ink[group["concept"]] = [
+                    _block_ink(
+                        alignment.image,
+                        alignment.template,
+                        [x, y, x + w, y + h],
+                    )
+                    for x, y, w, h in group.get("bands", [])
+                ]
             try:
                 tick_values, tick_usage = ticks.read_ticks(
                     alignment.image,
@@ -632,6 +736,7 @@ def run_card(
                     tick_profile,
                     run_dir,
                     page=form_variant,
+                    ink_by_concept=tick_ink,
                 )
                 result["input_tokens"] += tick_usage["input_tokens"]
                 result["output_tokens"] += tick_usage["output_tokens"]
@@ -656,12 +761,17 @@ def run_card(
                 pair_id = (spec_groups.get(concept) or {}).get("pair")
                 if not pair_id:
                     continue
-                if entry["value"] is None and form_variant != "back":
-                    # On the front, no band read means the strip region is not
-                    # trustworthy; keep the block's own read. On the back the
-                    # reaction strips are the sole source, so a blank strip is a
-                    # real blank and must clear any block hallucination.
-                    continue
+                if entry.get("unreadable"):
+                    # Ink is inside a box but the strip did not resolve it. Do
+                    # not fall back to the block prompt; that is where the
+                    # invented ticks came from. Hold the field for review.
+                    tick_warnings.append(
+                        {
+                            "pair_id": pair_id,
+                            "block_id": (spec_groups.get(concept) or {}).get("block"),
+                            "message": "Caixa marcada mas não legível. Corrija e digitalize de novo.",
+                        }
+                    )
                 all_values[pair_id] = entry["value"]
                 pair = next((item for item in pairs if item.id == pair_id), None)
                 expected_row = truth.get(pair_id)
@@ -756,6 +866,50 @@ def run_card(
             country=form["definition"].get("country", "mozambique"),
             as_of=date.today(),
         )
+        if tick_warnings:
+            for warning in tick_warnings:
+                validation["issues"].append(
+                    {
+                        "pair_id": warning["pair_id"],
+                        "block_id": warning.get("block_id"),
+                        "kind": "tick_unreadable",
+                        "severity": "blocking",
+                        "audience": ["clinician"],
+                        "advice": warning["message"],
+                        "bbox": None,
+                    }
+                )
+            validation["blocking"] = sum(
+                1 for issue in validation["issues"] if issue["severity"] == "blocking"
+            )
+            validation["info"] = sum(
+                1 for issue in validation["issues"] if issue["severity"] == "info"
+            )
+            validation["status"] = "blocked" if validation["blocking"] else (
+                "review" if validation["info"] else "ok"
+            )
+        if table_warnings:
+            for warning in table_warnings:
+                validation["issues"].append(
+                    {
+                        "pair_id": warning.get("pair_id"),
+                        "block_id": warning.get("block_id"),
+                        "kind": "table_inconsistent",
+                        "severity": "blocking",
+                        "audience": ["clinician"],
+                        "advice": warning["message"],
+                        "bbox": None,
+                    }
+                )
+            validation["blocking"] = sum(
+                1 for issue in validation["issues"] if issue["severity"] == "blocking"
+            )
+            validation["info"] = sum(
+                1 for issue in validation["issues"] if issue["severity"] == "info"
+            )
+            validation["status"] = "blocked" if validation["blocking"] else (
+                "review" if validation["info"] else "ok"
+            )
         result["validation"] = validation
         (run_dir / "validation.json").write_text(
             json.dumps(validation, indent=2, ensure_ascii=False)
