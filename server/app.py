@@ -1097,6 +1097,31 @@ def get_review(run_id: str):
                 if row is not None and row.get("value") in (None, ""):
                     row["value"] = verdict["outcome"]
 
+    # What an earlier capture of the same case already had confirmed. On a
+    # re-scan only the new information is shown: a confirmed value that is read
+    # the same again is hidden, a confirmed value that changed stays visible.
+    confirmed_before: dict[str, str] = {}
+    if case_id is not None:
+        with connect() as conn:
+            earlier = conn.execute(
+                text(
+                    "SELECT DISTINCT ON (o.pair_id) o.pair_id, "
+                    "       COALESCE(o.reviewed_value, o.value) AS value "
+                    "  FROM observations o "
+                    "  JOIN runs r ON r.id = o.run_id "
+                    "  JOIN capture_pages p ON p.run_id = r.id "
+                    "  JOIN captures c ON c.id = p.capture_id "
+                    " WHERE c.case_id = :case_id AND r.id <> :run_id "
+                    "   AND o.review_mode IN ('accepted', 'corrected') "
+                    " ORDER BY o.pair_id, r.started_at DESC"
+                ),
+                {"case_id": case_id, "run_id": run_id},
+            ).mappings().all()
+        for row in earlier:
+            value = row["value"]
+            if value is not None and str(value).strip() != "":
+                confirmed_before[row["pair_id"]] = str(value).strip()
+
     layout = _ui_layout((form["definition"] or {}))
     hidden = set(layout.get("hidden") or [])
     dev_only = set(layout.get("dev_only") or [])
@@ -1174,8 +1199,19 @@ def get_review(run_id: str):
                     },
                     "issue": row_issue,
                     "dev_only": pair.id in dev_only,
+                    "confirmed": False,
                 }
             )
+            row = rows[-1]
+            before = confirmed_before.get(pair.id)
+            if before is not None:
+                read = str(row.get("reviewed_value") or row.get("value") or "").strip()
+                if read == before:
+                    row["confirmed"] = True
+                    row["confirmed_value"] = before
+                else:
+                    row["changed"] = True
+                    row["confirmed_value"] = before
             counts["total"] += 1
             mode = obs.get("review_mode")
             if mode in counts:
@@ -1190,6 +1226,7 @@ def get_review(run_id: str):
                 "pairs": rows,
                 "tables": tables_by_block.get(block.id, []),
                 "hidden_count": skipped_hidden,
+                "confirmed": bool(rows) and all(row["confirmed"] for row in rows),
                 # A section the model called empty can still hold normal-sensation
                 # ticks. The reviewer can confirm it was filled; that clears the
                 # section_filled issue instead of making them fight the model.

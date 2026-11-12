@@ -32,6 +32,42 @@ from .schema import (
 )
 
 
+def resolve_case(conn: Connection, case_id: uuid.UUID) -> uuid.UUID:
+    """Follow a merge pointer to the case that now holds the record."""
+    seen = set()
+    current = case_id
+    for _ in range(8):
+        if current in seen:
+            break
+        seen.add(current)
+        target = conn.execute(
+            select(cases.c.merged_into).where(cases.c.id == current)
+        ).scalar()
+        if target is None:
+            break
+        current = target
+    return current
+
+
+def merge_case(conn: Connection, from_id: uuid.UUID, into_id: uuid.UUID) -> None:
+    """Join a provisional case to the case its number belongs to.
+
+    The captures carry the pages and runs, so moving them is the whole merge.
+    The provisional row keeps the pointer so a phone holding its id still
+    resolves to the real case.
+    """
+    if from_id == into_id:
+        return
+    conn.execute(
+        update(captures).where(captures.c.case_id == from_id).values(case_id=into_id)
+    )
+    conn.execute(
+        update(cases)
+        .where(cases.c.id == from_id)
+        .values(merged_into=into_id, status="closed")
+    )
+
+
 def find_case(
     conn: Connection,
     *,
@@ -43,6 +79,8 @@ def find_case(
     """Find one case by id, HANNA number, NIL, or country + NIL."""
     if not any((case_id, hanna_number, government_id)):
         raise ValueError("find_case needs a case id, a HANNA number or a government id")
+    if case_id is not None:
+        case_id = resolve_case(conn, case_id)
     query = select(cases)
     if case_id is not None:
         query = query.where(cases.c.id == case_id)

@@ -565,6 +565,25 @@ async function maybeDecide() {
     );
   }
   const messages = (verdict.feedback || []).map((item) => item.message).filter(Boolean);
+
+  if (verdict.already_closed) {
+    // The card carries a number we already have and the case is closed. Nothing
+    // new is added; the answer is the number it already has.
+    (captureBody.runs || []).forEach((run) => {
+      const panel = document.getElementById(`run-${run.side}`);
+      if (panel) panel.querySelector("[data-link]").innerHTML = "";
+    });
+    const existing = identity.hanna_number;
+    if (existing) {
+      head.push(
+        `Caso já notificado. Número HANNA: <strong>${hannaDisplay(existing)}</strong>`
+      );
+    }
+    $("decision-message").innerHTML = head.concat(messages).join("<br>");
+    $("finalise").classList.add("hidden");
+    return;
+  }
+
   $("decision-message").innerHTML = head.concat(messages).join("<br>");
   if (verdict.can_allocate) $("finalise").classList.remove("hidden");
   else $("finalise").classList.add("hidden");

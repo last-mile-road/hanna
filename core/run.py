@@ -18,7 +18,7 @@ from typing import Any
 
 from sqlalchemy import delete, select, text, update
 
-from . import align, aliases, location, marks, normalise, settings, store, ticks
+from . import align, aliases, cases as case_store, location, marks, normalise, settings, store, ticks
 from .db import connect
 from .forms import Block, Pair
 from .inference import OpenRouter
@@ -819,6 +819,44 @@ def run_card(
                             "raw": mark["raw"],
                         },
                     )
+                    # A valid number that already belongs to a case means this
+                    # card was captured before: join that case instead of
+                    # keeping a second record of the same patient.
+                    if mark["valid"] and not conn.execute(
+                        text(
+                            "SELECT ca.hanna_number FROM capture_pages p "
+                            "JOIN captures c ON c.id = p.capture_id "
+                            "JOIN cases ca ON ca.id = c.case_id "
+                            "WHERE p.run_id = :run_id LIMIT 1"
+                        ),
+                        {"run_id": run_id},
+                    ).scalar():
+                        row = conn.execute(
+                            text(
+                                "SELECT c.case_id, ca.country_id FROM capture_pages p "
+                                "JOIN captures c ON c.id = p.capture_id "
+                                "JOIN cases ca ON ca.id = c.case_id "
+                                "WHERE p.run_id = :run_id LIMIT 1"
+                            ),
+                            {"run_id": run_id},
+                        ).mappings().first()
+                        target = None
+                        if row:
+                            target = conn.execute(
+                                text(
+                                    "SELECT id FROM cases WHERE country_id = :country_id "
+                                    "  AND hanna_number = :number AND id <> :case_id "
+                                    "  AND merged_into IS NULL"
+                                ),
+                                {
+                                    "country_id": row["country_id"],
+                                    "number": mark["value"],
+                                    "case_id": row["case_id"],
+                                },
+                            ).scalar()
+                        if target:
+                            case_store.merge_case(conn, row["case_id"], target)
+                            print(f"  case joined to {target} by number {mark['value']}")
                     conn.commit()
                 print(f"  card number: {mark['value']}"
                       f"{'' if mark['valid'] else ' (check digit failed)'}")

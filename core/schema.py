@@ -267,6 +267,10 @@ cases = Table(
     Column("outcome", String(32)),  # country-defined: completed, abandoned, died, ...
     Column("outcome_date", Date),
     Column("outcome_note", Text),
+    # A re-scan whose number matches a case that already exists joins that case.
+    # The provisional row stays only so an in-flight phone still resolves; every
+    # reader follows this pointer.
+    Column("merged_into", UUID(as_uuid=True), ForeignKey("cases.id", ondelete="SET NULL")),
     Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
     CheckConstraint(
         "hanna_number IS NULL OR hanna_number ~ '^[0-9]{9}$'",

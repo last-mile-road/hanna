@@ -21,6 +21,7 @@ from sqlalchemy.engine import Connection
 
 from . import settings
 from .caseid import format_number, is_valid
+from .cases import resolve_case
 
 TERMINAL = {"done", "partial", "failed"}
 CLOSED_CODES = {"released", "ltfu", "died", "misclassification", "other", "transferred"}
@@ -120,6 +121,8 @@ def decide_case(
 ) -> dict[str, Any]:
     """Return the case decision. Read-only; the caller persists a number or close."""
     as_of = as_of or date.today()
+    requested_id = case_id
+    case_id = resolve_case(conn, case_id)
     case = conn.execute(
         text(
             "SELECT id, country_id, government_id, hanna_number, status, classification, "
@@ -274,6 +277,8 @@ def decide_case(
                 }
             )
 
+    already_closed = bool(state == "closed" and identity_status == "existing_hanna")
+
     can_allocate = review_ready and not blocking
     feedback: list[dict[str, Any]] = []
     if not review_ready:
@@ -327,7 +332,19 @@ def decide_case(
                     ),
                 }
             )
-        if not blocking and state == "closed":
+        if already_closed and not blocking:
+            feedback.append(
+                {
+                    "kind": "already_closed",
+                    "severity": "info",
+                    "message": (
+                        "Este caso já foi notificado e está fechado"
+                        f"{' (' + format_number(number_read) + ')' if number_read else ''}. "
+                        "Não é acrescentada informação nova."
+                    ),
+                }
+            )
+        elif not blocking and state == "closed":
             feedback.append(
                 {
                     "kind": "closed",
@@ -346,6 +363,8 @@ def decide_case(
 
     return {
         "case_id": str(case_id),
+        "requested_case_id": str(requested_id),
+        "already_closed": already_closed,
         "review_ready": review_ready,
         "can_allocate": can_allocate,
         "state": state,

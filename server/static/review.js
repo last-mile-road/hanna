@@ -339,7 +339,10 @@ function render() {
     title.textContent = (data.block_titles || {})[block.id] || BLOCK_LABELS[block.id] || block.id;
     const count = document.createElement("span");
     count.className = "count";
-    count.textContent = `${block.pairs.length} campos`;
+    const fresh = block.pairs.filter((pair) => !pair.confirmed).length;
+    count.textContent = fresh === block.pairs.length
+      ? `${block.pairs.length} campos`
+      : `${fresh} novos de ${block.pairs.length}`;
     const reviewed = document.createElement("span");
     reviewed.className = "block-count";
     reviewed.dataset.blockCount = block.id;
@@ -383,8 +386,18 @@ function render() {
       section.appendChild(renderTable(table, block));
     });
     block.pairs
-      .filter((pair) => !inTable.has(pair.pair_id))
+      .filter((pair) => !inTable.has(pair.pair_id) && !pair.confirmed)
       .forEach((pair) => section.appendChild(renderPair(pair)));
+
+    if (block.confirmed) {
+      // Confirmed on an earlier capture and unchanged: not shown again. That is
+      // the point of a re-scan: only the new information appears.
+      const done = document.createElement("div");
+      done.className = "issue-note info";
+      done.textContent = "Confirmado numa captura anterior; não é mostrado outra vez.";
+      section.appendChild(done);
+      acceptAll.classList.add("hidden");
+    }
 
     acceptAll.addEventListener("click", () => {
       // A table's "Verificado" covers that table only. The complication flags and the
@@ -424,6 +437,12 @@ function renderPair(pair) {
   const label = document.createElement("span");
   label.className = "label";
   label.textContent = pair.label;
+  if (pair.changed) {
+    const changed = document.createElement("span");
+    changed.className = "badge review";
+    changed.textContent = `mudou · antes ${pair.confirmed_value ?? "—"}`;
+    top.appendChild(changed);
+  }
   const ok = document.createElement("button");
   ok.className = "ok";
   ok.textContent = "✓";
