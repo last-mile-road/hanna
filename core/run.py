@@ -18,7 +18,7 @@ from typing import Any
 
 from sqlalchemy import delete, select, text, update
 
-from . import align, aliases, location, normalise, settings, store, ticks
+from . import align, aliases, location, marks, normalise, settings, store, ticks
 from .db import connect
 from .forms import Block, Pair
 from .inference import OpenRouter
@@ -425,7 +425,7 @@ def run_card(
                 )
                 parsed = parse_json_response(
                     completion.text, [p.id for p in pairs_in_block]
-                )
+                ) or {}
                 if not parsed and pairs_in_block and not item.get("reader"):
                     # An empty answer is not a result. One retry, then say so out loud:
                     # the 13:48 card lost its whole demographics block this way and looked
@@ -439,7 +439,7 @@ def run_card(
                         )
                         parsed = parse_json_response(
                             retry.text, [p.id for p in pairs_in_block]
-                        )
+                        ) or {}
                         _apply_box_states(parsed, pairs_in_block)
                         if parsed:
                             block_values["retried"] = True
@@ -744,6 +744,84 @@ def run_card(
                          "run_id": run_id, "pair_id": pair_id},
                     )
                     conn.commit()
+
+        # The HANNA number written in the card margin after the first capture.
+        # It is the key to the case on every later capture, so it is read from
+        # the paper: typing it in is the step that gets forgotten. Same strategy
+        # as the ticks: one crop, white space, one easy answer.
+        if routing:
+            mark_profile_id = routing_map.get("strips", profile_id)
+            mark_profile = profiles_by_id.get(mark_profile_id, profile)
+            mark = None
+            candidates = [mark_profile]
+            fallback_id = routing_map.get("fallback")
+            if fallback_id and fallback_id != mark_profile_id and fallback_id in profiles_by_id:
+                candidates.append(profiles_by_id[fallback_id])
+            for candidate in candidates:
+                try:
+                    mark = marks.read_number(
+                        alignment.image,
+                        str(form["definition"].get("country", "mozambique")).lower(),
+                        form_variant,
+                        client_for(candidate),
+                        candidate,
+                        run_dir,
+                    )
+                    if mark:
+                        mark_profile = candidate
+                    break
+                except Exception as exc:  # the number is an aid, not a hard dependency
+                    print(f"  warning: card number not read ({candidate.get('id')}):",
+                          str(exc)[:160])
+            if mark and mark["value"]:
+                all_values["hanna_number"] = mark["value"]
+                result["input_tokens"] += mark["input_tokens"]
+                result["output_tokens"] += mark["output_tokens"]
+                result["cost_usd"] += mark["cost_usd"]
+                result["hanna_number_read"] = mark["value"]
+                with connect() as conn:
+                    block_run_id = conn.execute(
+                        text(
+                            "INSERT INTO block_runs (run_id, block_id, block_type, profile_id, "
+                            "  prompt_hash, prompt, raw_response, status, latency_ms, "
+                            "  input_tokens, output_tokens, crop_path) "
+                            "VALUES (:run_id, 'card_identity', 'mark', :profile_id, :hash, "
+                            "  :prompt, :raw, 'done', :latency, :in_tokens, :out_tokens, :crop) "
+                            "RETURNING id"
+                        ),
+                        {
+                            "run_id": run_id,
+                            "profile_id": mark_profile.get("id"),
+                            "hash": prompt_hash(
+                                mark["prompt"], mark_profile["model"], mark_profile["settings"]
+                            ),
+                            "prompt": mark["prompt"],
+                            "raw": mark["raw"],
+                            "latency": mark["latency_ms"],
+                            "in_tokens": mark["input_tokens"] or None,
+                            "out_tokens": mark["output_tokens"] or None,
+                            "crop": str(mark["path"]),
+                        },
+                    ).scalar_one()
+                    conn.execute(
+                        text(
+                            "INSERT INTO observations (run_id, block_run_id, block_id, pair_id, "
+                            "  concept_id, value, raw_value) "
+                            "VALUES (:run_id, :block_run_id, 'card_identity', 'hanna_number', "
+                            "  'hanna_number', :value, :raw) "
+                            "ON CONFLICT (run_id, pair_id) DO UPDATE "
+                            "SET value = excluded.value, raw_value = excluded.raw_value"
+                        ),
+                        {
+                            "run_id": run_id,
+                            "block_run_id": block_run_id,
+                            "value": mark["value"],
+                            "raw": mark["raw"],
+                        },
+                    )
+                    conn.commit()
+                print(f"  card number: {mark['value']}"
+                      f"{'' if mark['valid'] else ' (check digit failed)'}")
 
         # The back REACÇÕES section is ten signs; the headline the clinician needs
         # is "was a reaction diagnosed". Derive it from the signs, not a new model

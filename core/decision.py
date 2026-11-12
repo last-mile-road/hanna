@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import calendar
 import fnmatch
+import re
 import uuid
 from datetime import date, datetime
 from typing import Any
@@ -19,6 +20,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 from . import settings
+from .caseid import format_number, is_valid
 
 TERMINAL = {"done", "partial", "failed"}
 CLOSED_CODES = {"released", "ltfu", "died", "misclassification", "other", "transferred"}
@@ -200,11 +202,40 @@ def decide_case(
     if state == "in_treatment" and not effective_outcome:
         effective_outcome = default_outcome
 
+    # The number is read from the card margin. The write space sits just above
+    # the NIL row, so the block model sometimes reads it as the NIL instead;
+    # a NIL that is a valid nine-digit HANNA number is taken as the number.
+    number_read = readings.get("hanna_number")
+    number_source = "margin" if number_read else None
+    nil_read = readings.get("patient_id")
+    nil_digits = re.sub(r"\D", "", str(nil_read or ""))
+    if not number_read and len(nil_digits) == 9 and is_valid(nil_digits):
+        number_read = nil_digits
+        number_source = "nil_field"
+    same_as_nil = bool(
+        number_read and len(nil_digits) == 9 and nil_digits == number_read
+    )
+
     identity_status = "new"
-    if case.get("hanna_number") or readings.get("hanna_number"):
+    if case.get("hanna_number") or number_read:
         identity_status = "existing_hanna"
     elif case.get("government_id") or readings.get("patient_id"):
         identity_status = "known_nil"
+
+    # A number read from the card may already belong to another case: the same
+    # patient photographed again after the first number was written. Name it,
+    # so the capture can be joined to that case instead of held as a new one.
+    match_case = None
+    if number_read:
+        row = conn.execute(
+            text(
+                "SELECT id, hanna_number FROM cases "
+                " WHERE country_id = :country_id AND hanna_number = :number AND id <> :case_id"
+            ),
+            {"country_id": case["country_id"], "number": number_read, "case_id": case_id},
+        ).mappings().first()
+        if row:
+            match_case = str(row["id"])
 
     blocking: list[dict[str, Any]] = []
     if review_ready:
@@ -262,6 +293,40 @@ def decide_case(
                     "message": item.get("message") or "Condição bloqueante.",
                 }
             )
+        if number_source == "nil_field":
+            feedback.append(
+                {
+                    "kind": "hanna_number_in_nil",
+                    "severity": "info",
+                    "message": (
+                        "O número HANNA foi lido no campo NIL, porque está escrito "
+                        "logo acima dele. Confirme o NIL na revisão."
+                    ),
+                }
+            )
+        if number_read and not is_valid(number_read):
+            feedback.append(
+                {
+                    "kind": "hanna_number_invalid",
+                    "severity": "info",
+                    "message": (
+                        f"O número escrito no cartão ({format_number(number_read)}) não "
+                        "passa o dígito de controlo. Confirme os dígitos."
+                    ),
+                }
+            )
+        if match_case:
+            feedback.append(
+                {
+                    "kind": "hanna_number_exists",
+                    "severity": "info",
+                    "message": (
+                        f"Este número já pertence a outro caso "
+                        f"({format_number(number_read)}). A captura deve juntar-se a esse "
+                        "caso, não criar um novo."
+                    ),
+                }
+            )
         if not blocking and state == "closed":
             feedback.append(
                 {
@@ -287,8 +352,18 @@ def decide_case(
         "status": "blocked" if blocking else ("closed" if state == "closed" else state),
         "identity": {
             "status": identity_status,
-            "government_id": readings.get("patient_id") or case.get("government_id"),
-            "hanna_number": readings.get("hanna_number") or case.get("hanna_number"),
+            "government_id": (
+                None
+                if same_as_nil
+                else (readings.get("patient_id") or case.get("government_id"))
+            ),
+            "hanna_number": number_read or case.get("hanna_number"),
+            "number_read": number_read,
+            "number_source": number_source,
+            "number_valid": (
+                is_valid(number_read) if number_read else None
+            ),
+            "match_case_id": match_case,
         },
         "classification": classification or None,
         "duration_months": duration,

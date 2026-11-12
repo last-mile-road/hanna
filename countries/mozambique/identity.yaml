@@ -1,0 +1,26 @@
+# Marks written by the clinic on the card itself, outside the printed fields.
+#
+# The HANNA number is written after the first capture and is the key to the case
+# on every later capture. It goes in the blank top margin of the front, above
+# the NIL block. The back has no usable margin (alignment crops to the printed
+# frame), so the front is the side that is read.
+hanna_number:
+  concept: hanna_number
+  page: front
+  # x, y, width, height on template.jpg (3332 x 2502). Left of the printed
+  # title, above the NIL row.
+  strip: [0, 0, 3332, 205]
+  pad: 24
+  upscale: 1.5
+  prompt: |
+    This image is the empty top margin of a leprosy clinic card.
+
+    A nine-digit number may be handwritten here, usually in three groups of
+    three digits, for example 789-731-320.
+
+    Read only the handwritten number. Ignore printed text, logos, the card
+    title and every printed box.
+
+    Return one JSON object and nothing else:
+    {"number": "789731320"} when a handwritten nine-digit number is visible,
+    {"number": null} when the margin is empty or the digits cannot be read.

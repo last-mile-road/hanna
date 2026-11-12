@@ -483,15 +483,30 @@ function watchRun(run, panel) {
 async function pollRun(run, panel) {
   const statusEl = panel.querySelector("[data-status]");
   const detailEl = panel.querySelector("[data-detail]");
+  let misses = 0;
   for (;;) {
     let data;
     try {
       const response = await fetch(`/api/runs/${run.run_id}`, { cache: "no-store" });
       if (!response.ok) throw new Error("poll");
       data = await response.json();
+      misses = 0;
     } catch {
-      detailEl.textContent = "Sem ligação ao servidor.";
-      return;
+      // A phone on mobile data loses the connection for a few seconds at a
+      // time. Keep polling: the run carries on on the server. Give up only
+      // after five minutes without an answer.
+      misses += 1;
+      detailEl.textContent =
+        misses < 15
+          ? "A reconectar…"
+          : "Sem ligação ao servidor. A tentar de novo…";
+      if (misses >= 150) {
+        detailEl.textContent =
+          "Sem ligação ao servidor. Verifique a rede e recarregue a página.";
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      continue;
     }
     const done = data.blocks_done || 0;
     detailEl.textContent = data.status === "queued" ? "Em fila" : `${done} blocos`;
@@ -507,18 +522,30 @@ async function pollRun(run, panel) {
   }
 }
 
+function hannaDisplay(number) {
+  const digits = String(number || "").replace(/\D/g, "");
+  if (digits.length !== 9) return digits;
+  return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+}
+
 async function maybeDecide() {
   if (!captureBody) return;
   if (Object.keys(runStates).length !== (captureBody.runs || []).length) return;
   let verdict;
-  try {
-    const response = await fetch(`/api/cases/${captureBody.case_id}/decision`, { cache: "no-store" });
-    if (!response.ok) throw new Error("decision");
-    verdict = await response.json();
-  } catch {
-    $("case-decision").classList.remove("hidden");
-    $("decision-message").textContent = "A decisão do caso não está disponível. Recarregue a página.";
-    return;
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      const response = await fetch(`/api/cases/${captureBody.case_id}/decision`, { cache: "no-store" });
+      if (!response.ok) throw new Error("decision");
+      verdict = await response.json();
+      break;
+    } catch {
+      if (attempt >= 5) {
+        $("case-decision").classList.remove("hidden");
+        $("decision-message").textContent = "A decisão do caso não está disponível. Recarregue a página.";
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
   }
   $("case-decision").classList.remove("hidden");
   (captureBody.runs || []).forEach((run) => {
@@ -529,8 +556,16 @@ async function maybeDecide() {
       ? `<a href="/review?run=${run.run_id}&from=capture" target="_blank" rel="noopener">Rever valores</a>`
       : "";
   });
+  const identity = verdict.identity || {};
+  const head = [];
+  if (identity.number_read) {
+    head.push(
+      `Número HANNA lido no cartão: <strong>${hannaDisplay(identity.number_read)}</strong>` +
+        (identity.number_valid === false ? " · dígito de controlo inválido" : "")
+    );
+  }
   const messages = (verdict.feedback || []).map((item) => item.message).filter(Boolean);
-  $("decision-message").innerHTML = messages.join("<br>");
+  $("decision-message").innerHTML = head.concat(messages).join("<br>");
   if (verdict.can_allocate) $("finalise").classList.remove("hidden");
   else $("finalise").classList.add("hidden");
 }
@@ -555,7 +590,7 @@ async function finalise() {
     $("number-note").textContent = body.detail || "Ainda não é possível atribuir o número.";
     return;
   }
-  $("number-note").innerHTML = `Número HANNA: <strong>${body.hanna_number_display}</strong><br><span class="hint">Escreva-o no cartão: frente, no espaço acima do bloco NIL; verso, acima do primeiro bloco de seguimento.</span>`;
+  $("number-note").innerHTML = `Número HANNA: <strong>${body.hanna_number_display}</strong><br><span class="hint">Escreva-o no cartão, na frente, no canto superior esquerdo, acima do bloco NIL. Depois digitalize outra vez: o número é lido daí.</span>`;
   $("btn-finalise").classList.add("hidden");
 }
 
