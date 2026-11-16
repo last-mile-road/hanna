@@ -4,6 +4,8 @@
 const $ = (id) => document.getElementById(id);
 const runId = new URLSearchParams(location.search).get("run");
 const from = new URLSearchParams(location.search).get("from");
+const otherRun = new URLSearchParams(location.search).get("other");
+const otherSide = new URLSearchParams(location.search).get("otherside");
 
 const BLOCK_LABELS = {
   general_demographic: "Identificação",
@@ -184,13 +186,42 @@ function openPicker(location, onSaved) {
 
   const zoom = location.level === "facility" || location.level === "locality" ? 16 : 13;
   const map = L.map(mapElement).setView([location.lat, location.lon], zoom);
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "&copy; OpenStreetMap",
+  const look = MAP_STYLES[mapStyle] || MAP_STYLES.map;
+  L.tileLayer(look.url, {
+    attribution: look.attribution,
     maxZoom: 19,
+    ...(look.labels ? { labels: look.labels } : {}),
   }).addTo(map);
+  if (look.labels) {
+    L.tileLayer(look.labels, { opacity: 0.9, maxZoom: 19 }).addTo(map);
+  }
   const marker = L.marker([location.lat, location.lon], { draggable: true }).addTo(map);
   setTimeout(() => map.invalidateSize(), 50);
 }
+
+// The same point, three looks. A satellite view is the only way to see the
+// houses in a rural area; the topographic style carries more place names than
+// the sparse standard style.
+const MAP_STYLES = {
+  map: {
+    label: "Mapa",
+    url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attribution: "© OpenStreetMap contributors",
+  },
+  terrain: {
+    label: "Terreno",
+    url: "https://tile.opentopomap.org/{z}/{x}/{y}.png",
+    attribution: "© OpenStreetMap · SRTM · OpenTopoMap (CC-BY-SA)",
+  },
+  satellite: {
+    label: "Satélite",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    labels: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+    attribution: "© Esri, Maxar, Earthstar Geographics",
+  },
+};
+let mapStyle = localStorage.getItem("hanna-map-style") || "map";
+if (!MAP_STYLES[mapStyle]) mapStyle = "map";
 
 function renderLocation() {
   const loc = data.location;
@@ -222,12 +253,43 @@ function renderLocation() {
   const hasPoint = loc.lat !== null && loc.lat !== undefined
     && loc.lon !== null && loc.lon !== undefined;
   if (hasPoint) {
+    const point = `${loc.review?.lat ?? loc.lat},${loc.review?.lon ?? loc.lon}`;
     const map = document.createElement("img");
     map.className = "locmap";
     map.alt = "Mapa da localização";
-    const point = `${loc.review?.lat ?? loc.lat},${loc.review?.lon ?? loc.lon}`;
-    map.src = `/api/runs/${runId}/map.png?v=${point}`;
+    const drawMap = () => {
+      map.src = `/api/runs/${runId}/map.png?style=${mapStyle}&v=${point}`;
+    };
+
+    const styles = document.createElement("div");
+    styles.className = "map-styles";
+    Object.entries(MAP_STYLES).forEach(([key, cfg]) => {
+      const button = document.createElement("button");
+      button.className = "mini";
+      button.textContent = cfg.label;
+      button.setAttribute("aria-pressed", String(key === mapStyle));
+      if (key === mapStyle) button.classList.add("accept");
+      button.addEventListener("click", () => {
+        mapStyle = key;
+        localStorage.setItem("hanna-map-style", key);
+        styles.querySelectorAll("button").forEach((item) => {
+          const on = item.textContent === MAP_STYLES[mapStyle].label;
+          item.classList.toggle("accept", on);
+          item.setAttribute("aria-pressed", String(on));
+        });
+        caption.textContent = MAP_STYLES[mapStyle].attribution;
+        drawMap();
+      });
+      styles.appendChild(button);
+    });
+    const caption = document.createElement("p");
+    caption.className = "locmeta";
+    caption.textContent = MAP_STYLES[mapStyle].attribution;
+
+    drawMap();
+    section.appendChild(styles);
     section.appendChild(map);
+    section.appendChild(caption);
   }
 
   const instruction = document.createElement("p");
@@ -797,6 +859,34 @@ function updateProgress() {
     });
   });
   $("progress").textContent = `${done} de ${total} revistos`;
+}
+
+function showNextStep() {
+  const thisSide = otherSide === "back" ? "front" : "back";
+  const box = $("next-step");
+  const actions = $("next-step-actions");
+  actions.innerHTML = "";
+  const label = otherSide === "back" ? "Rever o verso"
+    : otherSide === "front" ? "Rever a frente" : "Rever o outro lado";
+  if (otherRun) {
+    const next = document.createElement("a");
+    next.className = "primary";
+    next.href = `/review?run=${otherRun}&from=capture${
+      runId ? `&other=${runId}&otherside=${thisSide}` : ""
+    }`;
+    next.textContent = label;
+    actions.appendChild(next);
+  }
+  const back = document.createElement("a");
+  back.className = "secondary";
+  back.href = "/capture";
+  back.textContent = "Voltar à captura";
+  actions.appendChild(back);
+  $("next-step-note").textContent = otherRun
+    ? "Esta página pode ficar aberta. O outro lado tem a sua própria revisão."
+    : "As duas páginas estão revistas. Volte à captura para finalizar.";
+  box.classList.remove("hidden");
+  box.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 $("finish").addEventListener("click", async () => {

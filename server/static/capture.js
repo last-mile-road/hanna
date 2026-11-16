@@ -424,7 +424,10 @@ function startProgress(body) {
     panel.innerHTML = `
       <h2><span>${run.side === "front" ? "Frente" : "Verso"}</span><span class="badge review" data-status>Em fila</span></h2>
       <p class="muted" data-detail>0 blocos</p>
-      <p class="muted" data-link></p>`;
+      <div class="run-review hidden" data-review>
+        <span class="badge review" data-review-badge>Por rever</span>
+        <a class="btn-review" data-link href="#" target="_blank" rel="noopener">Rever valores</a>
+      </div>`;
     wrap.appendChild(panel);
     watchRun(run, panel);
   });
@@ -456,6 +459,7 @@ function watchRun(run, panel) {
     const total = data.blocks_done ? `${data.blocks_done} blocos` : "leitura terminada";
     detailEl.textContent = `${total}${data.error ? " · " + data.error : ""}`;
     runStates[run.side] = data;
+    revealReview(panel, data);
     maybeDecide();
   };
 
@@ -478,6 +482,32 @@ function watchRun(run, panel) {
   es.onerror = () => {
     if (!gotAny) { es.close(); pollRun(run, panel); }
   };
+}
+
+/* The review link is the next step after the reading, so it is a full-width
+   button, and its badge says whether the side has been reviewed yet. */
+function revealReview(panel, data) {
+  const wrap = panel.querySelector("[data-review]");
+  if (!wrap) return;
+  wrap.classList.remove("hidden");
+  const finished = Boolean(data.review && data.review.finished);
+  const badge = wrap.querySelector("[data-review-badge]");
+  const link = wrap.querySelector("[data-link]");
+  const armed = link.getAttribute("href") && link.getAttribute("href") !== "#";
+  link.classList.toggle("waiting", !armed);
+  wrap.classList.toggle("confirmed", finished);
+  if (finished) {
+    badge.textContent = "Confirmado";
+    badge.className = "badge ok";
+    link.textContent = "Ver valores";
+    link.classList.add("secondary-link");
+  } else {
+    const done = data.review ? `${data.review.reviewed} de ${data.review.total} campos` : "";
+    badge.textContent = done ? `Por rever · ${done}` : "Por rever";
+    badge.className = "badge review";
+    link.textContent = armed ? "Rever valores" : "A preparar a revisão…";
+    link.classList.remove("secondary-link");
+  }
 }
 
 async function pollRun(run, panel) {
@@ -515,6 +545,7 @@ async function pollRun(run, panel) {
       statusEl.textContent = validation;
       statusEl.className = `badge ${validation}`;
       runStates[run.side] = data;
+      revealReview(panel, data);
       maybeDecide();
       return;
     }
@@ -551,10 +582,16 @@ async function maybeDecide() {
   (captureBody.runs || []).forEach((run) => {
     const panel = document.getElementById(`run-${run.side}`);
     if (!panel) return;
+    const other = (captureBody.runs || []).find((item) => item.side !== run.side);
     const link = panel.querySelector("[data-link]");
-    link.innerHTML = verdict.review_ready
-      ? `<a href="/review?run=${run.run_id}&from=capture" target="_blank" rel="noopener">Rever valores</a>`
-      : "";
+    if (!verdict.review_ready) {
+      link.removeAttribute("href");
+      return;
+    }
+    link.href = `/review?run=${run.run_id}&from=capture${
+      other ? `&other=${other.run_id}&otherside=${other.side}` : ""
+    }`;
+    if (runStates[run.side]) revealReview(panel, runStates[run.side]);
   });
   const identity = verdict.identity || {};
   const head = [];
@@ -571,7 +608,8 @@ async function maybeDecide() {
     // new is added; the answer is the number it already has.
     (captureBody.runs || []).forEach((run) => {
       const panel = document.getElementById(`run-${run.side}`);
-      if (panel) panel.querySelector("[data-link]").innerHTML = "";
+      const review = panel && panel.querySelector("[data-review]");
+      if (review) review.classList.add("hidden");
     });
     const existing = identity.hanna_number;
     if (existing) {
@@ -584,9 +622,46 @@ async function maybeDecide() {
     return;
   }
 
+  // Finalising is the last step: the number is only offered once both sides
+  // have been looked at. Until then the review buttons are the next action.
+  const reviewed = (captureBody.runs || []).every(
+    (run) => runStates[run.side] && runStates[run.side].review && runStates[run.side].review.finished
+  );
+  if (verdict.can_allocate && !reviewed) {
+    head.push("Reveja a frente e o verso para poder finalizar.");
+  }
   $("decision-message").innerHTML = head.concat(messages).join("<br>");
-  if (verdict.can_allocate) $("finalise").classList.remove("hidden");
+  if (verdict.can_allocate && reviewed) $("finalise").classList.remove("hidden");
   else $("finalise").classList.add("hidden");
+  if (verdict.can_allocate && !reviewed) watchReviews();
+}
+
+/* The review opens in another tab. Poll the two runs until both are reviewed,
+   so the Finalizar button appears on this screen without a reload. */
+let reviewWatch = null;
+function watchReviews() {
+  if (reviewWatch) return;
+  reviewWatch = setInterval(async () => {
+    let finished = true;
+    for (const run of captureBody.runs || []) {
+      try {
+        const response = await fetch(`/api/runs/${run.run_id}`, { cache: "no-store" });
+        if (!response.ok) throw new Error("poll");
+        const data = await response.json();
+        runStates[run.side] = data;
+        const panel = document.getElementById(`run-${run.side}`);
+        if (panel) revealReview(panel, data);
+        if (!(data.review && data.review.finished)) finished = false;
+      } catch {
+        finished = false;
+      }
+    }
+    maybeDecide();
+    if (finished) {
+      clearInterval(reviewWatch);
+      reviewWatch = null;
+    }
+  }, 4000);
 }
 
 $("btn-finalise").addEventListener("click", finalise);

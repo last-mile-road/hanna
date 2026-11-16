@@ -58,6 +58,47 @@ def observation_rows(conn: Connection, run_id: str) -> list[dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
+def review_progress(conn: Connection, run_id: str) -> dict[str, Any]:
+    """How much of this run a human has decided: accepted, corrected or skipped.
+
+    Only pairs the review screen shows count. Location fields, the HANNA number
+    and the dev-only fields (the NIL, the internal notes) never appear there, so
+    requiring a decision on them would leave the run permanently unfinished.
+    """
+    from core import uischema
+
+    row = conn.execute(
+        text(
+            "SELECT r.form_id, f.definition "
+            "  FROM runs r JOIN forms f ON f.id = r.form_id "
+            " WHERE r.id = CAST(:run_id AS uuid)"
+        ),
+        {"run_id": run_id},
+    ).mappings().first()
+    if row is None:
+        return {"reviewed": 0, "total": 0, "finished": False}
+    layout = uischema.layout(row["definition"])
+    # Fields the screen never shows: the location block (confirmed on a map) and
+    # the developer-only detail. A reviewer cannot decide them, so they cannot
+    # hold the run open.
+    skipped = list(layout.get("dev_only") or []) + list(layout.get("hidden") or [])
+
+    counts = conn.execute(
+        text(
+            "SELECT count(*) AS total, "
+            "       count(*) FILTER (WHERE o.review_mode IS NOT NULL) AS reviewed "
+            "  FROM observations o "
+            "  JOIN form_pairs fp ON fp.form_id = :form_id AND fp.pair_id = o.pair_id "
+            " WHERE o.run_id = CAST(:run_id AS uuid) "
+            "   AND NOT (o.pair_id = ANY(:dev_only))"
+        ),
+        {"run_id": run_id, "form_id": row["form_id"], "dev_only": skipped},
+    ).mappings().one()
+    total = int(counts["total"] or 0)
+    reviewed = int(counts["reviewed"] or 0)
+    return {"reviewed": reviewed, "total": total, "finished": total > 0 and reviewed >= total}
+
+
 def snapshot(conn: Connection, run_id: str) -> dict[str, Any] | None:
     run = run_row(conn, run_id)
     if run is None:
@@ -84,6 +125,7 @@ def snapshot(conn: Connection, run_id: str) -> dict[str, Any] | None:
         "error": run["error"],
         "blocks": blocks,
         "blocks_done": len(blocks),
+        "review": review_progress(conn, run_id),
     }
 
 

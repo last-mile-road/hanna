@@ -49,6 +49,16 @@
   .run-panel h2 { font-size: 1rem; margin: 0 0 .3rem; display: flex; justify-content: space-between; gap: .5rem; }
   .run-panel .muted { color: var(--muted); font-size: .88rem; }
   .run-panel a { color: var(--accent); }
+  .run-review { display: flex; align-items: center; gap: .6rem; margin-top: .5rem; flex-wrap: wrap; }
+  .run-review .badge { flex: none; }
+  .btn-review {
+    display: inline-block; padding: .6rem 1rem; border-radius: .45rem;
+    background: var(--accent); color: var(--accent-ink); font-weight: 700;
+    text-decoration: none; text-align: center; flex: 1 1 10rem;
+  }
+  .run-review.confirmed { opacity: .75; }
+  .btn-review.secondary-link { background: transparent; color: var(--accent); border: 1px solid var(--accent); font-weight: 600; }
+  .btn-review.waiting { opacity: .55; pointer-events: none; }
   @media (orientation: landscape) and (max-height: 34rem) {
     .capture-wrap { display: flex; gap: .8rem; align-items: flex-start; }
     .stage.a4 { flex: 1 1 auto; height: 72vh; max-height: 72vh; aspect-ratio: auto; }
@@ -177,6 +187,6 @@
 </main>
 
 <footer><span id="net"></span></footer>
-<script src="/static/capture.js?v=9"></script>
+<script src="/static/capture.js?v=11"></script>
 </body>
 </html>

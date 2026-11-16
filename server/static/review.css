@@ -121,3 +121,35 @@ body.blocked-only .section:not(.has-blocking-section) { display: none; }
 .has-blocking .pair-top .label { color: var(--bad); font-weight: 600; }
 #blocking-banner { color: var(--bad); font-weight: 600; margin: .2rem 0 .6rem; }
 body.blocked-only .mini.accept { display: none; }
+
+/* After a side is finished, the next step is a button, not the browser back
+   button. The reviewer either goes straight to the other side or returns to the
+   capture screen where the two sides are listed. */
+.next-step {
+  margin: 1rem auto 2.5rem;
+  max-width: 54rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: .6rem;
+  background: var(--card);
+}
+.next-step-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+.next-step-actions a,
+.next-step-actions button {
+  flex: 1 1 12rem;
+  text-align: center;
+  padding: .7rem 1rem;
+  border-radius: .45rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.next-step-actions .primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
+}
+.next-step-actions .secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}

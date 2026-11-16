@@ -859,8 +859,12 @@ def run_image(run_id: str, kind: str, sig: str = Query(...)):
 
 
 @app.get("/api/runs/{run_id}/map.png")
-def run_map(run_id: str):
-    """The review map: a static PNG so the coordinate never reaches the phone's tile client."""
+def run_map(run_id: str, style: str = "map"):
+    """The review map: a static PNG so the coordinate never reaches the phone's tile client.
+
+    `style` is map (OSM), terrain (OpenTopoMap) or satellite (Esri imagery). The
+    same point, three looks; the coordinate never leaves this call.
+    """
     from core import mapimage
 
     run_id = _uuid(run_id)
@@ -877,8 +881,11 @@ def run_map(run_id: str):
     lat, lon = float(location["lat"]), float(location["lon"])
     # The point moves when a reviewer corrects it, so the file name has to follow it;
     # a single map.png would keep serving the old picture from cache.
-    digest = hashlib.sha256(f"{lat:.5f},{lon:.5f},{reviewed}".encode()).hexdigest()[:10]
-    out = settings.OUTPUT_DIR / "runs" / run_id / f"map-{digest}.png"
+    style = style if style in mapimage.STYLES else "map"
+    digest = hashlib.sha256(
+        f"{lat:.5f},{lon:.5f},{reviewed},{style}".encode()
+    ).hexdigest()[:10]
+    out = settings.OUTPUT_DIR / "runs" / run_id / f"map-{style}-{digest}.png"
     path = mapimage.compose(
         lat=lat,
         lon=lon,
@@ -886,6 +893,7 @@ def run_map(run_id: str):
         out=out,
         cache=settings.OUTPUT_DIR / "tiles",
         reviewed=reviewed,
+        style=style,
     )
     return FileResponse(path, media_type="image/png", headers={"Cache-Control": "no-store"})
 
@@ -1018,23 +1026,10 @@ _UI_LAYOUT: dict[str, dict] = {}
 
 
 def _ui_layout(form_definition: dict) -> dict:
-    """How the review screen lays this form out.
+    """How the review screen lays this form out (see core.uischema)."""
+    from core import uischema
 
-    Per form variant first (ui.<variant>.yaml — the back card has no map and
-    different sections), then the country default (ui.yaml).
-    """
-    import yaml
-
-    country = form_definition.get("country", "mozambique")
-    variant = form_definition.get("variant") or "draft"
-    key = f"{country}:{variant}"
-    if key not in _UI_LAYOUT:
-        directory = settings.COUNTRIES_DIR / country
-        variant_path = directory / f"ui.{variant}.yaml"
-        default_path = directory / "ui.yaml"
-        path = variant_path if variant_path.exists() else default_path
-        _UI_LAYOUT[key] = yaml.safe_load(path.read_text()) if path.exists() else {}
-    return _UI_LAYOUT[key]
+    return uischema.layout(form_definition)
 
 
 def _template_size(path: str) -> tuple[int, int]:

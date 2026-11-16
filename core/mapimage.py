@@ -22,23 +22,46 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
 TILE_UA = "HANNA/0.1 (leprosy clinic card review; contact: last-mile-road)"
 TILE_SIZE = 256
+
+# Three looks over the same point. The OSM standard style is sparse where the
+# map data is sparse, which is most of rural Mozambique; the topographic style
+# carries more place names and the satellite view shows the houses themselves.
+TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+LABEL_TILE_URL = "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+STYLES = {
+    "map": {
+        "url": TILE_URL,
+        "attribution": "© OpenStreetMap contributors",
+    },
+    "terrain": {
+        "url": "https://tile.opentopomap.org/{z}/{x}/{y}.png",
+        "attribution": "© OpenStreetMap · SRTM · OpenTopoMap (CC-BY-SA)",
+    },
+    "satellite": {
+        "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        # The imagery alone has no place names; the reference layer adds them.
+        "labels": LABEL_TILE_URL,
+        "attribution": "© Esri, Maxar, Earthstar Geographics",
+    },
+}
+DEFAULT_STYLE = "map"
 WIDTH, HEIGHT = 720, 380
 RING_FRACTION = 0.34          # ring radius as a share of the shorter side
 TILE_CACHE: Path | None = None
 
 
-def _tile(z: int, x: int, y: int, cache: Path | None) -> Image.Image | None:
+def _tile(z: int, x: int, y: int, cache: Path | None,
+          url: str = TILE_URL, key: str = "", rgba: bool = False) -> Image.Image | None:
     if cache is not None:
-        path = cache / str(z) / str(x) / f"{y}.png"
+        path = cache / key / str(z) / str(x) / f"{y}.png" if key else cache / str(z) / str(x) / f"{y}.png"
         if path.exists():
             try:
-                return Image.open(path).convert("RGB")
+                return Image.open(path).convert("RGBA" if rgba else "RGB")
             except OSError:
                 pass
-    request = urllib.request.Request(TILE_URL.format(z=z, x=x, y=y),
+    request = urllib.request.Request(url.format(z=z, x=x, y=y),
                                      headers={"User-Agent": TILE_UA})
     try:
         with urllib.request.urlopen(request, timeout=6) as response:
@@ -46,19 +69,25 @@ def _tile(z: int, x: int, y: int, cache: Path | None) -> Image.Image | None:
         if cache is not None:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
-        return Image.open(io.BytesIO(data)).convert("RGB")
+        return Image.open(io.BytesIO(data)).convert("RGBA" if rgba else "RGB")
     except Exception:  # noqa: BLE001 - a missing tile must not fail the picture
         return None
 
 
 def _zoom_for(lat: float, radius_m: float, pixels: int) -> int:
-    """Pick the zoom at which the ring covers `pixels` across."""
-    target = max(40.0, radius_m) * 2.4          # ring plus context
-    for zoom in range(18, 2, -1):
-        metres_per_pixel = 156543.03392 * math.cos(math.radians(lat)) / (2 ** zoom)
-        if target / metres_per_pixel >= pixels:
-            return zoom
-    return 3
+    """Pick the zoom at which the ring's radius covers `pixels` on screen.
+
+    Drawing the ring at a fixed pixel size says nothing unless the ground scale
+    matches it: at zoom 18 a 1.5 km ring covers almost nothing and the picture is
+    a wall of empty green. The zoom follows from the radius.
+    """
+    radius_m = max(40.0, radius_m)
+    metres_per_pixel = radius_m / max(1, pixels) * 1.15   # a little context
+    scale = 156543.03392 * math.cos(math.radians(lat))
+    if metres_per_pixel <= 0:
+        return 3
+    zoom = int(round(math.log2(scale / metres_per_pixel)))
+    return max(3, min(17, zoom))
 
 
 def _world_px(lat: float, lon: float, zoom: int) -> tuple[float, float]:
@@ -81,13 +110,18 @@ def _fallback(lat: float, lon: float, radius_px: int) -> Image.Image:
 
 
 def compose(lat: float, lon: float, radius_m: float, out: Path,
-            cache: Path | None = None, reviewed: bool = False) -> Path:
+            cache: Path | None = None, reviewed: bool = False,
+            style: str = DEFAULT_STYLE) -> Path:
     """Write a PNG centred on the point.
 
     `reviewed`: a person moved the pin. The ring is a statement about the gazetteer's
     uncertainty, and it stops being true the moment a human corrects the point, so it is
     not drawn. The caller labels the pin as reviewer-placed instead.
+
+    `style`: map (OSM), terrain (OpenTopoMap) or satellite (Esri imagery with a
+    place-name overlay). An unknown style falls back to the map.
     """
+    spec = STYLES.get(style) or STYLES[DEFAULT_STYLE]
     out.parent.mkdir(parents=True, exist_ok=True)
     if out.exists():
         return out
@@ -105,11 +139,18 @@ def compose(lat: float, lon: float, radius_m: float, out: Path,
     tiles = 0
     for tx in range(first_tile[0], last_tile[0] + 1):
         for ty in range(first_tile[1], last_tile[1] + 1):
-            tile = _tile(zoom, tx % (2 ** zoom), ty, cache)
+            tile = _tile(zoom, tx % (2 ** zoom), ty, cache,
+                         spec["url"], key=style)
             if tile is None:
                 continue
             tiles += 1
             canvas.paste(tile, (tx * TILE_SIZE - left, ty * TILE_SIZE - top))
+            if spec.get("labels"):
+                # Place names are a separate layer on the imagery service.
+                labels = _tile(zoom, tx % (2 ** zoom), ty, cache,
+                               spec["labels"], key=f"{style}-labels", rgba=True)
+                if labels is not None:
+                    canvas.paste(labels, (tx * TILE_SIZE - left, ty * TILE_SIZE - top), labels)
 
     draw = ImageDraw.Draw(canvas, "RGBA")
     cx, cy = WIDTH / 2, HEIGHT / 2
