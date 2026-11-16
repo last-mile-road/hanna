@@ -1235,6 +1235,7 @@ def get_review(run_id: str):
     return {
         "run_id": run_id,
         "status": run["status"],
+        "required_review": list(layout.get("required_review") or []),
         "validation_status": run["validation_status"],
         "location": run.get("location"),
         "show_location": bool(layout.get("show_location", True)),
@@ -1249,6 +1250,29 @@ def get_review(run_id: str):
         },
         "blocks": sections,
     }
+
+
+@app.post("/api/runs/{run_id}/review/finished")
+def mark_review_finished(run_id: str):
+    """The reviewer pressed Terminar: this side is reviewed.
+
+    Completion is a human decision, not a coverage count. The screen hides empty
+    visits and values already confirmed on an earlier capture, and those pairs
+    can never be decided, so counting them would keep the run open forever.
+    """
+    run_id = _uuid(run_id)
+    with connect() as conn:
+        if events.run_row(conn, run_id) is None:
+            raise HTTPException(404, "run não encontrado")
+        conn.execute(
+            text(
+                "UPDATE runs SET review_finished_at = now() "
+                " WHERE id = CAST(:run_id AS uuid) AND review_finished_at IS NULL"
+            ),
+            {"run_id": run_id},
+        )
+        conn.commit()
+    return {"ok": True}
 
 
 @app.post("/api/runs/{run_id}/sections/{section_id}/filled")

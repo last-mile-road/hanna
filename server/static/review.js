@@ -470,7 +470,13 @@ function render() {
         tables.forEach((table) => (table.rows || []).forEach((row) =>
           row.cells.forEach((cell) => cells.add(cell))));
         block.pairs.forEach((pair) => {
-          if (cells.has(pair.pair_id)) decide(pair.pair_id, "accepted", null);
+          if (!cells.has(pair.pair_id)) return;
+          // A cell the reviewer corrected, or one with a blocking problem,
+          // must not be overwritten by the table-wide "Verificado".
+          const done = decisions.get(pair.pair_id);
+          if (done && done.mode === "corrected") return;
+          if (pair.issue && pair.issue.severity === "blocking") return;
+          decide(pair.pair_id, "accepted", null);
         });
         return;
       }
@@ -878,15 +884,22 @@ function showNextStep() {
     actions.appendChild(next);
   }
   const back = document.createElement("a");
-  back.className = "secondary";
+  back.className = otherRun ? "secondary" : "primary";
   back.href = "/capture";
   back.textContent = "Voltar à captura";
+  back.addEventListener("click", () => {
+    // The capsule opened this tab; closing it lands back on the capture screen
+    // with the two sides and the Finalizar button. If the browser refuses to
+    // close a tab, the link still takes the reviewer to the capture route.
+    setTimeout(() => { /* fall through to href */ }, 0);
+    window.close();
+  });
   actions.appendChild(back);
   $("next-step-note").textContent = otherRun
     ? "Esta página pode ficar aberta. O outro lado tem a sua própria revisão."
     : "As duas páginas estão revistas. Volte à captura para finalizar.";
   box.classList.remove("hidden");
-  box.scrollIntoView({ behavior: "smooth", block: "center" });
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 $("finish").addEventListener("click", async () => {
@@ -895,6 +908,22 @@ $("finish").addEventListener("click", async () => {
 
   // Untouched is not the same as accepted: a value nobody looked at must not count as
   // confirmed in the statistics or the training set. Record the remainder as skipped.
+  // Hard gate: the key fields of the card must have a decision. A pair already
+  // confirmed on an earlier capture counts as decided even though it is hidden.
+  const required = (data.required_review || []).filter((pairId) => {
+    const pair = pairsById.get(pairId);
+    if (pair && pair.confirmed) return false;
+    return !decisions.has(pairId);
+  });
+  if (required.length) {
+    const names = required.map((pairId) => pairsById.get(pairId)?.label || pairId);
+    window.alert(
+      "Faltam campos essenciais por confirmar:\n\n• " + names.join("\n• ") +
+      "\n\nConfirme cada um (✓) antes de terminar."
+    );
+    return;
+  }
+
   const untouched = [];
   data.blocks.forEach((block) => {
     block.pairs.forEach((pair) => {
@@ -926,12 +955,22 @@ $("finish").addEventListener("click", async () => {
 
   $("finish").textContent = "A guardar…";
   await saveQueue;
+  // Record that this side is finished. The capture screen polls this and turns
+  // the badge to Confirmado, so the number button appears there.
+  try {
+    await fetch(`/api/runs/${runId}/review/finished`, { method: "POST" });
+  } catch {
+    $("finish").textContent = "Terminar";
+    return;
+  }
   if (from === "capture") {
-    // This review was opened from the phone capture tab. Keep the tab open:
-    // the other side has its own review link there.
+    // The reviewer is on the phone, usually in a tab opened from the capture
+    // screen. Never leave them to the browser back button: offer the other side
+    // and the way back to the capture screen.
     $("finish").textContent = "Revisão guardada";
     $("finish").disabled = true;
-    $("saved").textContent = "Revisão guardada. Volte ao separador da captura para rever o outro lado.";
+    $("saved").textContent = "Revisão guardada.";
+    showNextStep();
     return;
   }
   location.href = "/";

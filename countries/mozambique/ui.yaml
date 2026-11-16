@@ -3,6 +3,17 @@
 # The review screen reads this to decide how a block is shown: as a table that mirrors the
 # card, as plain rows, or not at all. It is country data, not code (PURPOSE §5).
 
+# Fields a clinician must look at before "Terminar" closes this side. A hard
+# gate: the review refuses to finish while one of them has no decision. Keep it
+# short — every field here is a keystroke the reviewer cannot skip.
+required_review:
+  - patient_name
+  - birth_year
+  - gender
+  - date_diagnosed
+  - leprosy_classification
+  - admin_classification
+
 # Location is confirmed on a map, never typed into a list of fields.
 hidden:
   - district

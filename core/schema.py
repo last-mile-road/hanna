@@ -165,6 +165,10 @@ runs = Table(
     Column("output_tokens", Integer),
     Column("cost_usd", Numeric(10, 6)),
     Column("error", Text),
+    # Set when a reviewer presses Terminar on this run. Completion is a human
+    # decision, not a coverage count: the screen hides empty visits and already
+    # confirmed values, and those pairs can never be decided.
+    Column("review_finished_at", DateTime(timezone=True)),
 )
 
 block_runs = Table(

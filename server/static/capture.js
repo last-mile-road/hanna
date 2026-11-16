@@ -502,7 +502,7 @@ function revealReview(panel, data) {
     link.textContent = "Ver valores";
     link.classList.add("secondary-link");
   } else {
-    const done = data.review ? `${data.review.reviewed} de ${data.review.total} campos` : "";
+    const done = data.review && data.review.reviewed ? `${data.review.reviewed} campos revistos` : "";
     badge.textContent = done ? `Por rever · ${done}` : "Por rever";
     badge.className = "badge review";
     link.textContent = armed ? "Rever valores" : "A preparar a revisão…";

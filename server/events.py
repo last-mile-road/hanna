@@ -96,7 +96,16 @@ def review_progress(conn: Connection, run_id: str) -> dict[str, Any]:
     ).mappings().one()
     total = int(counts["total"] or 0)
     reviewed = int(counts["reviewed"] or 0)
-    return {"reviewed": reviewed, "total": total, "finished": total > 0 and reviewed >= total}
+    finished_at = conn.execute(
+        text("SELECT review_finished_at FROM runs WHERE id = CAST(:run_id AS uuid)"),
+        {"run_id": run_id},
+    ).scalar()
+    return {
+        "reviewed": reviewed,
+        "total": total,
+        "finished": finished_at is not None,
+        "finished_at": finished_at.isoformat() if finished_at else None,
+    }
 
 
 def snapshot(conn: Connection, run_id: str) -> dict[str, Any] | None:
