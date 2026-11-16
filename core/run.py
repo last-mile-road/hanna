@@ -693,6 +693,11 @@ def run_card(
         if routing:
             tick_profile_id = routing_map.get("strips", profile_id)
             tick_profile = profiles_by_id.get(tick_profile_id, profile)
+            fallback_id = routing_map.get("fallback")
+            tick_fallback = None
+            if fallback_id and fallback_id != tick_profile_id and fallback_id in profiles_by_id:
+                fb = profiles_by_id[fallback_id]
+                tick_fallback = (client_for(fb), fb)
             try:
                 tick_values, tick_usage = ticks.read_ticks(
                     alignment.image,
@@ -701,6 +706,7 @@ def run_card(
                     tick_profile,
                     run_dir,
                     page=form_variant,
+                    fallback=tick_fallback,
                 )
                 result["input_tokens"] += tick_usage["input_tokens"]
                 result["output_tokens"] += tick_usage["output_tokens"]

@@ -89,10 +89,11 @@ def render(image, group: dict, render_opts: dict | None = None):
     pad = int(opts.get("border_px", 12))
     font_scale = float(opts.get("number_scale", 1.2))
     thick = int(opts.get("number_thickness", 3))
-    gap = int(opts.get("stack_gap_px", 70))
+    gap = int(opts.get("stack_gap_px", 110))
     if group.get("kind") == "horizontal":
         return stack_bands(image, group["strip"], group["bands"], gap=gap, left=left,
-                           pad=pad, font=font_scale, thickness=thick)
+                           pad=pad, font=font_scale, thickness=thick,
+                           separator=bool(opts.get("band_separator", True)))
     return render_strip(image, group["strip"], group["bands"], left=left, pad=pad,
                         font=font_scale, thickness=thick)
 
@@ -111,7 +112,7 @@ def reaction_prompt(start: int, end: int) -> str:
     )
 
 
-def _read_reaction_grid(aligned, groups_list, client, profile, run_dir, opts):
+def _read_reaction_grid(aligned, groups_list, client, profile, run_dir, opts, fallback=None):
     """Two VLM calls: rows 1–5 and 6–10, each as a regular numbered stack."""
     from concurrent.futures import ThreadPoolExecutor, as_completed
     from core.parse import parse_json_response
@@ -145,9 +146,19 @@ def _read_reaction_grid(aligned, groups_list, client, profile, run_dir, opts):
         path = run_dir / f"tick_reactions_{start + 1}_{end}.jpg"
         cv2.imwrite(str(path), image, [cv2.IMWRITE_JPEG_QUALITY, 92])
         try:
-            completion = client.complete(
-                reaction_prompt(start + 1, end), [path], profile["model"], profile["settings"]
-            )
+            try:
+                completion = client.complete(
+                    reaction_prompt(start + 1, end), [path], profile["model"],
+                    profile["settings"],
+                )
+            except Exception:
+                if not fallback:
+                    raise
+                fb_client, fb_profile = fallback
+                completion = fb_client.complete(
+                    reaction_prompt(start + 1, end), [path], fb_profile["model"],
+                    fb_profile["settings"],
+                )
             parsed = parse_json_response(
                 completion.text, [str(n) for n in range(start + 1, end + 1)]
             )
@@ -191,7 +202,7 @@ def _read_reaction_grid(aligned, groups_list, client, profile, run_dir, opts):
     return values, usage
 
 
-def _read_one_strip(aligned, group, opts, client, profile, run_dir):
+def _read_one_strip(aligned, group, opts, client, profile, run_dir, fallback=None):
     from core.parse import parse_json_response
 
     concept = group["concept"]
@@ -199,7 +210,20 @@ def _read_one_strip(aligned, group, opts, client, profile, run_dir):
     path = run_dir / f"tick_{concept}.jpg"
     cv2.imwrite(str(path), image, [cv2.IMWRITE_JPEG_QUALITY, 92])
     try:
-        completion = client.complete(prompt(group), [path], profile["model"], profile["settings"])
+        try:
+            completion = client.complete(
+                prompt(group), [path], profile["model"], profile["settings"]
+            )
+        except Exception:
+            # A rate-limited primary is the common failure. The fallback model
+            # reads the same strip once; a strip is one question, so this is
+            # cheap, and a null tick is a blocking "missing" field downstream.
+            if not fallback:
+                raise
+            fb_client, fb_profile = fallback
+            completion = fb_client.complete(
+                prompt(group), [path], fb_profile["model"], fb_profile["settings"]
+            )
         parsed = parse_json_response(completion.text, ["ticked"])
         ticked = decode(parsed.get("ticked") if isinstance(parsed, dict) else parsed)
         if len(ticked) == 1 and 1 <= ticked[0] <= len(group["labels"]):
@@ -226,6 +250,7 @@ def read_ticks(
     profile: dict,
     run_dir: Path,
     page: str = "front",
+    fallback=None,
 ) -> tuple[dict, dict]:
     """Read tick groups. Front uses one strip per question; back uses two 5-row grids."""
     from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -238,11 +263,11 @@ def read_ticks(
         reaction_groups = [g for g in groups_list if g.get("kind") == "horizontal"]
         other_groups = [g for g in groups_list if g.get("kind") != "horizontal"]
         values, usage = _read_reaction_grid(
-            aligned, reaction_groups, client, profile, run_dir, opts
+            aligned, reaction_groups, client, profile, run_dir, opts, fallback
         )
         for group in other_groups:
             concept, entry, used, error = _read_one_strip(
-                aligned, group, opts, client, profile, run_dir
+                aligned, group, opts, client, profile, run_dir, fallback
             )
             values[concept] = entry
             usage["calls"] += 1
@@ -258,9 +283,9 @@ def read_ticks(
     usage = {"input_tokens": 0, "output_tokens": 0, "cost_usd": 0.0, "calls": 0, "errors": []}
 
     def one(group: dict) -> tuple[str, dict, dict | None, str | None]:
-        return _read_one_strip(aligned, group, opts, client, profile, run_dir)
+        return _read_one_strip(aligned, group, opts, client, profile, run_dir, fallback)
 
-    workers = max(1, min(int((profile.get("settings") or {}).get("parallel", 4)), len(groups_list) or 1))
+    workers = max(1, min(int((profile.get("settings") or {}).get("parallel", 2)), len(groups_list) or 1))
     if groups_list:
         with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = [pool.submit(one, group) for group in groups_list]

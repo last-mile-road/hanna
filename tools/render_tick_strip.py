@@ -58,6 +58,7 @@ def stack_bands(
     pad: int = 12,
     font: float = 1.1,
     thickness: int = 3,
+    separator: bool = True,
 ) -> np.ndarray:
     """Vertical stack for a horizontal row (gender): one band per option, gap between."""
     x1, y1, x2, y2 = strip
@@ -77,6 +78,12 @@ def stack_bands(
         parts.append(piece)
         if index < len(padded) - 1:
             parts.append(np.full((gap, width, 3), 255, np.uint8))
+            if separator:
+                # Two wide tiles stacked with nothing between them read as one
+                # block: the mark in the upper tile got answered as the lower
+                # band. A grey rule and a taller gap keep them separate.
+                parts.append(np.full((2, width, 3), (170, 170, 170), np.uint8))
+                parts.append(np.full((gap, width, 3), 255, np.uint8))
     return np.vstack(parts)
 
 
