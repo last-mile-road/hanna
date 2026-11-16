@@ -86,7 +86,11 @@ def fail_retryable(conn: Connection, job_id: uuid.UUID, error: str, max_attempts
     """Requeue when attempts remain; otherwise park it as failed. Returns the new state."""
     attempts = conn.execute(
         text("SELECT attempts FROM jobs WHERE id = :id"), {"id": job_id}
-    ).scalar_one()
+    ).scalar_one_or_none()
+    if attempts is None:
+        # The row is gone: a test truncation or an operator cleanup while the
+        # worker held it. Nothing to update, and the worker must not die of it.
+        return "gone"
     state = "queued" if attempts < max_attempts else "failed"
     conn.execute(
         text(

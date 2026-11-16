@@ -56,10 +56,13 @@ def work_once() -> bool:
         run_job(job)
     except Exception as exc:
         print(f"job {job['id']} failed: {exc}", flush=True)
-        with connect() as conn:
-            state = jobs.fail_retryable(conn, job["id"], str(exc)[:2000])
-            conn.commit()
-        print(f"job {job['id']} -> {state}", flush=True)
+        try:
+            with connect() as conn:
+                state = jobs.fail_retryable(conn, job["id"], str(exc)[:2000])
+                conn.commit()
+            print(f"job {job['id']} -> {state}", flush=True)
+        except Exception as record_error:  # never let bookkeeping kill the worker
+            print(f"job {job['id']}: could not record failure: {record_error}", flush=True)
     return True
 
 
