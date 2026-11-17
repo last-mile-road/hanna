@@ -617,9 +617,46 @@ def run_card(
                     {
                         "block_id": block.id,
                         "pair_id": None,
+                        "kind": "table_inconsistent",
+                        "severity": "blocking",
                         "message": (
                             "Duas leituras MinerU diferentes para esta tabela. "
                             "Confirme as células assinaladas e digitalize de novo."
+                        ),
+                    }
+                )
+            # The read can come back clean but empty, or with no positive mark at
+            # all, while the block has handwriting. Neither is a value; say so
+            # instead of storing a confident blank.
+            final = json.loads(reading.text or "{}") if reading is not None else {}
+            if ink >= INK_MIN and not final:
+                table_warnings.append(
+                    {
+                        "block_id": block.id,
+                        "pair_id": None,
+                        "kind": "table_empty",
+                        "severity": "blocking",
+                        "message": (
+                            "Esta tabela tem escrita mas a leitura voltou vazia. "
+                            "Leia as células na fotografia e corrija-as."
+                        ),
+                    }
+                )
+            elif (
+                ink >= INK_MIN
+                and final
+                and (block.id.endswith("nerve") or block.id == "nerve_assessment")
+                and all(str(v).strip() in {"-", "—", "–", ""} for v in final.values())
+            ):
+                table_warnings.append(
+                    {
+                        "block_id": block.id,
+                        "pair_id": None,
+                        "kind": "nerve_all_negative",
+                        "severity": "info",
+                        "message": (
+                            "A tabela de nervos tem escrita mas nenhuma marca foi "
+                            "lida como positiva. Confirme se está tudo em falta."
                         ),
                     }
                 )
@@ -947,8 +984,8 @@ def run_card(
                     {
                         "pair_id": warning.get("pair_id"),
                         "block_id": warning.get("block_id"),
-                        "kind": "table_inconsistent",
-                        "severity": "blocking",
+                        "kind": warning.get("kind") or "table_inconsistent",
+                        "severity": warning.get("severity") or "blocking",
                         "audience": ["clinician"],
                         "advice": warning["message"],
                         "bbox": None,
