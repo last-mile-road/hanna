@@ -490,6 +490,69 @@ def _local_osm_search(names: dict[str, str], district: str, limit: int = 6,
     return hits[:limit]
 
 
+_PLACE_CACHE: dict[str, list[dict]] = {}
+
+
+def nearby_places(country: str, lat: float, lon: float, km: float,
+                  limit: int = 14) -> list[dict]:
+    """Named places from the country gazetteer around a point, nearest first.
+
+    Used to label the review map. The map tiles only show what the map data has;
+    in rural Mozambique that is often nothing, while the gazetteer that resolved
+    the case knows the villages and facilities by name and coordinate.
+    """
+    import csv
+    import math
+
+    if country not in _PLACE_CACHE:
+        places: list[dict] = []
+        for name in ("admin_units.csv", "facilities.csv"):
+            path = settings.COUNTRIES_DIR / country / "gazetteer" / name
+            if not path.exists():
+                continue
+            with path.open(newline="") as handle:
+                for row in csv.DictReader(handle):
+                    try:
+                        plat, plon = float(row["lat"]), float(row["lon"])
+                    except (KeyError, TypeError, ValueError):
+                        continue
+                    label = str(row.get("name") or "").strip()
+                    if not label:
+                        continue
+                    places.append(
+                        {
+                            "name": label,
+                            "lat": plat,
+                            "lon": plon,
+                            "level": row.get("level") or "facility",
+                        }
+                    )
+        _PLACE_CACHE[country] = places
+    places = _PLACE_CACHE[country]
+
+    dlat = km / 111.0
+    dlon = km / max(1.0, 111.0 * math.cos(math.radians(lat)))
+    near = [
+        place
+        for place in places
+        if abs(place["lat"] - lat) <= dlat and abs(place["lon"] - lon) <= dlon
+    ]
+    seen: set[str] = set()
+    out: list[dict] = []
+    for place in sorted(
+        near,
+        key=lambda p: (p["lat"] - lat) ** 2 + (p["lon"] - lon) ** 2,
+    ):
+        key = place["name"].lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(place)
+        if len(out) >= limit:
+            break
+    return out
+
+
 def resolve(district: str = "", locality: str = "", place: str = "",
             province: str | None = None, top: int = 5,
             service_url: str | None = None) -> Resolution:

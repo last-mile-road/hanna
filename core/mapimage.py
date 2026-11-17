@@ -39,6 +39,10 @@ STYLES = {
         "url": "https://tile.opentopomap.org/{z}/{x}/{y}.png",
         "attribution": "© OpenStreetMap · SRTM · OpenTopoMap (CC-BY-SA)",
     },
+    "streets": {
+        "url": "https://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+        "attribution": "© OpenStreetMap contributors · HOT",
+    },
     "satellite": {
         "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         # The imagery alone has no place names; the reference layer adds them.
@@ -111,7 +115,8 @@ def _fallback(lat: float, lon: float, radius_px: int) -> Image.Image:
 
 def compose(lat: float, lon: float, radius_m: float, out: Path,
             cache: Path | None = None, reviewed: bool = False,
-            style: str = DEFAULT_STYLE) -> Path:
+            style: str = DEFAULT_STYLE,
+            labels: list[dict] | None = None) -> Path:
     """Write a PNG centred on the point.
 
     `reviewed`: a person moved the pin. The ring is a statement about the gazetteer's
@@ -153,6 +158,42 @@ def compose(lat: float, lon: float, radius_m: float, out: Path,
                     canvas.paste(labels, (tx * TILE_SIZE - left, ty * TILE_SIZE - top), labels)
 
     draw = ImageDraw.Draw(canvas, "RGBA")
+
+    # Place names from our own gazetteer. The OSM styles label what the map data
+    # has, which in rural Mozambique is often nothing; these come from the same
+    # extract that resolved the case, so a nearby village is always named.
+    if labels:
+        from PIL import ImageFont
+
+        try:
+            font = ImageFont.load_default(size=14)
+        except TypeError:  # Pillow before 10.1
+            font = ImageFont.load_default()
+        taken: list[tuple[int, int, int, int]] = []
+        for label in labels[:18]:
+            lx, ly = _world_px(float(label["lat"]), float(label["lon"]), zoom)
+            px, py = lx - left, ly - top
+            if not (8 < px < WIDTH - 40 and 8 < py < HEIGHT - 20):
+                continue
+            name = str(label.get("name") or "").strip()
+            if not name:
+                continue
+            width = 7 * len(name) + 8
+            box = (int(px + 5), int(py - 10), int(px + 5 + width), int(py + 6))
+            if any(
+                not (box[2] < other[0] or box[0] > other[2]
+                     or box[3] < other[1] or box[1] > other[3])
+                for other in taken
+            ):
+                # Two names in the same few pixels read as one word. Keep the
+                # nearer one (the list is ordered by distance) and drop the rest.
+                continue
+            taken.append(box)
+            draw.ellipse([px - 3, py - 3, px + 3, py + 3],
+                         fill=(60, 60, 60, 230), outline=(255, 255, 255, 230))
+            draw.text((px + 6, py - 8), name, font=font, fill=(25, 25, 25, 255),
+                      stroke_width=2, stroke_fill=(255, 255, 255, 235))
+
     cx, cy = WIDTH / 2, HEIGHT / 2
     if not reviewed:
         draw.ellipse([cx - ring_px, cy - ring_px, cx + ring_px, cy + ring_px],

@@ -131,6 +131,36 @@ def _run_card_path(conn, run_id: str) -> tuple[Path, str]:
     return Path(card["image_path"]), str(row["id"])
 
 
+@app.get("/api/countries")
+def list_countries():
+    """The countries this portal can read. One web app, one card contract per country.
+
+    A country is listed when its pack exists (`countries/<code>/`) and it has at
+    least one published form; a country with no form would only reach the camera
+    and fail at capture time.
+    """
+    with connect() as conn:
+        rows = conn.execute(
+            text(
+                "SELECT c.code, c.name, count(f.id) AS forms "
+                "  FROM countries c "
+                "  LEFT JOIN forms f ON f.country_id = c.id AND f.status <> 'draft' "
+                " GROUP BY c.code, c.name ORDER BY c.name"
+            )
+        ).mappings().all()
+    return {
+        "countries": [
+            {
+                "code": row["code"],
+                "name": row["name"],
+                "has_forms": bool(row["forms"]),
+                "pack": (settings.COUNTRIES_DIR / row["code"]).exists(),
+            }
+            for row in rows
+        ]
+    }
+
+
 @app.get("/healthz")
 def healthz():
     try:
@@ -862,9 +892,10 @@ def run_image(run_id: str, kind: str, sig: str = Query(...)):
 def run_map(run_id: str, style: str = "map"):
     """The review map: a static PNG so the coordinate never reaches the phone's tile client.
 
-    `style` is map (OSM), terrain (OpenTopoMap) or satellite (Esri imagery). The
-    same point, three looks; the coordinate never leaves this call.
+    `style` is map (OSM), terrain (OpenTopoMap), streets (HOT) or satellite (Esri
+    imagery). The same point, four looks; the coordinate never leaves this call.
     """
+    from core import location as location_module
     from core import mapimage
 
     run_id = _uuid(run_id)
@@ -882,8 +913,27 @@ def run_map(run_id: str, style: str = "map"):
     # The point moves when a reviewer corrects it, so the file name has to follow it;
     # a single map.png would keep serving the old picture from cache.
     style = style if style in mapimage.STYLES else "map"
+    # Name the villages and facilities around the point from the gazetteer that
+    # resolved it: the tile styles leave most of rural Mozambique unlabelled.
+    with connect() as conn:
+        country = conn.execute(
+            text(
+                "SELECT co.code FROM runs r "
+                "  JOIN cards ca ON ca.id = r.card_id "
+                "  JOIN countries co ON co.id = ca.country_id "
+                " WHERE r.id = CAST(:run_id AS uuid)"
+            ),
+            {"run_id": run_id},
+        ).scalar() or "mozambique"
+    radius_m = float(location.get("precision_m") or 1500)
+    places = location_module.nearby_places(
+        country, lat, lon, km=max(2.0, min(30.0, radius_m / 250.0))
+    )
+    # The version moves when the drawing changes; without it the cached PNG
+    # keeps serving the old picture for the same point.
+    MAP_RENDER_VERSION = 3
     digest = hashlib.sha256(
-        f"{lat:.5f},{lon:.5f},{reviewed},{style}".encode()
+        f"{lat:.5f},{lon:.5f},{reviewed},{style},{len(places)},{MAP_RENDER_VERSION}".encode()
     ).hexdigest()[:10]
     out = settings.OUTPUT_DIR / "runs" / run_id / f"map-{style}-{digest}.png"
     path = mapimage.compose(
@@ -894,6 +944,7 @@ def run_map(run_id: str, style: str = "map"):
         cache=settings.OUTPUT_DIR / "tiles",
         reviewed=reviewed,
         style=style,
+        labels=places,
     )
     return FileResponse(path, media_type="image/png", headers={"Cache-Control": "no-store"})
 

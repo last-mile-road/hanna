@@ -218,6 +218,8 @@ function acceptCanvas(canvas, side) {
 
 $("btn-retake").addEventListener("click", () => retake(currentSide));
 
+loadCountries();
+
 $("btn-continue").addEventListener("click", () => {
   if (shots.front && shots.back) {
     toReview();
@@ -350,6 +352,9 @@ $("btn-send").addEventListener("click", sendCapture);
 
 async function sendCapture() {
   if (!shots.front || !shots.back) return;
+  // The photographs are already in memory. Release the camera and the torch
+  // now, not after the upload: nothing on screen needs the stream any more.
+  stopCamera();
   $("btn-send").disabled = true;
   $("btn-send").textContent = "A enviar…";
   const form = new FormData();
@@ -379,7 +384,6 @@ async function sendCapture() {
     showAdmission(body);
     return;
   }
-  stopCamera();
   captureBody = body;
   showAdmission(body);
   setTimeout(() => startProgress(body), 700);
@@ -404,6 +408,33 @@ function showAdmission(body) {
   $("btn-retake-back").classList.toggle("hidden", !needsRetake);
   $("btn-retake-front").onclick = () => retake("front");
   $("btn-retake-back").onclick = () => retake("back");
+}
+
+/* The portal serves every country; the select is filled from the ledger so a
+   new country pack appears without touching this page. */
+async function loadCountries() {
+  const select = $("country");
+  if (!select) return;
+  try {
+    const response = await fetch("/api/countries", { cache: "no-store" });
+    if (!response.ok) throw new Error("countries");
+    const body = await response.json();
+    const usable = (body.countries || []).filter(
+      (item) => item.has_forms && item.pack
+    );
+    if (!usable.length) return;
+    const current = select.value;
+    select.innerHTML = "";
+    usable.forEach((item) => {
+      const option = document.createElement("option");
+      option.value = item.code;
+      option.textContent = item.name;
+      select.appendChild(option);
+    });
+    if (usable.some((item) => item.code === current)) select.value = current;
+  } catch {
+    // Keep the static option: a portal with one country still works offline.
+  }
 }
 
 /* ---------- extraction progress ---------- */
@@ -666,6 +697,21 @@ function watchReviews() {
 
 $("btn-finalise").addEventListener("click", finalise);
 
+$("btn-another").addEventListener("click", () => {
+  // A fresh capture starts at the consent screen; nothing of this case remains
+  // in the page.
+  location.reload();
+});
+
+$("btn-end").addEventListener("click", () => {
+  stopCamera();
+  $("hanna-result").classList.add("hidden");
+  $("session-end").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+$("btn-restart").addEventListener("click", () => location.reload());
+
 async function finalise() {
   if (!captureBody) return;
   $("btn-finalise").disabled = true;
@@ -684,8 +730,19 @@ async function finalise() {
     $("number-note").textContent = body.detail || "Ainda não é possível atribuir o número.";
     return;
   }
-  $("number-note").innerHTML = `Número HANNA: <strong>${body.hanna_number_display}</strong><br><span class="hint">Escreva-o no cartão, na frente, no canto superior esquerdo, acima do bloco NIL. Depois digitalize outra vez: o número é lido daí.</span>`;
-  $("btn-finalise").classList.add("hidden");
+  // The number is issued: the work on this card is over. Clear the reading and
+  // review screens so nothing offers to edit values that are now fixed, and
+  // give the number the whole screen.
+  if (reviewWatch) {
+    clearInterval(reviewWatch);
+    reviewWatch = null;
+  }
+  $("run-panels").classList.add("hidden");
+  $("case-decision").classList.add("hidden");
+  $("finalise").classList.add("hidden");
+  $("hanna-number").textContent = body.hanna_number_display || body.hanna_number || "";
+  $("hanna-result").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 /* ---------- network hint ---------- */

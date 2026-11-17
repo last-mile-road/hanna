@@ -59,6 +59,17 @@
   .run-review.confirmed { opacity: .75; }
   .btn-review.secondary-link { background: transparent; color: var(--accent); border: 1px solid var(--accent); font-weight: 600; }
   .btn-review.waiting { opacity: .55; pointer-events: none; }
+  /* The number is the end of the work: one screen, nothing else to press. */
+  .hanna-card { text-align: center; }
+  .hanna-label { color: var(--muted); font-size: .9rem; margin: 0; }
+  .hanna-number {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 2.6rem; font-weight: 700; letter-spacing: .12em;
+    margin: .4rem 0 .2rem; color: var(--accent);
+  }
+  .hanna-where { width: 100%; height: auto; border: 1px solid var(--line); border-radius: .4rem; margin: .6rem 0 .4rem; }
+  .hanna-actions { display: grid; gap: .6rem; margin-top: .8rem; }
+  .hanna-actions button { width: 100%; }
   @media (orientation: landscape) and (max-height: 34rem) {
     .capture-wrap { display: flex; gap: .8rem; align-items: flex-start; }
     .stage.a4 { flex: 1 1 auto; height: 72vh; max-height: 72vh; aspect-ratio: auto; }
@@ -179,14 +190,31 @@
       <p id="decision-message" class="hint"></p>
     </div>
     <div id="finalise" class="card hidden" style="margin-top:1rem">
-      <p class="hint">As duas páginas foram lidas. Finalize para obter o número HANNA do caso. O resultado do tratamento vem do verso revisto; se o tratamento já terminou e o verso estiver em branco, o número fica retido.</p>
+      <p class="hint">As duas páginas foram lidas e revistas. Finalize para obter o número HANNA do caso. O resultado do tratamento vem do verso revisto; se o tratamento já terminou e o verso estiver em branco, o número fica retido.</p>
       <button id="btn-finalise">Finalizar e obter número HANNA</button>
       <p id="number-note" class="hint"></p>
+    </div>
+
+    <div id="hanna-result" class="card hanna-card hidden" style="margin-top:1rem">
+      <p class="hanna-label">Número HANNA deste caso</p>
+      <p id="hanna-number" class="hanna-number">— — —</p>
+      <p class="hint">Escreva este número no cartão, na frente, no espaço acima do bloco NIL. A partir daqui o número identifica o caso em todas as digitalizações seguintes.</p>
+      <img class="hanna-where" src="/static/hanna-write-front.png" alt="Onde escrever o número no cartão: margem superior esquerda da frente">
+      <div class="hanna-actions">
+        <button id="btn-another">Digitalizar outro cartão</button>
+        <button id="btn-end" class="secondary">Terminar sessão</button>
+      </div>
+    </div>
+
+    <div id="session-end" class="card hidden" style="margin-top:1rem;text-align:center">
+      <h2>Sessão terminada</h2>
+      <p class="hint">Pode fechar esta página com segurança.</p>
+      <button id="btn-restart" class="secondary">Começar de novo</button>
     </div>
   </section>
 </main>
 
 <footer><span id="net"></span></footer>
-<script src="/static/capture.js?v=12"></script>
+<script src="/static/capture.js?v=13"></script>
 </body>
 </html>

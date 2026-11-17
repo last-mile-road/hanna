@@ -213,6 +213,11 @@ const MAP_STYLES = {
     url: "https://tile.opentopomap.org/{z}/{x}/{y}.png",
     attribution: "© OpenStreetMap · SRTM · OpenTopoMap (CC-BY-SA)",
   },
+  streets: {
+    label: "Ruas",
+    url: "https://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+    attribution: "© OpenStreetMap contributors · HOT",
+  },
   satellite: {
     label: "Satélite",
     url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
