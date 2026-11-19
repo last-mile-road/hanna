@@ -73,7 +73,7 @@ help avoid conflicts and minimize harm.
 
 To report a possible violation, email the maintainer at
 
-**TODO: conduct contact address (set before the repository is published)**
+ariedk@lastmileroad.org
 
 Reports are handled privately. Community moderators will make every effort to
 respond within five working days, and will investigate by reviewing messages,

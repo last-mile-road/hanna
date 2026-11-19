@@ -8,7 +8,7 @@ submission or key handling are taken seriously.
 
 Do not open a public issue for a vulnerability. Email the maintainer:
 
-**TODO: security contact address (set before the repository is published)**
+ariedk@lastmileroad.org
 
 Include what you found, where, how to reproduce it, and what an attacker could
 do with it. A proof of concept helps; a screenshot of a leaked secret is enough
