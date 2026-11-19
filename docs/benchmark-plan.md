@@ -5,7 +5,7 @@ quality vs. the prior iteration (which used qwen3-vl / minicpm-v :8b), and estab
 accuracy baseline for any country form.
 
 > **Status 2026-10-26.** The first slice runs locally through OpenRouter; see the
-> README and `../../hanna_next/CONTRACTS.md`. The "cannot run locally" note below
+> README and the project contracts in the design archive. The "cannot run locally" note below
 > is historical. The corrected form16 baseline is 43/52 = 82.7% with
 > `qwen/qwen3-vl-8b-instruct`; Qwen3.5-27B and 35B-A3B reach 47/52 = 90.4%
 > (D-2026-10-26-06).

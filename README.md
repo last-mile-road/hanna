@@ -1,7 +1,9 @@
 # hanna_server — the build
 
-The running version of HANNA for testing and iteration. Design lives in
-`../hanna_next/`; the read-only baseline lives in `../hanna_v2/`.
+The running build of HANNA for testing and iteration. A photographed leprosy
+clinic card becomes a structured, validated case record. Design notes and the
+development archive are kept separately; this repository is the code and the
+country packs.
 
 **Status (2026-11-19).** Working test build. A phone photographs the front and
 back of a leprosy clinic card; the pipeline extracts the fields, validates them
@@ -85,7 +87,7 @@ auth OK, $20 limit, $0 used.
 Card images are **not** in this repo. Point the harness at them:
 
 ```bash
-export HANNA_IMAGES_DIR=/home/sam/Documents/hanna_project/hanna_archive/versions/v4_hanna3_2025-2026/test_forms
+export HANNA_IMAGES_DIR=/path/to/test_forms
 ```
 
 ## What exists now, measured
@@ -154,7 +156,7 @@ run ledger:
 entity, visit = event, concept = data element) so a later sync is a mapping, not
 a migration. The run ledger and the web layer are unchanged. The capture API,
 page admission gate, three-state validation and DHIS2 sync are the next steps;
-see `../memory/decisions/2026-11-09-case-foundation.md`.
+see the case-foundation decision record in the project's design archive.
 
 ## Capture ground truth
 

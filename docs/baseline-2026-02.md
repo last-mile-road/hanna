@@ -1,7 +1,7 @@
 # Baseline — what v5 actually scores, measured from corrected records
 
 **Date:** 2026-10-23 (measurement of runs from 2025-11-30 to 2026-02-19)
-**Source:** `hanna_archive/versions/v5_hanna_scalable_best/backups/hanna_vps_full_20260219_173148/cabo_delgado_admin.db`
+**Source:** the v5 VPS backup (`cabo_delgado_admin.db`)
 **Data:** `data/baseline/field_accuracy.csv` (aggregates only; no patient values leave the archive)
 
 ## The number
