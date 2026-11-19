@@ -35,6 +35,11 @@ IMAGES_DIR = Path(
 )
 OUTPUT_DIR = Path(os.environ.get("HANNA_OUTPUT_DIR", str(ROOT / "output")))
 COUNTRIES_DIR = ROOT / "countries"
+# Country data (ground truth, identifying sidecars) is not source. It lives
+# outside the repository; the portal will hold it per country at the same shape.
+COUNTRY_DATA_DIR = Path(
+    os.environ.get("HANNA_COUNTRY_DATA", str(ROOT / "country_data"))
+)
 CONCEPTS_PATH = ROOT / "docs" / "concepts" / "concepts.yaml"
 
 # Web layer (Phase 1). Uploads land outside the repo; images are served only through

@@ -259,7 +259,7 @@ builder (Studio).
 ## Rules
 
 - No real patient data in this repo. Cards stay in the archive; only the blank
-  template is tracked.
+  template is tracked. Every test card is a dummy card with an invented patient.
 - No secrets in git. `.env` is ignored; `.env.example` is not.
 - One commit per logical unit, conventional messages, a verification step per
   milestone (the existing repo convention).

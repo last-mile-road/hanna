@@ -23,6 +23,8 @@ venv/
 countries/mozambique/ground_truth/_identifying/
 
 # Data / artifacts
+# Country data (ground truth, identifying sidecars) lives outside the repo.
+country_data/
 # Patient-card images and fetched data are SENSITIVE — never commit real patient forms.
 uploads/
 output/

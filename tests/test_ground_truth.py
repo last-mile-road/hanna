@@ -8,14 +8,23 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 from pathlib import Path
 
 import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from core import settings  # noqa: E402
+
 CONCEPTS = yaml.safe_load((ROOT / "docs/concepts/concepts.yaml").read_text())["concepts"]
-GT_DIR = ROOT / "countries/mozambique/ground_truth"
+GT_DIR = settings.COUNTRY_DATA_DIR / "mozambique/ground_truth"
+needs_gt = pytest.mark.skipif(
+    not GT_DIR.is_dir(),
+    reason="country ground truth lives outside the repository (HANNA_COUNTRY_DATA)",
+)
 FORMS = ["form16", "form19", "form21", "form22", "form23", "form25", "form30"]
 TEMPLATE_MD5 = "92e2c6befb2c63e8403a83edeb70075f"
 
@@ -34,6 +43,7 @@ def test_every_concept_declares_sensitivity_and_type():
 
 
 @pytest.mark.parametrize("form_id", FORMS)
+@needs_gt
 def test_sheet_matches_concept_index(form_id):
     sheet = json.loads((GT_DIR / f"{form_id}.json").read_text())
     scope = yaml.safe_load((ROOT / "countries/mozambique/card_scope.yaml").read_text())
@@ -55,6 +65,7 @@ def test_sheet_matches_concept_index(form_id):
 
 
 @pytest.mark.parametrize("form_id", FORMS)
+@needs_gt
 def test_verified_values_are_allowed(form_id):
     by_id = {c["id"]: c for c in CONCEPTS}
     sheet = json.loads((GT_DIR / f"{form_id}.json").read_text())
@@ -84,6 +95,7 @@ def test_template_is_the_measured_scan():
     )
 
 
+@needs_gt
 def test_sidecar_overrides_the_sheet_without_duplicating():
     """A concept present in both files must yield one row, sidecar wins."""
     import sys

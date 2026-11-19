@@ -262,7 +262,9 @@ def main() -> None:
         for profile in PROFILES:
             store.upsert_profile(conn, profile)
 
-        gt_dir = settings.COUNTRIES_DIR / args.country / "ground_truth"
+        gt_dir = settings.COUNTRY_DATA_DIR / args.country / "ground_truth"
+        if not gt_dir.is_dir():
+            gt_dir = settings.COUNTRIES_DIR / args.country / "ground_truth"
         total_rows = 0
         for sheet_path in sorted(gt_dir.glob("form*.json")):
             form_name = sheet_path.stem

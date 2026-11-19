@@ -2,23 +2,29 @@
 
 One file per card. Accuracy is measured against these files and nothing else.
 
-| Form | Status | Verified | Note |
-|---|---|---|---|
-| form16 | partial | 51/62 | |
-| form19 | partial | 47/62 | |
-| form21 | partial | 46/62 | |
-| form22 | partial | 49/62 | |
-| form23 | partial | 49/62 | |
-| form25 | partial | 47/62 | |
-| form30 | partial | 48/62 | |
+**The cards are dummy cards.** The patient details on the test cards are invented
+or anonymised; no real patient data is held in this repository or in the test
+set. If a card ever comes from a real register, it enters only with the
+programme's written permission and with the identifying fields removed.
 
-**form20 is not in the set.** It is a duplicate of form16 (owner, 2026-10-23), so
-keeping both would double-count one card in every benchmark run.
+## Where the sheets live
 
-Remaining gaps on each sheet are fields that are genuinely blank on that card,
-plus the identifying fields, which live in the gitignored sidecar. The new
-`reference_person` field is pending on every sheet; the card's "Pessoa de
-Referência" is a community contact, not a patient ID.
+The sheets are **country data, not source**. They are not tracked in git. The
+working copies sit outside the repository, in the country data directory:
+
+```
+country_data/<country>/ground_truth/*.json
+country_data/<country>/ground_truth/_identifying/<form>.json
+country_data/<country>/ground_truth/_evidence.yaml
+```
+
+`HANNA_COUNTRY_DATA` points at that directory (see `.env.example`).
+`tools/load_pack.py` reads it first and falls back to
+`countries/<country>/ground_truth` if it does not exist. Tests that need the
+sheets skip when the directory is absent, which is what a public clone sees.
+
+The eventual home is the country portal: same shape, one folder per country,
+with the country's own account controlling it.
 
 ## Schema
 
@@ -36,7 +42,7 @@ Referência" is a community contact, not a patient ID.
     "skin_patch_count": {
       "value": "4",
       "status": "verified",
-      "source": "hanna_archive/notes/AI_self_make.txt (line 23)"
+      "source": "owner reading, 2026-10-23"
     },
     "patient_name": {"value": null, "status": "pending", "source": null}
   }
@@ -54,7 +60,7 @@ Rules the tooling enforces (`tests/test_ground_truth.py`):
 
 1. Open the card image next to the JSON.
 2. For each field you can read, replace `null` with the value and set
-   `"status": "verified"`, `"source": "owner reading, 2026-10-23"`.
+   `"status": "verified"`, `"source": "owner reading, YYYY-MM-DD"`.
 3. Leave fields you cannot read as `pending`. A wrong truth is worse than a null:
    it turns a correct extraction into a failure.
 4. Set `reviewed_by` and re-run:
@@ -89,9 +95,10 @@ canonicalises to WHO terms, both sides must move together.
 
 ## Identifying fields
 
-Seven fields never enter the committed sheet. They are stored in
-`_identifying/<form>.json` (gitignored) and merged back in when the benchmark
-loads the sheet, so they are still scored.
+Seven fields never enter the sheet itself. They are stored in
+`_identifying/<form>.json`, merged back in when the benchmark loads the sheet, so
+they are still scored. Both the sheet and the sidecar sit in the country data
+directory, outside git.
 
 ## What this card does not carry
 
@@ -103,8 +110,8 @@ is not in that file; it stays pending until someone reads it.
 
 ## Evidence ledger
 
-`_evidence.yaml` holds the raw statements each verified value came from, including
-the nerve column order (cubital right, cubital left, radial right, radial left,
-popliteal right, popliteal left) taken from
+`_evidence.yaml` holds the raw statements each verified value came from,
+including the nerve column order (cubital right, cubital left, radial right,
+radial left, popliteal right, popliteal left) taken from
 `hanna_archive/notes/nerve_coordinates.txt`. If a value's source is not in the
-ledger, it does not belong in a sheet.
+ledger, it does not belong in a sheet. It lives with the sheets, outside git.

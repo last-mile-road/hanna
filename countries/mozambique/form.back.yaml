@@ -7,7 +7,7 @@ form:
   reference_year: 2026
   note: 'v3: one wide visit index; per visit nerve, sensory and def_exam (eye + muscles + grades in one
     block, like the front); reactions read by strips; outcome date/choice/free text separate. Bboxes measured
-    from template.back.jpg (3229x2303); overlay in docs/diagnostics.'
+    from template.back.jpg (3229x2303); overlay in countries/mozambique/docs/diagnostics.'
 blocks:
 - id: visit_index
   block_type: value_pairs
