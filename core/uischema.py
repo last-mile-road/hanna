@@ -13,13 +13,14 @@ from typing import Any
 import yaml
 
 from . import settings
+from .forms import country_of
 
 _CACHE: dict[str, dict[str, Any]] = {}
 
 
 def layout(form_definition: dict[str, Any] | None) -> dict[str, Any]:
     definition = form_definition or {}
-    country = definition.get("country", "mozambique")
+    country = country_of(definition)
     variant = definition.get("variant") or "draft"
     key = f"{country}:{variant}"
     if key not in _CACHE:

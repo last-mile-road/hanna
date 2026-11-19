@@ -55,15 +55,15 @@ def test_bilibiza_resolves_through_district_and_post():
 def test_combination_anchors_on_a_strong_district():
     import location_combinations as lc
 
-    assert lc.best_district("Chiure")[0] == "Chiúre"
-    assert lc.best_district("Chiave") is None  # 66.7, below the anchor threshold
-    top = lc.rank("Mocuba", "Zambezia", "Muinamba")[0]
+    assert lc.best_district("Chiure", "mozambique")[0] == "Chiúre"
+    assert lc.best_district("Chiave", "mozambique") is None  # 66.7, below the anchor threshold
+    top = lc.rank("Mocuba", "Zambezia", "Muinamba", "mozambique")[0]
     assert top[1].district == "Mocuba"
 
 
 def test_combination_keeps_bilibiza_in_chiure():
     import location_combinations as lc
 
-    top = lc.rank("Chiave", "Namgogotra", "Bilibiza")[0]
+    top = lc.rank("Chiave", "Namgogotra", "Bilibiza", "mozambique")[0]
     assert top[1].district == "Chiúre"
     assert top[1].locality == "Bilibiza"

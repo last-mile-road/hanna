@@ -22,8 +22,9 @@ from rapidfuzz import fuzz
 from location_resolver import key
 
 ROOT = Path(__file__).resolve().parents[1]
-ADMIN = ROOT / "countries/mozambique/gazetteer/admin_units.csv"
-FACILITIES = ROOT / "countries/mozambique/gazetteer/facilities.csv"
+def gazetteer_dir(country: str) -> Path:
+    """The pack owns its gazetteer; the tool knows no country."""
+    return ROOT / "countries" / country / "gazetteer"
 
 FIELD_WEIGHTS = {
     "province": 0.4,
@@ -50,10 +51,11 @@ class Chain:
     lon: float | None
 
 
-@lru_cache(maxsize=1)
-def load_chains() -> list[Chain]:
-    admin = pd.read_csv(ADMIN)
-    facilities = pd.read_csv(FACILITIES)
+@lru_cache(maxsize=None)
+def load_chains(country: str) -> list[Chain]:
+    folder = gazetteer_dir(country)
+    admin = pd.read_csv(folder / "admin_units.csv")
+    facilities = pd.read_csv(folder / "facilities.csv")
     chains: list[Chain] = []
 
     for _, row in admin.iterrows():
@@ -121,16 +123,16 @@ def score_chain(chain: Chain, written: list[tuple[str, str]]):
     return round(final, 1), matches
 
 
-@lru_cache(maxsize=1)
-def _districts():
-    admin = pd.read_csv(ADMIN)
+@lru_cache(maxsize=None)
+def _districts(country: str):
+    admin = pd.read_csv(gazetteer_dir(country) / "admin_units.csv")
     return admin[admin["level"] == 2]
 
 
-def best_district(value: str):
+def best_district(value: str, country: str):
     if not value:
         return None
-    districts = _districts()
+    districts = _districts(country)
     scored = [
         (row["name"], fuzz.ratio(key(value), key(row["name"])))
         for _, row in districts.iterrows()
@@ -139,11 +141,11 @@ def best_district(value: str):
     return scored[0] if scored and scored[0][1] >= 85 else None
 
 
-def rank(district: str, locality: str, village: str, top: int = 5):
+def rank(district: str, locality: str, village: str, country: str, top: int = 5):
     written = [("district", district), ("locality", locality), ("village", village)]
-    anchor = best_district(district)
+    anchor = best_district(district, country)
     scored = []
-    for chain in load_chains():
+    for chain in load_chains(country):
         if anchor and key(chain.district) != key(anchor[0]):
             continue
         final, matches = score_chain(chain, written)
@@ -167,6 +169,7 @@ def rank(district: str, locality: str, village: str, top: int = 5):
 
 def main() -> None:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--country", required=True)
     ap.add_argument("--district", default="")
     ap.add_argument("--locality", default="")
     ap.add_argument("--village", default="")
@@ -176,10 +179,10 @@ def main() -> None:
         f"input: district={args.district!r} locality={args.locality!r} "
         f"village={args.village!r}"
     )
-    anchor = best_district(args.district)
+    anchor = best_district(args.district, args.country)
     if anchor:
         print(f"district anchor: {anchor[0]!r} ({anchor[1]:.1f})")
-    ranked = rank(args.district, args.locality, args.village)
+    ranked = rank(args.district, args.locality, args.village, args.country)
     for i, (final, chain, matches) in enumerate(ranked, 1):
         chain_text = " > ".join(
             x

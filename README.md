@@ -19,17 +19,6 @@ no authentication yet: the API is for localhost and a temporary tunnel.
 | reuse the code | `LICENSING.md` — Apache-2.0; country packs stay under their own terms |
 | contribute | `CONTRIBUTING.md` — data rule, DCO sign-off, pack checklist |
 
-## Decisions taken 2026-10-23
-
-| | |
-|---|---|
-| Design vs build | `hanna_next/` = design notes, `hanna_server/` = code. One repo each. |
-| GitHub | local first, push when the code is stable. Private first, public later. |
-| Inference | OpenRouter, same path for local work and for the VPS. |
-| VPS | Oracle VPS currently running a Hermes agent. Wiped and rebuilt only when the test server goes public; not now. |
-| Local runtime | `~/.venv` (Python 3.14, already has cv2, opencv, requests, openai, pyyaml, pytest). |
-| Entry ticket | undecided: 3 or 10 dummy cards per country (`hanna_next/PURPOSE.md` D-C). |
-
 ## Layout
 
 ```
@@ -244,13 +233,13 @@ printed tables — front `def_exam`/`nerve_assessment` and back
 has no VLM fallback: a failed table block fails visibly and is fixed
 structurally.
 
-Still missing: the UI (Phase 2), login and country scoping (Phase 3), and the form
-builder (Studio).
+Still missing: authentication, invitations and country scoping; the Studio publish
+step; the DHIS2 export; and the server deployment. The API is localhost-only.
 
 ## Not built yet, deliberately
 
-- The form builder (Studio) and the review screen (Bench).
-- Login, invite codes and country scoping; the API is localhost-only.
+- Login, invitations and country scoping; the API is localhost-only.
+- The Studio publish step and the DHIS2 export adapter.
 - The verification UI and the re-photograph workflow; the validator output exists.
 - HANNA-issued patient numbers and district-supervisor notifications.
 - The location ladder beyond the declaration in `location.yaml`.

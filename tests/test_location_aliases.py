@@ -55,7 +55,7 @@ def test_an_alias_hit_resolves_where_the_gazetteer_escalated():
     # assert the substitution contract — lookup canonicalises, resolve accepts.
     hits = lookup("mozambique", {"village": misspelling})
     canonical = hits["village"]["canonical"]
-    result = resolve(district="", locality="", place=canonical)
+    result = resolve("mozambique", district="", locality="", place=canonical)
     # Facility and ADM4 Bilibiza tie, so the cascade correctly refuses to auto-write
     # it — but the alias hit lifts it out of escalate and onto the review map.
     assert result.decision in {"auto", "review"}

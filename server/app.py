@@ -174,7 +174,7 @@ def healthz():
 @app.post("/api/runs", status_code=202)
 async def create_run(
     file: UploadFile = File(...),
-    country: str = Form("mozambique"),
+    country: str = Form(...),
     variant: str = Form("draft"),
     attested_dummy: bool = Form(False),
     gate_blur: float | None = Form(None),
@@ -337,7 +337,7 @@ class CloseCaseBody(BaseModel):
 @app.post("/api/captures")
 def create_capture(
     files: list[UploadFile] = File(...),
-    country: str = Form("mozambique"),
+    country: str = Form(...),
     attested_dummy: bool = Form(False),
     hanna_number: str | None = Form(None),
     government_id: str | None = Form(None),
@@ -924,7 +924,9 @@ def run_map(run_id: str, style: str = "map"):
                 " WHERE r.id = CAST(:run_id AS uuid)"
             ),
             {"run_id": run_id},
-        ).scalar() or "mozambique"
+        ).scalar()
+    if not country:
+        raise HTTPException(500, "run has no country")
     radius_m = float(location.get("precision_m") or 1500)
     places = location_module.nearby_places(
         country, lat, lon, km=max(2.0, min(30.0, radius_m / 250.0))
@@ -1069,7 +1071,9 @@ def form_country(conn, run_id: str) -> str:
              "JOIN runs run ON run.form_id = form.id WHERE run.id = CAST(:run_id AS uuid)"),
         {"run_id": run_id},
     ).scalar()
-    return row or "mozambique"
+    if not row:
+        raise HTTPException(404, "run has no country")
+    return row
 
 
 _TEMPLATE_SIZE: dict[str, tuple[int, int]] = {}
@@ -1341,7 +1345,7 @@ def confirm_section_filled(run_id: str, section_id: str):
             raise HTTPException(404, "run não encontrado")
         blocks, pairs, concepts = store.form_rows(conn, run["form_id"])
         form = conn.execute(select(forms_t).where(forms_t.c.id == run["form_id"])).mappings().one()
-        country = str((form["definition"] or {}).get("country", "mozambique"))
+        country = country_of(form["definition"] or {})
         contract = load_contract(country)
         cfg = (contract.get("blocks") or {}).get(section_id) or {}
         if cfg.get("mode") != "section_filled":

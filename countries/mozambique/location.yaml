@@ -5,6 +5,8 @@
 # are unique in COD-AB v02) and uses the facility context as a fallback.
 
 country: mozambique
+country_name: Mozambique
+country_code: mz
 gazetteer:
   admin_units: gazetteer/admin_units.csv     # OCHA COD-AB v02, 2025-01-01
   facilities: gazetteer/facilities.csv       # MFL / SIS-MA via HDX

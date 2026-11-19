@@ -1035,6 +1035,7 @@ def run_card(
                 written_location[field] = hit["canonical"]
             print(f"  location aliases applied: {', '.join(sorted(alias_hits))}")
         geo = location.resolve(
+            country_of(form["definition"]),
             district=written_location["district"],
             locality=written_location["locality"],
             place=written_location["village"],

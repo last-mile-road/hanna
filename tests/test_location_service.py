@@ -40,7 +40,7 @@ def test_no_service_configured_means_no_request(monkeypatch):
     monkeypatch.setattr(location.settings, "NOMINATIM_URL", "")
     called = []
     monkeypatch.setattr(location.urllib.request, "urlopen", lambda *a, **k: called.append(1))
-    assert location.service_search({"place": "Impiri"}, "Balama") == []
+    assert location.service_search({"place": "Impiri"}, "Balama", "mozambique") == []
     assert called == []
 
 
@@ -67,7 +67,7 @@ def test_hits_outside_the_district_or_naming_another_district_are_dropped(cache,
          "type": "village", "address": {"county": "Namuno"}},        # different district
     ]
     monkeypatch.setattr(location.urllib.request, "urlopen", lambda *a, **k: FakeResponse(payload))
-    hits = location.service_search({"place": "Impiri"}, "Balama", url="http://nominatim.test")
+    hits = location.service_search({"place": "Impiri"}, "Balama", "mozambique", url="http://nominatim.test")
     assert len(hits) == 1
     assert hits[0].name == "Impiri"
     assert hits[0].source == "nominatim"
@@ -83,8 +83,8 @@ def test_an_answer_is_cached_and_not_asked_twice(cache, monkeypatch):
                               "display_name": "Impiri, Balama", "address": {"county": "Balama"}}])
 
     monkeypatch.setattr(location.urllib.request, "urlopen", fake)
-    first = location.service_search({"place": "Impiri"}, "Balama", url="http://nominatim.test")
-    second = location.service_search({"place": "Impiri"}, "Balama", url="http://nominatim.test")
+    first = location.service_search({"place": "Impiri"}, "Balama", "mozambique", url="http://nominatim.test")
+    second = location.service_search({"place": "Impiri"}, "Balama", "mozambique", url="http://nominatim.test")
     assert len(calls) == 1
     assert [hit.name for hit in first] == [hit.name for hit in second]
 
@@ -95,7 +95,7 @@ def test_service_hits_reach_review_but_never_auto(cache, monkeypatch):
                               "display_name": "Noere, Balama", "address": {"county": "Balama"}}])
 
     monkeypatch.setattr(location.urllib.request, "urlopen", fake)
-    result = location.resolve(district="Balama", locality="Nowhere", place="Nothing",
+    result = location.resolve("mozambique", district="Balama", locality="Nowhere", place="Nothing",
                               service_url="http://nominatim.test")
     assert result.decision == "review"
     assert result.service_used is True
@@ -107,6 +107,6 @@ def test_a_service_hit_cannot_rescue_an_unanchored_card_by_itself(cache, monkeyp
         return FakeResponse([])
 
     monkeypatch.setattr(location.urllib.request, "urlopen", fake)
-    result = location.resolve(district="Nowhereville", place="Nothing",
+    result = location.resolve("mozambique", district="Nowhereville", place="Nothing",
                               service_url="http://nominatim.test")
     assert result.decision == "escalate"

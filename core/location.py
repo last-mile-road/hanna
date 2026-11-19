@@ -42,12 +42,39 @@ if str(TOOLS) not in sys.path:
 import location_combinations as combos  # noqa: E402
 from rapidfuzz import fuzz  # noqa: E402
 
+import yaml  # noqa: E402
+
 from . import settings  # noqa: E402
 
 AUTO_SCORE = 85.0
 REVIEW_SCORE = 70.0
 MIN_MARGIN = 10.0
 TIE = 0.05
+
+@dataclass(frozen=True)
+class CountryContext:
+    """What a location service needs from a country pack, and nothing else."""
+
+    slug: str
+    name: str
+    code: str
+    language: str
+
+
+def country_context(country: str) -> CountryContext:
+    """Read `countries/<country>/location.yaml`. No defaults: a pack that cannot
+    name its country, its ISO code and its language cannot use a place service."""
+    path = settings.COUNTRIES_DIR / country / "location.yaml"
+    data = yaml.safe_load(path.read_text()) or {}
+    name = data.get("country_name")
+    code = data.get("country_code")
+    language = (data.get("match") or {}).get("language") or data.get("language")
+    if not (name and code and language):
+        raise ValueError(
+            f"{path} must declare country_name, country_code and match.language"
+        )
+    return CountryContext(country, str(name), str(code), str(language))
+
 
 # Tier 2: a service query carries a place name, so it is opt-in, cached, rate-limited and
 # constrained to the district. A hit from a service is never auto-accepted: it goes to the
@@ -163,12 +190,12 @@ def _order(candidates: list[Candidate]) -> list[Candidate]:
     )
 
 
-def _centre(district: str) -> tuple[float, float] | None:
+def _centre(district: str, country: str) -> tuple[float, float] | None:
     """District centroid from the gazetteer, used to bound a service query."""
-    anchor = combos.best_district(district)
+    anchor = combos.best_district(district, country)
     if not anchor:
         return None
-    rows = combos._districts()
+    rows = combos._districts(country)
     row = rows[rows["name"] == anchor[0]]
     if row.empty:
         return None
@@ -219,13 +246,15 @@ def _throttle() -> None:
         _last_service_call = time.monotonic()
 
 
-def service_search(names: dict[str, str], district: str, province: str | None = None,
+def service_search(names: dict[str, str], district: str, country: str,
+                   province: str | None = None,
                    url: str | None = None, limit: int = 5) -> list[Candidate]:
     """Tier 2: ask a Nominatim-compatible service, bounded to the district.
 
     Returns candidates marked `source="nominatim"`. Never raises: a service that is down
     or slow must leave the card in the same state it was, not fail it.
     """
+    ctx = country_context(country)
     base = (url if url is not None else settings.NOMINATIM_URL or "").rstrip("/")
     if not base:
         return []
@@ -240,17 +269,17 @@ def service_search(names: dict[str, str], district: str, province: str | None = 
         parts.append(district)
     if province:
         parts.append(province)
-    parts.append("Mozambique")
+    parts.append(ctx.name)
     query = ", ".join(parts)
 
-    centre = _centre(district)
+    centre = _centre(district, country)
     params = {
         "q": query,
         "format": "jsonv2",
         "addressdetails": "1",
         "limit": str(limit),
-        "countrycodes": "mz",
-        "accept-language": "pt",
+        "countrycodes": ctx.code,
+        "accept-language": ctx.language,
     }
     if centre:
         params["viewbox"] = _viewbox(centre[0], centre[1], SERVICE_MAX_KM)
@@ -311,22 +340,23 @@ def service_search(names: dict[str, str], district: str, province: str | None = 
     return _order(hits)
 
 
-def _gazetteer_resolve(district: str = "", locality: str = "", place: str = "",
-                       province: str | None = None, top: int = 5) -> Resolution:
+def _gazetteer_resolve(country: str, district: str = "", locality: str = "",
+                       place: str = "", province: str | None = None,
+                       top: int = 5) -> Resolution:
     """Tier 1: decide from the gazetteer alone. `resolve` adds tier 2 on an escalate."""
     """Resolve the three written names into one decision, with its alternatives."""
     written = {"district": district or "", "locality": locality or "", "place": place or ""}
     if not any(written.values()):
         return Resolution(decision="escalate", reason="no location written on the card")
 
-    anchor = combos.best_district(district)
+    anchor = combos.best_district(district, country)
     anchored = anchor is not None
     if not anchored and province:
         # A province on the card narrows nothing by itself, but it can re-anchor through
         # a district written in the locality field; the chain ranking already allows that.
         written["province"] = province
 
-    ranked = combos.rank(district, locality, place, top=top)
+    ranked = combos.rank(district, locality, place, country, top=top)
     if not ranked:
         return Resolution(
             decision="escalate",
@@ -390,7 +420,7 @@ def _gazetteer_resolve(district: str = "", locality: str = "", place: str = "",
     return resolution
 
 
-def _local_osm_search(names: dict[str, str], district: str, limit: int = 6,
+def _local_osm_search(names: dict[str, str], district: str, country: str, limit: int = 6,
                       written_only: tuple[str, ...] = ("locality", "place")) -> list[Candidate]:
     """Tier 2, local: find the written place names in the country's OSM extract.
 
@@ -413,7 +443,7 @@ def _local_osm_search(names: dict[str, str], district: str, limit: int = 6,
         written = {label: value for label, value in names.items() if (value or "").strip()}
     if not written or not district:
         return []
-    centre = _centre(district)
+    centre = _centre(district, country)
     if not centre:
         return []
     try:
@@ -553,7 +583,7 @@ def nearby_places(country: str, lat: float, lon: float, km: float,
     return out
 
 
-def resolve(district: str = "", locality: str = "", place: str = "",
+def resolve(country: str, district: str = "", locality: str = "", place: str = "",
             province: str | None = None, top: int = 5,
             service_url: str | None = None) -> Resolution:
     """The cascade: gazetteer first, then the place service, and no auto from a service.
@@ -561,15 +591,15 @@ def resolve(district: str = "", locality: str = "", place: str = "",
     A service hit is evidence that a place with that name exists near the district, not
     that it is the place written on the card, so the decision it can reach is `review`.
     """
-    resolution = _gazetteer_resolve(district, locality, place, province=province, top=top)
+    resolution = _gazetteer_resolve(country, district, locality, place, province=province, top=top)
     if resolution.decision != "escalate":
         return resolution
 
     names = {"district": district, "locality": locality, "place": place}
-    hits = _local_osm_search(names, district)
+    hits = _local_osm_search(names, district, country)
     source_label = "local OSM"
     if not hits:
-        hits = service_search(names, district, province, url=service_url)
+        hits = service_search(names, district, country, province=province, url=service_url)
         source_label = "service"
     if not hits:
         return resolution
