@@ -51,21 +51,24 @@ sheets skip when it is absent, which is what a public clone sees.
 ## Run it locally
 
 ```bash
+python3 -m venv .venv && . .venv/bin/activate
+pip install -r requirements.txt
 cp .env.example .env          # fill DATABASE_URL, OPENROUTER_API_KEY, HANNA_IMAGES_DIR
-~/.venv/bin/python tools/load_pack.py                 # concepts, form, cards, truth
-~/.venv/bin/python tools/run_card.py --form form16    # one card, one profile
-~/.venv/bin/python -m pytest tests -q                 # 206 passed
+python tools/load_pack.py                 # concepts, form, cards, truth
+python tools/run_card.py --form form16    # one card, one profile
+python -m pytest tests -q                 # 206 passed
 ```
 
-- The ledger is PostgreSQL. The development instance listens on `127.0.0.1:55432`.
+- The ledger is PostgreSQL. Start it, then point `DATABASE_URL` at it; the
+  development instance in this project listens on `127.0.0.1:55432`.
 - Card images are not in the repository; `HANNA_IMAGES_DIR` points at them.
 - A run writes `output/runs/<id>/validation.json` and `runs.validation_status`.
 
 ## The web layer
 
 ```bash
-~/.venv/bin/uvicorn server.app:app --host 127.0.0.1 --port 8100   # HTTP + SSE
-~/.venv/bin/python -m server.worker                               # claims jobs
+uvicorn server.app:app --host 127.0.0.1 --port 8100   # HTTP + SSE
+python -m server.worker                               # claims jobs
 curl -s localhost:8100/healthz
 ```
 
@@ -112,7 +115,7 @@ concept as data element — so an export is a mapping, not a migration.
 ## Ground-truth capture
 
 ```bash
-~/.venv/bin/python tools/gt_capture/app.py     # http://127.0.0.1:8765
+python tools/gt_capture/app.py     # http://127.0.0.1:8765
 ```
 
 A standalone page: card on the left, fields on the right with the widget each

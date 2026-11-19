@@ -1,0 +1,19 @@
+# Runtime and test dependencies, pinned to the versions this build was tested on.
+# Python 3.12 or newer. The deploy extras are in requirements-deploy.txt.
+alembic==1.19.1
+fastapi==0.141.1
+httpx==0.28.1
+numpy==2.5.4
+opencv-python==5.0.0.93
+openai==3.11.0
+pandas==3.0.6
+pg8000==1.31.5
+pillow==12.2.0
+pydantic==2.13.4
+pytest==8.2.2
+pytest-asyncio==0.23.7
+python-multipart==0.0.32
+PyYAML==6.0.3
+RapidFuzz==3.14.6
+SQLAlchemy==2.0.51
+uvicorn==0.30.0

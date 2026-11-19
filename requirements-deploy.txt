@@ -1,0 +1,2 @@
+# Only needed to deploy the model box; not needed to run the pipeline.
+modal==1.3.0
