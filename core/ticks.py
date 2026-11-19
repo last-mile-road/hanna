@@ -21,7 +21,7 @@ from . import settings
 _CACHE: dict[tuple[str, str], dict] = {}
 
 
-def load_spec(country: str = "mozambique", page: str = "front") -> dict:
+def load_spec(country: str, page: str = "front") -> dict:
     key = (country, page)
     if key not in _CACHE:
         name = "tick_columns.yaml" if page in {"front", "draft"} else f"tick_columns.{page}.yaml"

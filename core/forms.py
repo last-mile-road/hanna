@@ -67,8 +67,17 @@ def load_concepts(path: Path | None = None) -> dict[str, dict[str, Any]]:
     return {c["id"]: c for c in data["concepts"]}
 
 
+def country_of(definition: dict) -> str:
+    """The country a form pack declares. No default: a pack that does not name
+    its country is a broken pack, not a Mozambican one."""
+    country = (definition or {}).get("country")
+    if not country:
+        raise ValueError("form pack does not declare a country")
+    return str(country)
+
+
 def load_form_pack(
-    country: str = "mozambique",
+    country: str,
     form_file: str = "form.draft.yaml",
     concepts_path: Path | None = None,
 ) -> FormPack:

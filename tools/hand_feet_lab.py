@@ -154,7 +154,7 @@ def main() -> None:
                     cost = 0.0
 
                     if strategy in {"fields", "legend"}:
-                        prompt = build_prompt(block, pairs, concepts)
+                        prompt = build_prompt(block, pairs, concepts, country="Mozambique", language="Portuguese")
                         if strategy == "legend":
                             prompt = prompt.replace(
                                 "This crop contains a body diagram or a drawing.",

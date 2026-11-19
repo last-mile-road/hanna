@@ -32,7 +32,7 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from sqlalchemy import select, text, update
 
 from core import admission, caseid, cases as cases_mod, decision, jobs, settings, store
-from core.forms import prompt_options
+from core.forms import country_of, prompt_options
 from core.validate import load_contract, validate_run
 from core.db import connect
 from core.schema import capture_pages as capture_pages_t
@@ -1183,7 +1183,7 @@ def get_review(run_id: str):
 
     width, height = _template_size(form["template_path"])
     hide_empty = bool(layout.get("hide_empty_sections"))
-    contract = load_contract(str((form["definition"] or {}).get("country", "mozambique")))
+    contract = load_contract(country_of(form["definition"] or {}))
     section_modes = {
         block_id: cfg.get("mode")
         for block_id, cfg in (contract.get("blocks") or {}).items()

@@ -146,6 +146,7 @@ def convert(config: dict, aliases: dict[str, dict], template: str) -> dict:
         "form": {
             "id": "mozambique_leprosy_card_pt",
             "country": "mozambique",
+            "language": "Portuguese",
             "template": template,
             "status": "draft",
             "reference_year": 2026,

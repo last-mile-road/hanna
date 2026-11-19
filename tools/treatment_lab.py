@@ -138,9 +138,9 @@ def main() -> None:
             for strategy in args.strategies.split(","):
                 try:
                     if strategy == "current":
-                        prompt = build_prompt(block, pairs, concepts)
+                        prompt = build_prompt(block, pairs, concepts, country="Mozambique", language="Portuguese")
                     elif strategy == "headers":
-                        prompt = build_prompt(block, pairs, concepts).replace(
+                        prompt = build_prompt(block, pairs, concepts, country="Mozambique", language="Portuguese").replace(
                             "Return one JSON object", RULES + "\n\nReturn one JSON object"
                         )
                     elif strategy == "cells":

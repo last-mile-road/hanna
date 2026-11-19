@@ -27,7 +27,7 @@ TERMINAL = {"done", "partial", "failed"}
 CLOSED_CODES = {"released", "ltfu", "died", "misclassification", "other", "transferred"}
 
 
-def load_rules(country: str = "mozambique") -> dict[str, Any]:
+def load_rules(country: str) -> dict[str, Any]:
     path = settings.COUNTRIES_DIR / country / "case_rules.yaml"
     if not path.exists():
         return {}
@@ -137,7 +137,7 @@ def decide_case(
     country = conn.execute(
         text("SELECT code FROM countries WHERE id = :id"), {"id": case["country_id"]}
     ).scalar()
-    rules = load_rules(country or "mozambique")
+    rules = load_rules(country)
 
     pages = _page_rows(conn, case_id)
     readings = _readings(conn, case_id)

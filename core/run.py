@@ -20,7 +20,7 @@ from sqlalchemy import delete, select, text, update
 
 from . import align, aliases, cases as case_store, location, marks, normalise, settings, store, ticks
 from .db import connect
-from .forms import Block, Pair
+from .forms import Block, Pair, country_of
 from .inference import OpenRouter
 from .parse import parse_json_response
 from .prompts import build_prompt, prompt_hash
@@ -28,6 +28,16 @@ from .readers import read_block as read_table_block
 from .treatment import derive_treatment_grid
 from .validate import validate_run
 from .schema import block_runs, cards, forms, observations, profiles, runs
+
+
+def _pack_language(definition: dict) -> str:
+    """The language a form pack declares. No default: the pack says what the
+    handwriting is, the core does not assume Portuguese."""
+    language = (definition or {}).get("language")
+    if not language:
+        raise ValueError("form pack does not declare a language")
+    return str(language)
+
 
 OCR_BLOCK_TYPES = {"value_pairs", "tick_grid", "annotated_table", "free_text"}
 INK_MIN = 0.008  # share of dark ink pixels not present in the blank template
@@ -373,8 +383,8 @@ def run_card(
                 block,
                 pairs_in_block,
                 concepts,
-                country=form["definition"].get("country", "Mozambique").title(),
-                language=form["definition"].get("language", "Portuguese"),
+                country=country_of(form["definition"]).title(),
+                language=_pack_language(form["definition"]),
                 with_template=with_template,
             )
             p_hash = prompt_hash(prompt, block_profile["model"], block_profile["settings"])
@@ -738,7 +748,7 @@ def run_card(
             try:
                 tick_values, tick_usage = ticks.read_ticks(
                     alignment.image,
-                    str(form["definition"].get("country", "mozambique")).lower(),
+                    country_of(form["definition"]).lower(),
                     client_for(tick_profile),
                     tick_profile,
                     run_dir,
@@ -759,7 +769,7 @@ def run_card(
                 g["concept"]: g
                 for g in ticks.groups(
                     ticks.load_spec(
-                        str(form["definition"].get("country", "mozambique")).lower(),
+                        country_of(form["definition"]).lower(),
                         form_variant,
                     )
                 )
@@ -804,7 +814,7 @@ def run_card(
                 try:
                     mark = marks.read_number(
                         alignment.image,
-                        str(form["definition"].get("country", "mozambique")).lower(),
+                        country_of(form["definition"]).lower(),
                         form_variant,
                         client_for(candidate),
                         candidate,
@@ -975,7 +985,7 @@ def run_card(
             pairs,
             concepts,
             all_values,
-            country=form["definition"].get("country", "mozambique"),
+            country=country_of(form["definition"]),
             as_of=date.today(),
         )
         if table_warnings:
@@ -1018,7 +1028,7 @@ def run_card(
             "locality": str(all_values.get("locality") or ""),
             "village": str(all_values.get("village_name") or ""),
         }
-        alias_hits = aliases.lookup(form["definition"].get("country", "mozambique"),
+        alias_hits = aliases.lookup(country_of(form["definition"]),
                                     written_location)
         if alias_hits:
             for field, hit in alias_hits.items():

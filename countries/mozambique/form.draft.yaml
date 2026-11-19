@@ -2,6 +2,7 @@
 form:
   id: mozambique_leprosy_card_pt
   country: mozambique
+  language: Portuguese
   template: template.jpg
   status: draft
   reference_year: 2026

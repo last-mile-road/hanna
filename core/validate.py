@@ -55,7 +55,7 @@ def _date(value: Any) -> date | None:
     return None
 
 
-def load_contract(country: str = "mozambique") -> dict:
+def load_contract(country: str) -> dict:
     path = settings.COUNTRIES_DIR / country / "validation.yaml"
     if not path.exists():
         return {}
@@ -102,7 +102,7 @@ def validate_run(
     concepts: dict[str, dict],
     values: dict[str, Any],
     *,
-    country: str = "mozambique",
+    country: str,
     as_of: date | None = None,
 ) -> dict:
     contract = load_contract(country)

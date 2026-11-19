@@ -142,8 +142,8 @@ def build_prompt(
     block: Block,
     pairs: list[Pair],
     concepts: dict[str, dict[str, Any]],
-    country: str = "Mozambique",
-    language: str = "Portuguese",
+    country: str,
+    language: str,
     with_template: bool = False,
 ) -> str:
     if block.block_type == "dose_grid":

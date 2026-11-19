@@ -128,15 +128,15 @@ def map_output(parsed: dict, strategy: str, pair_ids: list[str]) -> dict[str, st
 
 def build_prompts(block: Block, pairs: list[Pair], concepts: dict, strategy: str) -> str:
     if strategy == "fields":
-        return build_prompt(block, pairs, concepts)
+        return build_prompt(block, pairs, concepts, country="Mozambique", language="Portuguese")
     if strategy == "spatial":
-        return build_prompt(block, pairs, concepts) + "\n" + SPATIAL
+        return build_prompt(block, pairs, concepts, country="Mozambique", language="Portuguese") + "\n" + SPATIAL
     if strategy == "labels":
         labelled = [
             dataclasses.replace(p, label_local=LABELS.get(p.id, p.label_local))
             for p in pairs
         ]
-        return build_prompt(block, labelled, concepts) + "\n" + SPATIAL
+        return build_prompt(block, labelled, concepts, country="Mozambique", language="Portuguese") + "\n" + SPATIAL
     if strategy == "transcribe":
         return TRANSCRIBE
     if strategy == "rows":

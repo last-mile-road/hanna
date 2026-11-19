@@ -1,6 +1,7 @@
 form:
   id: mozambique_back_card
   country: mozambique
+  language: Portuguese
   variant: back
   template: template.back.jpg
   status: draft
