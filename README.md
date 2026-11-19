@@ -3,11 +3,21 @@
 The running version of HANNA for testing and iteration. Design lives in
 `../hanna_next/`; the read-only baseline lives in `../hanna_v2/`.
 
-**Status:** working vertical slice with a validation layer and the first case
-model. PostgreSQL 18.6 run ledger, form contract, alignment, prompt generation,
-OpenRouter extraction, scoring and a required/parameter validator; 190 tests
-pass. Phase 1 adds a job worker, an HTTP/SSE surface and signed image links, with
-no UI or auth yet. Renamed from `objective-2-server` on 2026-10-23.
+**Status (2026-11-19).** Working test build. A phone photographs the front and
+back of a leprosy clinic card; the pipeline extracts the fields, validates them
+against the WHO standard, reviews them value by value against their crops,
+decides the case and places the home on a map. PostgreSQL 18 run ledger, form
+contract, alignment, generated prompts, model routing, 206 tests pass. There is
+no authentication yet: the API is for localhost and a temporary tunnel.
+
+## Start here
+
+| If you want to… | Read |
+|---|---|
+| add a country | `countries/_template/README.md` — four files, no code |
+| know what a country supplies | blank template, 5–10 dummy cards with known values, a location list; ground truth is the entry ticket |
+| reuse the code | `LICENSING.md` — Apache-2.0; country packs stay under their own terms |
+| contribute | `CONTRIBUTING.md` — data rule, DCO sign-off, pack checklist |
 
 ## Decisions taken 2026-10-23
 
@@ -62,7 +72,7 @@ hanna_server/
 │   ├── new_ground_truth_form.py      regenerate a sheet from the ledger
 │   └── gt_capture/                   ground-truth capture UI (standalone, disposable)
 ├── data/baseline/field_accuracy.csv  per-field baseline, aggregates only
-└── tests/                            105 checks; only the queue tests need the dev database
+└── tests/                            206 checks; the database tests need the dev instance on 55432
 ```
 
 ## Run it
@@ -72,7 +82,7 @@ cd ~/Documents/hanna_project/hanna_server
 ~/.venv/bin/python tools/load_pack.py                 # concepts, form, cards, truth
 ~/.venv/bin/python tools/run_card.py --form form16    # one card, one profile
 # each run writes output/runs/<id>/validation.json and runs.validation_status
-~/.venv/bin/python -m pytest tests -q                 # 105 passed
+~/.venv/bin/python -m pytest tests -q                 # 206 passed
 ```
 
 The ledger is PostgreSQL. `DATABASE_URL` defaults to the rootless dev instance
@@ -253,4 +263,12 @@ builder (Studio).
 - No secrets in git. `.env` is ignored; `.env.example` is not.
 - One commit per logical unit, conventional messages, a verification step per
   milestone (the existing repo convention).
+
+## Licence and contributing
+
+Code is Apache-2.0; documents and the concept index are CC BY-SA 4.0; a country
+pack stays under the terms in its own `NOTICE.md`. See `LICENSING.md`.
+
+Contributions: `CONTRIBUTING.md` (DCO sign-off, country-pack checklist, the data
+rule), `SECURITY.md` (private reporting), `CODE_OF_CONDUCT.md`.
 
