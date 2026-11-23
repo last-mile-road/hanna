@@ -9,6 +9,12 @@ It is a test bench, not a national system. A country joins with its own card, in
 its own language, and measures HANNA on its own test cards before anyone commits
 to a deployment.
 
+## Short video overview
+
+https://github.com/user-attachments/assets/fb388927-3f10-4658-a4fa-07ba7d6e6289
+
+
+
 ## What it does
 
 - **Reads the card** — front and back, photographed with a phone. No scanner, no
