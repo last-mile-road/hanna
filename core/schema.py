@@ -418,3 +418,111 @@ Index(
     unique=True,
     postgresql_where=case_values.c.visit_id.is_not(None),
 )
+
+
+# --- accounts, roles and sessions (D-2026-11-17-02/03/04) -------------------
+# One account may belong to one country; a project admin has no country and can
+# act across them. Sessions are server-side rows keyed by the hash of a random
+# cookie value, so a leaked database does not yield a usable cookie.
+
+accounts = Table(
+    "accounts",
+    metadata,
+    Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column("email", String(254), nullable=False, unique=True),
+    Column("password_hash", Text, nullable=False),
+    Column("display_name", String(128), nullable=False),
+    Column("is_active", Boolean, nullable=False, server_default="true"),
+    Column("totp_secret", String(64)),
+    Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
+    Column("last_login_at", DateTime(timezone=True)),
+    Column("failed_attempts", Integer, nullable=False, server_default="0"),
+    Column("locked_until", DateTime(timezone=True)),
+)
+
+memberships = Table(
+    "memberships",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column(
+        "account_id",
+        UUID(as_uuid=True),
+        ForeignKey("accounts.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column("country_id", ForeignKey("countries.id", ondelete="CASCADE")),
+    Column("role", String(32), nullable=False),
+    Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
+    UniqueConstraint("account_id", "country_id", name="uq_memberships_account_country"),
+    CheckConstraint(
+        "role IN ('project_admin','country_admin','contributor','reviewer','viewer')",
+        name="role",
+    ),
+)
+
+sessions = Table(
+    "sessions",
+    metadata,
+    Column("id", String(64), primary_key=True),  # sha256 of the cookie value
+    Column(
+        "account_id",
+        UUID(as_uuid=True),
+        ForeignKey("accounts.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
+    Column("last_seen_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
+    Column("expires_at", DateTime(timezone=True), nullable=False),
+    Column("ip", String(64)),
+    Column("user_agent", Text),
+)
+Index("ix_sessions_account", sessions.c.account_id)
+Index("ix_sessions_expires", sessions.c.expires_at)
+
+invitations = Table(
+    "invitations",
+    metadata,
+    Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column("email", String(254), nullable=False),
+    Column("country_id", ForeignKey("countries.id", ondelete="CASCADE")),
+    Column("role", String(32), nullable=False),
+    Column("token_hash", String(64), nullable=False, unique=True),
+    Column("expires_at", DateTime(timezone=True), nullable=False),
+    Column(
+        "created_by",
+        UUID(as_uuid=True),
+        ForeignKey("accounts.id", ondelete="SET NULL"),
+    ),
+    Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
+    Column("accepted_at", DateTime(timezone=True)),
+    Column("revoked_at", DateTime(timezone=True)),
+)
+
+audit_log = Table(
+    "audit_log",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column(
+        "account_id",
+        UUID(as_uuid=True),
+        ForeignKey("accounts.id", ondelete="SET NULL"),
+    ),
+    Column("action", String(64), nullable=False),
+    Column("object_type", String(32)),
+    Column("object_id", String(64)),
+    Column("country_id", ForeignKey("countries.id", ondelete="SET NULL")),
+    Column("detail", JSONB),
+    Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
+)
+Index("ix_audit_created", audit_log.c.created_at)
+Index("ix_audit_country", audit_log.c.country_id)
+
+quotas = Table(
+    "quotas",
+    metadata,
+    Column("country_id", ForeignKey("countries.id", ondelete="CASCADE"), primary_key=True),
+    Column("cards_per_day", Integer, nullable=False, server_default="50"),
+    Column("gpu_seconds_per_day", Integer, nullable=False, server_default="1200"),
+    Column("max_concurrent", Integer, nullable=False, server_default="2"),
+    Column("updated_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
+)

@@ -1,6 +1,7 @@
 # Runtime and test dependencies, pinned to the versions this build was tested on.
 # Python 3.12 or newer. The deploy extras are in requirements-deploy.txt.
 alembic==1.19.1
+argon2-cffi==25.1.0
 fastapi==0.141.1
 httpx==0.28.1
 numpy==2.5.4

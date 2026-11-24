@@ -44,9 +44,11 @@ from core.schema import forms as forms_t
 from core.schema import runs as runs_t
 
 from . import events, signing, uploads
+from .auth_routes import router as auth_router
 from .studio import router as studio_router
 
 app = FastAPI(title="HANNA", version="0.1-phase1")
+app.include_router(auth_router)
 app.include_router(studio_router)
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -65,6 +67,12 @@ def review_page():
 def index():
     """Bench screen 1: consent, capture, client gate, upload, live stream."""
     return FileResponse(STATIC_DIR / "index.html")
+
+
+@app.get("/login", include_in_schema=False)
+def login_page():
+    """Sign-in screen. The API is /auth/login."""
+    return FileResponse(STATIC_DIR / "login.html", headers={"Cache-Control": "no-store"})
 
 
 @app.get("/capture", include_in_schema=False)

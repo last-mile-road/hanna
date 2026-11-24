@@ -85,3 +85,9 @@ ROUTING_FILE = os.environ.get("HANNA_ROUTING_FILE", "routing.yaml")
 # A local mineru-api (JSON + local source) instead of the box proxy (multipart). Set this
 # for local experimentation: MINERU_LOCAL_BASE=http://127.0.0.1:8001
 MINERU_LOCAL_BASE = os.environ.get("MINERU_LOCAL_BASE", "")
+
+# Authentication (D-2026-11-17-04). Secure cookies on the VPS; plain HTTP locally.
+SESSION_COOKIE = os.environ.get("HANNA_SESSION_COOKIE", "hanna_session")
+SESSION_TTL_DAYS = int(os.environ.get("HANNA_SESSION_TTL_DAYS", "90"))
+COOKIE_SECURE = os.environ.get("HANNA_COOKIE_SECURE", "0") == "1"
+INVITE_TTL_DAYS = int(os.environ.get("HANNA_INVITE_TTL_DAYS", "7"))
