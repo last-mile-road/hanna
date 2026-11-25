@@ -15,8 +15,32 @@
   .muted { color:#5b6470; font-size:.88rem; }
   .banner { margin:18px 0; padding:10px 14px; border-radius:10px;
             background:#fff7e6; border:1px solid #f0d9a8; color:#7a5a12; font-size:.88rem; }
-  .grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); margin-top:16px; }
-  .card { background:#fff; border:1px solid #dde1e6; border-radius:12px; padding:18px; }
+  .grid { display:grid; gap:14px; grid-template-columns:repeat(6, 1fr); margin-top:16px; align-items:start; }
+  .card { grid-column: span 2; background:#fff; border:1px solid #dde1e6; border-radius:12px; padding:18px; min-width:0; }
+  .card.wide { grid-column: span 3; }
+  .card.full { grid-column: span 6; }
+  @media (max-width: 860px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .card, .card.wide { grid-column: span 1; }
+    .card.full { grid-column: span 2; }
+  }
+  @media (max-width: 560px) {
+    .grid { grid-template-columns: 1fr; }
+    .card, .card.wide, .card.full { grid-column: span 1; }
+  }
+  .upload-row { display:grid; gap:8px; grid-template-columns: 200px 1fr auto; align-items:center; margin-top:10px; }
+  .upload-row select, .upload-row input[type=file] { width:100%; padding:9px; border:1px solid #c9cfd6; border-radius:8px; font:inherit; background:#fff; }
+  .upload-row button { padding:9px 16px; font:inherit; font-weight:600; color:#fff; background:#1f5bd7; border:0; border-radius:8px; cursor:pointer; }
+  @media (max-width: 720px) { .upload-row { grid-template-columns: 1fr; } }
+  #asset-list .row { display:grid; grid-template-columns: 1fr 190px auto; gap:10px; align-items:center;
+                     padding:8px 0; border-top:1px solid #eef0f3; }
+  #asset-list .name { overflow-wrap:anywhere; }
+  #asset-list .meta { color:#5b6470; font-size:.8rem; }
+  #asset-list .actions { white-space:nowrap; }
+  @media (max-width: 720px) {
+    #asset-list .row { grid-template-columns: 1fr; gap:2px; }
+    #asset-list .actions { white-space:normal; }
+  }
   .card p { margin:6px 0 0; }
   a.button { display:inline-block; margin-top:12px; padding:9px 13px; border-radius:8px;
              text-decoration:none; font-weight:600; color:#1f5bd7; border:1px solid #b9cbf0; background:#fff; }
@@ -65,37 +89,34 @@
       <span class="tag soon">coming next</span>
     </section>
 
-    <section class="card" id="resources">
+    <section class="card wide">
+      <h2>Team</h2>
+      <p class="muted">Members, roles and invitations for this country.</p>
+      <span class="tag soon">coming next</span>
+    </section>
+
+    <section class="card wide">
+      <h2>Information</h2>
+      <p class="muted">Leprosy facts, the country brief, and how the test works.</p>
+      <a class="button" href="https://www.who.int/news-room/fact-sheets/detail/leprosy" target="_blank" rel="noopener">WHO fact sheet</a>
+    </section>
+
+    <section class="card full" id="resources">
       <h2>Resources</h2>
       <p class="muted">Template scan, filled test cards, location list, mapping, documents.</p>
-      <form id="upload" style="margin-top:10px">
-        <select id="kind" style="width:100%;padding:9px;border:1px solid #c9cfd6;border-radius:8px">
+      <form id="upload" class="upload-row">
+        <select id="kind">
           <option value="template">Blank template</option>
           <option value="test_card">Filled test card</option>
           <option value="location">Location list</option>
           <option value="mapping">Mapping file</option>
           <option value="document">Document</option>
         </select>
-        <input id="file" type="file" required style="margin-top:8px">
-        <button class="button" type="submit" id="upload-btn"
-                style="margin-top:8px;border:1px solid #b9cbf0;background:#fff;color:#1f5bd7;border-radius:8px;padding:9px 13px;font:inherit;font-weight:600;cursor:pointer">
-          Upload
-        </button>
-        <div class="muted" id="upload-note" style="margin-top:6px"></div>
+        <input id="file" type="file" required>
+        <button type="submit" id="upload-btn">Upload</button>
       </form>
+      <div class="muted" id="upload-note" style="margin-top:6px"></div>
       <div id="asset-list" style="margin-top:12px"></div>
-    </section>
-
-    <section class="card">
-      <h2>Team</h2>
-      <p class="muted">Members, roles and invitations for this country.</p>
-      <span class="tag soon">coming next</span>
-    </section>
-
-    <section class="card">
-      <h2>Information</h2>
-      <p class="muted">Leprosy facts, the country brief, and how the test works.</p>
-      <a class="button" href="https://www.who.int/news-room/fact-sheets/detail/leprosy" target="_blank" rel="noopener">WHO fact sheet</a>
     </section>
   </div>
 </main>
@@ -156,14 +177,14 @@
       return;
     }
     list.innerHTML = data.assets.map(a => `
-      <div style="display:flex;gap:8px;align-items:center;padding:7px 0;border-top:1px solid #eef0f3">
-        <div style="flex:1;min-width:0">
-          <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.filename}</div>
-          <div class="muted" style="font-size:.76rem">${a.kind} · ${size(a.size_bytes)} · ${(a.created_at || "").slice(0,10)}</div>
+      <div class="row">
+        <div class="name">${a.filename}</div>
+        <div class="meta">${a.kind} · ${size(a.size_bytes)} · ${(a.created_at || "").slice(0,10)}</div>
+        <div class="actions">
+          <a href="/portal/api/assets/${a.id}/download">Download</a>
+          <button data-id="${a.id}" data-kind="${a.kind}" class="rep" style="border:0;background:none;color:#1f5bd7;cursor:pointer">Replace</button>
+          <button data-id="${a.id}" class="del" style="border:0;background:none;color:#a3231f;cursor:pointer">Delete</button>
         </div>
-        <a href="/portal/api/assets/${a.id}/download">Download</a>
-        <button data-id="${a.id}" data-kind="${a.kind}" class="rep" style="border:0;background:none;color:#1f5bd7;cursor:pointer">Replace</button>
-        <button data-id="${a.id}" class="del" style="border:0;background:none;color:#a3231f;cursor:pointer">Delete</button>
       </div>`).join("");
     list.querySelectorAll("button.rep").forEach(button => {
       button.addEventListener("click", () => {
