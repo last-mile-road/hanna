@@ -17,6 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from sqlalchemy import select, text
+from sqlalchemy.exc import InterfaceError, OperationalError
 
 from core import auth
 from core.db import connect
@@ -35,7 +36,14 @@ def main() -> None:
     if password != getpass.getpass("again: "):
         raise SystemExit("passwords do not match")
 
-    with connect() as conn:
+    try:
+        conn = connect()
+    except (OperationalError, InterfaceError):
+        raise SystemExit(
+            "database not running: start it with "
+            "bash ~/.local/share/hanna/pg18/start.sh"
+        )
+    with conn as conn:
         country_id = None
         if args.country:
             country_id = conn.execute(
