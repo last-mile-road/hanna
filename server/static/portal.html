@@ -143,12 +143,16 @@
     const list = document.getElementById("asset-list");
     const response = await fetch("/portal/api/assets");
     if (!response.ok) {
-      list.innerHTML = '<p class="muted">Resources are available to country accounts.</p>';
+      const message = response.status === 401 ? "Sign in to see your files."
+        : response.status === 403 ? "This account is not attached to a country."
+        : response.status === 404 ? "The server is running an older version; restart it."
+        : "Could not load resources (" + response.status + ").";
+      list.innerHTML = '<p class="muted">' + message + '</p>';
       return;
     }
     const data = await response.json();
     if (!data.assets.length) {
-      list.innerHTML = '<p class="muted">Nothing uploaded yet.</p>';
+      list.innerHTML = '<p class="muted">No files yet. Upload a template, a test card or a location list above.</p>';
       return;
     }
     list.innerHTML = data.assets.map(a => `
@@ -158,8 +162,32 @@
           <div class="muted" style="font-size:.76rem">${a.kind} · ${size(a.size_bytes)} · ${(a.created_at || "").slice(0,10)}</div>
         </div>
         <a href="/portal/api/assets/${a.id}/download">Download</a>
+        <button data-id="${a.id}" data-kind="${a.kind}" class="rep" style="border:0;background:none;color:#1f5bd7;cursor:pointer">Replace</button>
         <button data-id="${a.id}" class="del" style="border:0;background:none;color:#a3231f;cursor:pointer">Delete</button>
       </div>`).join("");
+    list.querySelectorAll("button.rep").forEach(button => {
+      button.addEventListener("click", () => {
+        const picker = document.createElement("input");
+        picker.type = "file";
+        picker.addEventListener("change", async () => {
+          const file = picker.files[0];
+          if (!file) return;
+          const form = new FormData();
+          form.append("kind", button.dataset.kind);
+          form.append("file", file);
+          const response = await fetch("/portal/api/assets", {method: "POST", body: form});
+          if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            alert(body.detail || "Replace failed (" + response.status + ")");
+            return;
+          }
+          await fetch("/portal/api/assets/" + button.dataset.id, {method: "DELETE"});
+          loadAssets();
+        });
+        picker.click();
+      });
+    });
+
     list.querySelectorAll("button.del").forEach(button => {
       button.addEventListener("click", async () => {
         if (!confirm("Delete this file?")) return;
@@ -181,7 +209,7 @@
     const response = await fetch("/portal/api/assets", {method: "POST", body: form});
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      note.textContent = body.detail || "Upload failed.";
+      note.textContent = body.detail || "Upload failed (" + response.status + ").";
       return;
     }
     note.textContent = "Uploaded.";

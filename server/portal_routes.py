@@ -79,7 +79,7 @@ def download_asset(asset_id: str, account: dict = Depends(require_account)):
 def delete_asset(asset_id: str, account: dict = Depends(require_account)):
     membership = _membership(account)
     role = membership.get("role")
-    if role not in {"country_admin", "contributor", "project_admin"}:
+    if role not in {"country_admin", "contributor", "tester", "project_admin"}:
         raise HTTPException(403, "your role cannot delete resources")
     with connect() as conn:
         removed = assets.remove(conn, asset_id, _country_id(membership))
