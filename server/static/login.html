@@ -61,7 +61,7 @@
         error.textContent = body.detail || "Sign-in failed.";
         return;
       }
-      const next = new URLSearchParams(location.search).get("next") || "/";
+      const next = new URLSearchParams(location.search).get("next") || "/portal";
       location.href = next.startsWith("/") ? next : "/";
     } catch (err) {
       error.textContent = "Network error. Try again.";

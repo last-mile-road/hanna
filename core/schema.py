@@ -432,12 +432,21 @@ accounts = Table(
     Column("email", String(254), nullable=False, unique=True),
     Column("password_hash", Text, nullable=False),
     Column("display_name", String(128), nullable=False),
+    Column("phone", String(32)),
     Column("is_active", Boolean, nullable=False, server_default="true"),
     Column("totp_secret", String(64)),
     Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
     Column("last_login_at", DateTime(timezone=True)),
     Column("failed_attempts", Integer, nullable=False, server_default="0"),
     Column("locked_until", DateTime(timezone=True)),
+)
+
+roles = Table(
+    "roles",
+    metadata,
+    Column("name", String(32), primary_key=True),
+    Column("label", String(64), nullable=False),
+    Column("rank", Integer, nullable=False, server_default="100"),
 )
 
 memberships = Table(
@@ -451,13 +460,15 @@ memberships = Table(
         nullable=False,
     ),
     Column("country_id", ForeignKey("countries.id", ondelete="CASCADE")),
-    Column("role", String(32), nullable=False),
+    Column("role", String(32), ForeignKey("roles.name"), nullable=False),
+    Column("province", String(64)),
+    Column("district", String(64)),
+    Column("facility", String(64)),
+    Column("staff_number", String(64)),
+    Column("status", String(16), nullable=False, server_default="active"),
     Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
     UniqueConstraint("account_id", "country_id", name="uq_memberships_account_country"),
-    CheckConstraint(
-        "role IN ('project_admin','country_admin','contributor','reviewer','viewer')",
-        name="role",
-    ),
+    CheckConstraint("status IN ('pending','active','suspended')", name="status"),
 )
 
 sessions = Table(

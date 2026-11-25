@@ -8,8 +8,11 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
+from sqlalchemy import select
+
 from core import auth, settings
 from core.db import connect
+from core.schema import countries
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -17,6 +20,19 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 class LoginIn(BaseModel):
     email: str
     password: str
+
+
+class RegisterIn(BaseModel):
+    country: str
+    email: str
+    password: str
+    display_name: str
+    role: str = "tester"
+    phone: str | None = None
+    province: str | None = None
+    district: str | None = None
+    facility: str | None = None
+    staff_number: str | None = None
 
 
 def _client(request: Request) -> tuple[str | None, str | None]:
@@ -44,7 +60,15 @@ def _public(account: dict) -> dict:
         "email": account["email"],
         "display_name": account["display_name"],
         "memberships": [
-            {"country_id": m.get("country_id"), "role": m["role"]}
+            {
+                "country_id": m.get("country_id"),
+                "country_code": m.get("country_code"),
+                "role": m["role"],
+                "status": m.get("status"),
+                "province": m.get("province"),
+                "district": m.get("district"),
+                "facility": m.get("facility"),
+            }
             for m in account.get("memberships", [])
         ],
     }
@@ -116,4 +140,66 @@ def logout(request: Request, response: Response):
 
 @router.get("/me")
 def me(account: dict = Depends(require_account)):
+    return {"account": _public(account)}
+
+
+@router.post("/register")
+def register(payload: RegisterIn, request: Request, response: Response):
+    """Self-registration behind a country QR. Testers are active at once; the
+    production approval step belongs here when it lands."""
+    ip, ua = _client(request)
+    role = payload.role.strip().lower()
+    if role not in {"tester", "notifier"}:
+        raise HTTPException(403, "this role cannot self-register")
+    with connect() as conn:
+        country = conn.execute(
+            select(countries.c.id, countries.c.code, countries.c.name).where(
+                countries.c.code == payload.country.strip().lower()
+            )
+        ).mappings().first()
+        if country is None:
+            raise HTTPException(404, "unknown country")
+        if auth.account_by_email(conn, payload.email) is not None:
+            raise HTTPException(409, "an account with this email already exists")
+        try:
+            row = auth.create_account(
+                conn,
+                email=payload.email,
+                password=payload.password,
+                display_name=payload.display_name,
+                country_id=country["id"],
+                role=role,
+                phone=payload.phone,
+                province=payload.province,
+                district=payload.district,
+                facility=payload.facility,
+                staff_number=payload.staff_number,
+                status="active",
+            )
+            token = auth.create_session(conn, row["id"], ip=ip, user_agent=ua)
+            auth.audit(
+                conn,
+                "registered",
+                account_id=row["id"],
+                country_id=country["id"],
+                detail={"role": role, "ip": ip},
+            )
+            conn.commit()
+            account = auth.resolve_session(conn, token)
+        except ValueError as exc:
+            conn.rollback()
+            raise HTTPException(422, str(exc))
+        except Exception:
+            conn.rollback()
+            raise
+
+    response.set_cookie(
+        settings.SESSION_COOKIE,
+        token,
+        max_age=settings.SESSION_TTL_DAYS * 86400,
+        httponly=True,
+        secure=settings.COOKIE_SECURE,
+        samesite="lax",
+        path="/",
+    )
     return {"account": _public(account)}

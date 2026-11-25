@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HANNA — country portal</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin:0; font:16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+         background:#f6f7f9; color:#1c1f23; }
+  main { max-width:880px; margin:0 auto; padding:24px 18px 60px; }
+  header { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:10px; }
+  h1 { font-size:1.35rem; margin:0; }
+  h2 { font-size:1rem; margin:0 0 6px; }
+  .muted { color:#5b6470; font-size:.88rem; }
+  .banner { margin:18px 0; padding:10px 14px; border-radius:10px;
+            background:#fff7e6; border:1px solid #f0d9a8; color:#7a5a12; font-size:.88rem; }
+  .grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); margin-top:16px; }
+  .card { background:#fff; border:1px solid #dde1e6; border-radius:12px; padding:18px; }
+  .card p { margin:6px 0 0; }
+  a.button { display:inline-block; margin-top:12px; padding:9px 13px; border-radius:8px;
+             text-decoration:none; font-weight:600; color:#1f5bd7; border:1px solid #b9cbf0; background:#fff; }
+  button.link { background:none; border:0; color:#5b6470; font:inherit; cursor:pointer; text-decoration:underline; padding:0; }
+  .tag { display:inline-block; font-size:.72rem; padding:1px 7px; border-radius:99px;
+         background:#eef3fd; color:#2456b3; border:1px solid #cfdcf7; }
+  .soon { opacity:.55; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1 id="title">Country portal</h1>
+      <div class="muted" id="who"></div>
+    </div>
+    <button class="link" id="signout">Sign out</button>
+  </header>
+
+  <div class="banner">
+    <strong>Test server.</strong> Test cards only. Accuracy is measured against the
+    values your team confirms.
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Test the scanner</h2>
+      <p class="muted">Open the capture screen on this device, or scan the country QR on a phone.</p>
+      <a class="button" href="/capture">Open the scanner</a>
+      <a class="button" href="/c/mozambique">Phone entry page</a>
+    </section>
+
+    <section class="card">
+      <h2>Test cards</h2>
+      <p class="muted">Upload filled cards with known values and see what is loaded.</p>
+      <span class="tag soon">coming next</span>
+    </section>
+
+    <section class="card">
+      <h2>Results</h2>
+      <p class="muted">Per-block accuracy, the weakest fields, recent failures.</p>
+      <span class="tag soon">coming next</span>
+    </section>
+
+    <section class="card">
+      <h2>Resources</h2>
+      <p class="muted">Template, location list, documents, mapping.</p>
+      <span class="tag soon">coming next</span>
+    </section>
+
+    <section class="card">
+      <h2>Team</h2>
+      <p class="muted">Members, roles and invitations for this country.</p>
+      <span class="tag soon">coming next</span>
+    </section>
+
+    <section class="card">
+      <h2>Information</h2>
+      <p class="muted">Leprosy facts, the country brief, and how the test works.</p>
+      <a class="button" href="https://www.who.int/news-room/fact-sheets/detail/leprosy" target="_blank" rel="noopener">WHO fact sheet</a>
+    </section>
+  </div>
+</main>
+<script>
+  let countries = [];
+
+  async function load() {
+    const me = await fetch("/auth/me");
+    if (!me.ok) {
+      location.href = "/login?next=/portal";
+      return;
+    }
+    const data = await me.json();
+    const account = data.account;
+    const membership = (account.memberships || [])[0] || {};
+
+    try {
+      const list = await (await fetch("/api/countries")).json();
+      countries = list.countries || [];
+    } catch (err) { countries = []; }
+
+    const country = countries.find(c => c.code === account.country_code) ||
+                    countries.find(c => c.code === "mozambique") || {};
+    const countryName = country.name || "Country";
+    document.getElementById("title").textContent = countryName + " portal";
+    document.getElementById("who").textContent =
+      account.display_name + " · " + membership.role +
+      (membership.facility ? " · " + membership.facility : "");
+    if (country.code) {
+      document.querySelectorAll('a[href="/c/mozambique"]').forEach(a => {
+        a.href = "/c/" + encodeURIComponent(country.code);
+      });
+    }
+  }
+
+  document.getElementById("signout").addEventListener("click", async () => {
+    await fetch("/auth/logout", {method: "POST"});
+    location.href = "/login";
+  });
+
+  load();
+</script>
+</body>
+</html>

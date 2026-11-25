@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HANNA — country entry</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin:0; font:16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+         background:#f6f7f9; color:#1c1f23; }
+  main { max-width:720px; margin:0 auto; padding:24px 18px 60px; }
+  header { display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+  h1 { font-size:1.35rem; margin:0 0 4px; }
+  .muted { color:#5b6470; font-size:.9rem; }
+  .banner { margin:18px 0; padding:10px 14px; border-radius:10px;
+            background:#fff7e6; border:1px solid #f0d9a8; color:#7a5a12; font-size:.88rem; }
+  .card { background:#fff; border:1px solid #dde1e6; border-radius:12px; padding:20px; margin:14px 0; }
+  .grid { display:grid; gap:12px; grid-template-columns:1fr 1fr; }
+  @media (max-width:560px) { .grid { grid-template-columns:1fr; } }
+  label { display:block; font-size:.82rem; color:#3b424b; margin:10px 0 4px; }
+  input, select { width:100%; box-sizing:border-box; padding:9px 11px; font:inherit;
+                  border:1px solid #c9cfd6; border-radius:8px; background:#fff; color:inherit; }
+  button { padding:11px 16px; font:inherit; font-weight:600; color:#fff; background:#1f5bd7;
+           border:0; border-radius:8px; cursor:pointer; }
+  button.ghost { background:#fff; color:#1f5bd7; border:1px solid #b9cbf0; }
+  button:disabled { opacity:.6; cursor:default; }
+  a.button { display:inline-block; padding:10px 14px; border-radius:8px; text-decoration:none;
+             font-weight:600; color:#1f5bd7; border:1px solid #b9cbf0; background:#fff; }
+  .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+  #error { color:#a3231f; font-size:.88rem; min-height:1.2em; margin-top:10px; }
+  h2 { font-size:1.02rem; margin:0 0 6px; }
+  ul.links { margin:6px 0 0; padding-left:18px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1 id="country-name">HANNA</h1>
+      <div class="muted" id="country-sub">Country entry</div>
+    </div>
+    <a class="button" href="/login?next=/portal">Sign in</a>
+  </header>
+
+  <div class="banner">
+    <strong>Test server.</strong> Use dummy cards only. Nothing here is a real
+    patient notification.
+  </div>
+
+  <section class="card">
+    <h2>Notify a case / test the scanner</h2>
+    <p class="muted">Photograph the front and back of the card. The reviewer confirms every value.</p>
+    <div class="actions">
+      <button id="notify">Open the scanner</button>
+      <a class="button" href="#register">Register</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Information</h2>
+    <ul class="links">
+      <li><a href="https://www.who.int/news-room/fact-sheets/detail/leprosy" target="_blank" rel="noopener">Leprosy — WHO fact sheet</a></li>
+      <li><a href="https://www.leprosy-information.org/" target="_blank" rel="noopener">Leprosy Information (ILEP)</a></li>
+      <li><a href="https://www.who.int/initiatives/skin-ntds" target="_blank" rel="noopener">WHO skin NTDs</a></li>
+    </ul>
+  </section>
+
+  <section class="card" id="register">
+    <h2>Register</h2>
+    <p class="muted">One account, linked to this country and your location. On the
+      test server, choose <em>Tester</em> and the capital as your location.</p>
+    <form id="form" novalidate>
+      <div class="grid">
+        <div>
+          <label for="display_name">Full name</label>
+          <input id="display_name" required autocomplete="name">
+        </div>
+        <div>
+          <label for="email">Email</label>
+          <input id="email" type="email" required autocomplete="username">
+        </div>
+        <div>
+          <label for="phone">Phone (optional)</label>
+          <input id="phone" type="tel" autocomplete="tel">
+        </div>
+        <div>
+          <label for="password">Password (12 characters or more)</label>
+          <input id="password" type="password" required autocomplete="new-password">
+        </div>
+        <div>
+          <label for="role">Role</label>
+          <select id="role">
+            <option value="tester" selected>Tester</option>
+            <option value="notifier">Clinician / notifier</option>
+          </select>
+        </div>
+        <div>
+          <label for="staff_number">Staff / MoH number (optional on test)</label>
+          <input id="staff_number">
+        </div>
+        <div>
+          <label for="province">Province / region</label>
+          <input id="province" placeholder="e.g. Capital">
+        </div>
+        <div>
+          <label for="district">District</label>
+          <input id="district">
+        </div>
+        <div>
+          <label for="facility">Facility</label>
+          <input id="facility">
+        </div>
+      </div>
+      <div class="actions">
+        <button id="submit" type="submit">Create account</button>
+      </div>
+      <div id="error" role="alert"></div>
+    </form>
+  </section>
+</main>
+<script>
+  const code = decodeURIComponent(location.pathname.split("/").filter(Boolean).pop() || "");
+  const countryName = document.getElementById("country-name");
+  const countrySub = document.getElementById("country-sub");
+
+  fetch("/api/countries").then(r => r.json()).then(data => {
+    const country = (data.countries || []).find(c => c.code === code);
+    if (!country) {
+      countrySub.textContent = "Unknown country";
+      return;
+    }
+    countryName.textContent = country.name;
+    countrySub.textContent = "Country entry · " + code;
+    countryName.dataset.code = country.code;
+  });
+
+  document.getElementById("notify").addEventListener("click", async () => {
+    const response = await fetch("/auth/me");
+    location.href = response.ok ? "/capture" : "/login?next=/capture";
+  });
+
+  const form = document.getElementById("form");
+  const error = document.getElementById("error");
+  const submit = document.getElementById("submit");
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    error.textContent = "";
+    submit.disabled = true;
+    try {
+      const response = await fetch("/auth/register", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          country: code,
+          display_name: document.getElementById("display_name").value,
+          email: document.getElementById("email").value,
+          phone: document.getElementById("phone").value || null,
+          password: document.getElementById("password").value,
+          role: document.getElementById("role").value,
+          staff_number: document.getElementById("staff_number").value || null,
+          province: document.getElementById("province").value || null,
+          district: document.getElementById("district").value || null,
+          facility: document.getElementById("facility").value || null
+        })
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        error.textContent = body.detail || "Registration failed.";
+        return;
+      }
+      location.href = "/portal";
+    } catch (err) {
+      error.textContent = "Network error. Try again.";
+    } finally {
+      submit.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

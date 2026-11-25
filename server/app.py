@@ -25,13 +25,13 @@ import uuid
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, StreamingResponse
 from sqlalchemy import select, text, update
 
-from core import admission, caseid, cases as cases_mod, decision, jobs, settings, store
+from core import admission, auth, caseid, cases as cases_mod, decision, jobs, settings, store
 from core.forms import country_of, prompt_options
 from core.validate import load_contract, validate_run
 from core.db import connect
@@ -64,9 +64,32 @@ def review_page():
 
 
 @app.get("/", include_in_schema=False)
-def index():
-    """Bench screen 1: consent, capture, client gate, upload, live stream."""
+def index(request: Request):
+    """Signed in → the country portal; otherwise the sign-in page."""
+    token = request.cookies.get(settings.SESSION_COOKIE)
+    if token:
+        with connect() as conn:
+            if auth.resolve_session(conn, token):
+                return RedirectResponse("/portal")
+    return RedirectResponse("/login")
+
+
+@app.get("/bench", include_in_schema=False)
+def bench():
+    """Bench screen: consent, capture, client gate, upload, live stream."""
     return FileResponse(STATIC_DIR / "index.html")
+
+
+@app.get("/c/{country}", include_in_schema=False)
+def country_entry(country: str):
+    """The QR landing for one country: sign in, register, information, notify."""
+    return FileResponse(STATIC_DIR / "country.html", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/portal", include_in_schema=False)
+def portal_page():
+    """Country workspace. The page asks /auth/me and sends a stranger to sign in."""
+    return FileResponse(STATIC_DIR / "portal.html", headers={"Cache-Control": "no-store"})
 
 
 @app.get("/login", include_in_schema=False)

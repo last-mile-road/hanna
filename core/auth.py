@@ -17,7 +17,7 @@ from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatc
 from sqlalchemy import delete, select, update
 
 from . import settings
-from .schema import accounts, audit_log, memberships, sessions
+from .schema import accounts, audit_log, countries, memberships, roles, sessions
 
 _hasher = PasswordHasher()
 
@@ -80,7 +80,20 @@ def account_by_email(conn, email: str) -> dict | None:
 
 def memberships_for(conn, account_id) -> list[dict]:
     rows = conn.execute(
-        select(memberships,)
+        select(
+            memberships.c.id,
+            memberships.c.country_id,
+            memberships.c.role,
+            memberships.c.province,
+            memberships.c.district,
+            memberships.c.facility,
+            memberships.c.staff_number,
+            memberships.c.status,
+            countries.c.code.label("country_code"),
+        )
+        .select_from(
+            memberships.outerjoin(countries, countries.c.id == memberships.c.country_id)
+        )
         .where(memberships.c.account_id == account_id)
     ).mappings().all()
     return [dict(r) for r in rows]
@@ -94,10 +107,16 @@ def create_account(
     display_name: str,
     country_id: int | None,
     role: str,
+    phone: str | None = None,
+    province: str | None = None,
+    district: str | None = None,
+    facility: str | None = None,
+    staff_number: str | None = None,
+    status: str = "active",
 ) -> dict:
     if len(password) < MIN_PASSWORD_LENGTH:
         raise ValueError(f"password must be at least {MIN_PASSWORD_LENGTH} characters")
-    if role not in {"project_admin", "country_admin", "contributor", "reviewer", "viewer"}:
+    if conn.execute(select(roles.c.name).where(roles.c.name == role)).scalar() is None:
         raise ValueError("unknown role")
     if role == "project_admin" and country_id is not None:
         raise ValueError("project_admin is not scoped to a country")
@@ -109,12 +128,20 @@ def create_account(
             email=email.strip().lower(),
             password_hash=hash_password(password),
             display_name=display_name.strip(),
+            phone=(phone or None),
         )
         .returning(accounts.c.id, accounts.c.email, accounts.c.display_name)
     ).mappings().one()
     conn.execute(
         memberships.insert().values(
-            account_id=row["id"], country_id=country_id, role=role
+            account_id=row["id"],
+            country_id=country_id,
+            role=role,
+            province=province,
+            district=district,
+            facility=facility,
+            staff_number=staff_number,
+            status=status,
         )
     )
     return dict(row)
