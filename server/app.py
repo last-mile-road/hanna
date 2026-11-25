@@ -47,11 +47,13 @@ from . import events, signing, uploads
 from .auth_routes import router as auth_router
 from .field_routes import router as field_router
 from .identity import require_identity
+from .portal_routes import router as portal_router
 from .studio import router as studio_router
 
 app = FastAPI(title="HANNA", version="0.1-phase1")
 app.include_router(auth_router)
 app.include_router(field_router)
+app.include_router(portal_router)
 app.include_router(studio_router)
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"

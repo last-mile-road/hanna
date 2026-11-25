@@ -580,3 +580,28 @@ field_sessions = Table(
     Column("user_agent", Text),
 )
 Index("ix_field_sessions_user", field_sessions.c.field_user_id)
+
+
+# --- country resources: files a country team uploads ------------------------
+# Template scans, filled test cards, location lists, mapping files, documents.
+# Files live on disk; the row holds the path, size and checksum.
+
+country_assets = Table(
+    "country_assets",
+    metadata,
+    Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column("country_id", ForeignKey("countries.id", ondelete="CASCADE"), nullable=False),
+    Column("kind", String(32), nullable=False),
+    Column("filename", String(255), nullable=False),
+    Column("content_type", String(128)),
+    Column("size_bytes", Integer, nullable=False),
+    Column("sha256", String(64), nullable=False),
+    Column("path", Text, nullable=False),
+    Column(
+        "uploaded_by",
+        UUID(as_uuid=True),
+        ForeignKey("accounts.id", ondelete="SET NULL"),
+    ),
+    Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
+)
+Index("ix_country_assets_country", country_assets.c.country_id)

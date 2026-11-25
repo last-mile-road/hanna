@@ -65,10 +65,25 @@
       <span class="tag soon">coming next</span>
     </section>
 
-    <section class="card">
+    <section class="card" id="resources">
       <h2>Resources</h2>
-      <p class="muted">Template, location list, documents, mapping.</p>
-      <span class="tag soon">coming next</span>
+      <p class="muted">Template scan, filled test cards, location list, mapping, documents.</p>
+      <form id="upload" style="margin-top:10px">
+        <select id="kind" style="width:100%;padding:9px;border:1px solid #c9cfd6;border-radius:8px">
+          <option value="template">Blank template</option>
+          <option value="test_card">Filled test card</option>
+          <option value="location">Location list</option>
+          <option value="mapping">Mapping file</option>
+          <option value="document">Document</option>
+        </select>
+        <input id="file" type="file" required style="margin-top:8px">
+        <button class="button" type="submit" id="upload-btn"
+                style="margin-top:8px;border:1px solid #b9cbf0;background:#fff;color:#1f5bd7;border-radius:8px;padding:9px 13px;font:inherit;font-weight:600;cursor:pointer">
+          Upload
+        </button>
+        <div class="muted" id="upload-note" style="margin-top:6px"></div>
+      </form>
+      <div id="asset-list" style="margin-top:12px"></div>
     </section>
 
     <section class="card">
@@ -118,12 +133,69 @@
     }
   }
 
+  function size(bytes) {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1048576) return Math.round(bytes / 1024) + " KB";
+    return (bytes / 1048576).toFixed(1) + " MB";
+  }
+
+  async function loadAssets() {
+    const list = document.getElementById("asset-list");
+    const response = await fetch("/portal/api/assets");
+    if (!response.ok) {
+      list.innerHTML = '<p class="muted">Resources are available to country accounts.</p>';
+      return;
+    }
+    const data = await response.json();
+    if (!data.assets.length) {
+      list.innerHTML = '<p class="muted">Nothing uploaded yet.</p>';
+      return;
+    }
+    list.innerHTML = data.assets.map(a => `
+      <div style="display:flex;gap:8px;align-items:center;padding:7px 0;border-top:1px solid #eef0f3">
+        <div style="flex:1;min-width:0">
+          <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.filename}</div>
+          <div class="muted" style="font-size:.76rem">${a.kind} · ${size(a.size_bytes)} · ${(a.created_at || "").slice(0,10)}</div>
+        </div>
+        <a href="/portal/api/assets/${a.id}/download">Download</a>
+        <button data-id="${a.id}" class="del" style="border:0;background:none;color:#a3231f;cursor:pointer">Delete</button>
+      </div>`).join("");
+    list.querySelectorAll("button.del").forEach(button => {
+      button.addEventListener("click", async () => {
+        if (!confirm("Delete this file?")) return;
+        await fetch("/portal/api/assets/" + button.dataset.id, {method: "DELETE"});
+        loadAssets();
+      });
+    });
+  }
+
+  document.getElementById("upload").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const note = document.getElementById("upload-note");
+    const file = document.getElementById("file").files[0];
+    if (!file) return;
+    const form = new FormData();
+    form.append("kind", document.getElementById("kind").value);
+    form.append("file", file);
+    note.textContent = "Uploading…";
+    const response = await fetch("/portal/api/assets", {method: "POST", body: form});
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      note.textContent = body.detail || "Upload failed.";
+      return;
+    }
+    note.textContent = "Uploaded.";
+    event.target.reset();
+    loadAssets();
+  });
+
   document.getElementById("signout").addEventListener("click", async () => {
     await fetch("/auth/logout", {method: "POST"});
     location.href = "/login";
   });
 
   load();
+  loadAssets();
 </script>
 </body>
 </html>
