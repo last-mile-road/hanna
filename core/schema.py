@@ -537,3 +537,46 @@ quotas = Table(
     Column("max_concurrent", Integer, nullable=False, server_default="2"),
     Column("updated_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
 )
+
+
+# --- field users: the official HANNA portal (phone, MoH ID) ------------------
+# Separate from accounts. A clinician is known by their MoH ID within a country;
+# the test server accepts that alone, and production will add the country's own
+# registration check and, where used, a second factor.
+
+field_users = Table(
+    "field_users",
+    metadata,
+    Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column("country_id", ForeignKey("countries.id", ondelete="CASCADE"), nullable=False),
+    Column("moh_id", String(64), nullable=False),
+    Column("display_name", String(128), nullable=False),
+    Column("phone", String(32)),
+    Column("province", String(64)),
+    Column("district", String(64)),
+    Column("facility", String(128)),
+    Column("role", String(32), nullable=False, server_default="clinician"),
+    Column("status", String(16), nullable=False, server_default="active"),
+    Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
+    Column("last_login_at", DateTime(timezone=True)),
+    UniqueConstraint("country_id", "moh_id", name="uq_field_users_country_moh"),
+    CheckConstraint("role IN ('clinician','supervisor')", name="role"),
+    CheckConstraint("status IN ('pending','active','suspended')", name="status"),
+)
+
+field_sessions = Table(
+    "field_sessions",
+    metadata,
+    Column("id", String(64), primary_key=True),  # sha256 of the cookie value
+    Column(
+        "field_user_id",
+        UUID(as_uuid=True),
+        ForeignKey("field_users.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
+    Column("expires_at", DateTime(timezone=True), nullable=False),
+    Column("ip", String(64)),
+    Column("user_agent", Text),
+)
+Index("ix_field_sessions_user", field_sessions.c.field_user_id)

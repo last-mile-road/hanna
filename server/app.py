@@ -25,7 +25,7 @@ import uuid
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, StreamingResponse
@@ -45,10 +45,13 @@ from core.schema import runs as runs_t
 
 from . import events, signing, uploads
 from .auth_routes import router as auth_router
+from .field_routes import router as field_router
+from .identity import require_identity
 from .studio import router as studio_router
 
 app = FastAPI(title="HANNA", version="0.1-phase1")
 app.include_router(auth_router)
+app.include_router(field_router)
 app.include_router(studio_router)
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -204,6 +207,7 @@ def healthz():
 
 @app.post("/api/runs", status_code=202)
 async def create_run(
+    _identity: dict | None = Depends(require_identity),
     file: UploadFile = File(...),
     country: str = Form(...),
     variant: str = Form("draft"),
@@ -367,6 +371,7 @@ class CloseCaseBody(BaseModel):
 
 @app.post("/api/captures")
 def create_capture(
+    _identity: dict | None = Depends(require_identity),
     files: list[UploadFile] = File(...),
     country: str = Form(...),
     attested_dummy: bool = Form(False),

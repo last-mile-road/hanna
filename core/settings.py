@@ -98,3 +98,13 @@ SMTP_PORT = int(os.environ.get("ZEPTOMAIL_SMTP_PORT", "465"))
 SMTP_USER = os.environ.get("ZEPTOMAIL_SMTP_USER", "emailapikey")
 SMTP_PASSWORD = os.environ.get("ZEPTOMAIL_SMTP_PASSWORD", "")
 MAIL_FROM = os.environ.get("ZEPTOMAIL_FROM", "support@lastmileroad.org")
+
+# The official portal: a field user signs in with their MoH ID (no password).
+FIELD_SESSION_COOKIE = os.environ.get("HANNA_FIELD_COOKIE", "hanna_field")
+FIELD_SESSION_TTL_DAYS = int(os.environ.get("HANNA_FIELD_SESSION_TTL_DAYS", "30"))
+# On the VPS and any public host this is 1: capture requires an identity.
+AUTH_REQUIRED = os.environ.get("HANNA_AUTH_REQUIRED", "0") == "1"
+
+# Desktop accounts are invitation-only. The country QR registers field users,
+# not accounts. Set to 1 only for a throwaway local experiment.
+ALLOW_OPEN_REGISTRATION = os.environ.get("HANNA_ALLOW_OPEN_REGISTRATION", "0") == "1"

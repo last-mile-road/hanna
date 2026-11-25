@@ -145,8 +145,9 @@ def me(account: dict = Depends(require_account)):
 
 @router.post("/register")
 def register(payload: RegisterIn, request: Request, response: Response):
-    """Self-registration behind a country QR. Testers are active at once; the
-    production approval step belongs here when it lands."""
+    """Desktop accounts are invitation-only; field users register at /field/register."""
+    if not settings.ALLOW_OPEN_REGISTRATION:
+        raise HTTPException(403, "accounts are created by invitation")
     ip, ua = _client(request)
     role = payload.role.strip().lower()
     if role not in {"tester", "notifier"}:
