@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Join the HANNA workspace</title>
+<style>
+  body { margin:0; min-height:100vh; display:grid; place-items:center; background:#f6f7f9;
+         color:#1c1f23; font:16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { width:min(92vw, 380px); background:#fff; border:1px solid #dde1e6; border-radius:12px;
+         padding:26px; }
+  h1 { font-size:1.2rem; margin:0 0 6px; }
+  p { color:#5b6470; font-size:.9rem; margin:0 0 18px; }
+  label { display:block; font-size:.84rem; margin:12px 0 5px; color:#3b424b; }
+  input { width:100%; box-sizing:border-box; padding:10px 12px; font:inherit; border:1px solid #c9cfd6;
+          border-radius:8px; }
+  button { width:100%; margin-top:18px; padding:11px; font:inherit; font-weight:600; color:#fff;
+           background:#1f5bd7; border:0; border-radius:8px; cursor:pointer; }
+  #error { color:#a3231f; font-size:.86rem; margin-top:10px; min-height:1.1em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Join the workspace</h1>
+  <p>Choose your name and a password. Your role and country are already set by the invitation.</p>
+  <label for="name">Full name</label>
+  <input id="name" autocomplete="name" autofocus>
+  <label for="password">Password (12 characters or more)</label>
+  <input id="password" type="password" autocomplete="new-password">
+  <button id="submit">Create my account</button>
+  <div id="error" role="alert"></div>
+</main>
+<script>
+  const token = decodeURIComponent(location.pathname.split("/").filter(Boolean).pop() || "");
+  document.getElementById("submit").addEventListener("click", async () => {
+    const error = document.getElementById("error");
+    error.textContent = "";
+    const response = await fetch("/auth/invite/" + encodeURIComponent(token), {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        display_name: document.getElementById("name").value,
+        password: document.getElementById("password").value
+      })
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      error.textContent = body.detail || "Could not accept the invitation.";
+      return;
+    }
+    location.href = "/portal";
+  });
+</script>
+</body>
+</html>

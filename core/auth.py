@@ -17,7 +17,7 @@ from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatc
 from sqlalchemy import delete, select, update
 
 from . import settings
-from .schema import accounts, audit_log, countries, memberships, roles, sessions
+from .schema import accounts, audit_log, countries, invitations, memberships, roles, sessions
 
 _hasher = PasswordHasher()
 
@@ -228,3 +228,123 @@ def clear_failures(conn, account_id) -> None:
 def is_locked(account: dict) -> bool:
     locked = account.get("locked_until")
     return bool(locked and locked > now())
+
+
+INVITABLE_ROLES = {"contributor", "reviewer", "tester", "viewer"}
+
+
+def create_invitation(conn, *, email: str, country_id: int, role: str, created_by=None):
+    if role not in INVITABLE_ROLES:
+        raise ValueError("that role cannot be invited here")
+    token = new_token()
+    row = conn.execute(
+        invitations.insert()
+        .values(
+            email=email.strip().lower(),
+            country_id=country_id,
+            role=role,
+            token_hash=token_hash(token),
+            expires_at=now() + timedelta(days=settings.INVITE_TTL_DAYS),
+            created_by=created_by,
+        )
+        .returning(
+            invitations.c.id,
+            invitations.c.email,
+            invitations.c.role,
+            invitations.c.expires_at,
+        )
+    ).mappings().one()
+    return token, dict(row)
+
+
+def invitation_by_token(conn, token: str) -> dict | None:
+    row = conn.execute(
+        select(
+            invitations.c.id,
+            invitations.c.email,
+            invitations.c.country_id,
+            invitations.c.role,
+            invitations.c.expires_at,
+            countries.c.code.label("country_code"),
+        )
+        .join(countries, countries.c.id == invitations.c.country_id)
+        .where(
+            invitations.c.token_hash == token_hash(token),
+            invitations.c.accepted_at.is_(None),
+            invitations.c.revoked_at.is_(None),
+            invitations.c.expires_at > now(),
+        )
+    ).mappings().first()
+    return dict(row) if row else None
+
+
+def accept_invitation(conn, token: str, *, display_name: str, password: str) -> dict:
+    invitation = invitation_by_token(conn, token)
+    if invitation is None:
+        raise ValueError("this invitation is not valid or has expired")
+    if account_by_email(conn, invitation["email"]) is not None:
+        raise ValueError("an account with this email already exists")
+    row = create_account(
+        conn,
+        email=invitation["email"],
+        password=password,
+        display_name=display_name,
+        country_id=invitation["country_id"],
+        role=invitation["role"],
+        status="active",
+    )
+    conn.execute(
+        update(invitations)
+        .where(invitations.c.id == invitation["id"])
+        .values(accepted_at=now())
+    )
+    return row
+
+
+def list_invitations(conn, country_id: int) -> list[dict]:
+    rows = conn.execute(
+        select(
+            invitations.c.id,
+            invitations.c.email,
+            invitations.c.role,
+            invitations.c.expires_at,
+            invitations.c.created_at,
+        )
+        .where(
+            invitations.c.country_id == country_id,
+            invitations.c.accepted_at.is_(None),
+            invitations.c.revoked_at.is_(None),
+        )
+        .order_by(invitations.c.created_at.desc())
+    ).mappings().all()
+    return [dict(r) for r in rows]
+
+
+def revoke_invitation(conn, invitation_id, country_id: int) -> bool:
+    result = conn.execute(
+        update(invitations)
+        .where(
+            invitations.c.id == invitation_id,
+            invitations.c.country_id == country_id,
+            invitations.c.accepted_at.is_(None),
+        )
+        .values(revoked_at=now())
+    )
+    return result.rowcount > 0
+
+
+def team_for_country(conn, country_id: int) -> list[dict]:
+    rows = conn.execute(
+        select(
+            accounts.c.display_name,
+            accounts.c.email,
+            memberships.c.role,
+            memberships.c.status,
+            memberships.c.facility,
+            memberships.c.created_at,
+        )
+        .join(memberships, memberships.c.account_id == accounts.c.id)
+        .where(memberships.c.country_id == country_id)
+        .order_by(memberships.c.created_at)
+    ).mappings().all()
+    return [dict(r) for r in rows]

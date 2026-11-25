@@ -91,6 +91,12 @@ def country_entry(country: str):
     return FileResponse(STATIC_DIR / "country.html", headers={"Cache-Control": "no-store"})
 
 
+@app.get("/invite/{token}", include_in_schema=False)
+def invite_page(token: str):
+    """Accept an invitation: set a name and password, then join the country."""
+    return FileResponse(STATIC_DIR / "invite.html", headers={"Cache-Control": "no-store"})
+
+
 @app.get("/portal", include_in_schema=False)
 def portal_page():
     """Country workspace. The page asks /auth/me and sends a stranger to sign in."""

@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
-from core import assets
+from pydantic import BaseModel
+
+from core import assets, auth, mail
 from core.db import connect
 from server.auth_routes import require_account
 
@@ -97,3 +99,97 @@ def _public(row: dict) -> dict:
         "size_bytes": row["size_bytes"],
         "created_at": row["created_at"].isoformat() if row.get("created_at") else None,
     }
+
+
+class InviteIn(BaseModel):
+    email: str
+    role: str = "contributor"
+
+
+def _admin(membership: dict) -> None:
+    if membership.get("role") not in {"country_admin", "project_admin"}:
+        raise HTTPException(403, "only a country administrator can manage the team")
+
+
+@router.get("/team")
+def team(account: dict = Depends(require_account)):
+    membership = _membership(account)
+    _admin(membership)
+    with connect() as conn:
+        members = auth.team_for_country(conn, _country_id(membership))
+        invitations = auth.list_invitations(conn, _country_id(membership))
+    return {
+        "members": [
+            {
+                "name": m["display_name"],
+                "email": m["email"],
+                "role": m["role"],
+                "status": m["status"],
+                "facility": m["facility"],
+            }
+            for m in members
+        ],
+        "invitations": [
+            {
+                "id": str(i["id"]),
+                "email": i["email"],
+                "role": i["role"],
+                "expires_at": i["expires_at"].isoformat(),
+            }
+            for i in invitations
+        ],
+    }
+
+
+@router.post("/invitations", status_code=201)
+def invite(payload: InviteIn, request: Request, account: dict = Depends(require_account)):
+    membership = _membership(account)
+    _admin(membership)
+    email = payload.email.strip().lower()
+    if "@" not in email or len(email) < 5:
+        raise HTTPException(422, "a valid email is required")
+    with connect() as conn:
+        try:
+            token, row = auth.create_invitation(
+                conn,
+                email=email,
+                country_id=_country_id(membership),
+                role=payload.role,
+                created_by=account["id"],
+            )
+        except ValueError as exc:
+            conn.rollback()
+            raise HTTPException(422, str(exc))
+        auth.audit(
+            conn,
+            "invitation_created",
+            account_id=account["id"],
+            country_id=_country_id(membership),
+            object_type="invitation",
+            object_id=str(row["id"]),
+            detail={"email": email, "role": payload.role},
+        )
+        conn.commit()
+    link = str(request.base_url).rstrip("/") + f"/invite/{token}"
+    sent = mail.send_mail(
+        email,
+        "Your HANNA country workspace invitation",
+        f"<p>You have been invited to the HANNA workspace.</p>"
+        f"<p><a href=\"{link}\">Set your password and sign in</a></p>"
+        f"<p>The link is valid for {7} days.</p>",
+        to_name="",
+    )
+    return {"invitation": {"id": str(row["id"]), "email": email, "role": payload.role},
+            "link": link, "email_sent": sent}
+
+
+@router.delete("/invitations/{invitation_id}")
+def revoke(invitation_id: str, account: dict = Depends(require_account)):
+    membership = _membership(account)
+    _admin(membership)
+    with connect() as conn:
+        ok = auth.revoke_invitation(conn, invitation_id, _country_id(membership))
+        conn.commit()
+    if not ok:
+        raise HTTPException(404, "invitation not found")
+    return {"ok": True}

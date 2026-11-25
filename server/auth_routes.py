@@ -22,6 +22,11 @@ class LoginIn(BaseModel):
     password: str
 
 
+class AcceptInviteIn(BaseModel):
+    display_name: str
+    password: str
+
+
 class RegisterIn(BaseModel):
     country: str
     email: str
@@ -197,6 +202,37 @@ def register(payload: RegisterIn, request: Request, response: Response):
     response.set_cookie(
         settings.SESSION_COOKIE,
         token,
+        max_age=settings.SESSION_TTL_DAYS * 86400,
+        httponly=True,
+        secure=settings.COOKIE_SECURE,
+        samesite="lax",
+        path="/",
+    )
+    return {"account": _public(account)}
+
+
+@router.post("/invite/{token}")
+def accept_invite(token: str, payload: AcceptInviteIn, request: Request, response: Response):
+    ip, ua = _client(request)
+    with connect() as conn:
+        try:
+            row = auth.accept_invitation(
+                conn,
+                token,
+                display_name=payload.display_name,
+                password=payload.password,
+            )
+        except ValueError as exc:
+            conn.rollback()
+            raise HTTPException(422, str(exc))
+        session = auth.create_session(conn, row["id"], ip=ip, user_agent=ua)
+        auth.audit(conn, "invitation_accepted", account_id=row["id"],
+                   detail={"ip": ip})
+        conn.commit()
+        account = auth.resolve_session(conn, session)
+    response.set_cookie(
+        settings.SESSION_COOKIE,
+        session,
         max_age=settings.SESSION_TTL_DAYS * 86400,
         httponly=True,
         secure=settings.COOKIE_SECURE,

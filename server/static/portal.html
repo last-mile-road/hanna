@@ -89,10 +89,9 @@
       <span class="tag soon">coming next</span>
     </section>
 
-    <section class="card wide">
+    <section class="card wide" id="team">
       <h2>Team</h2>
-      <p class="muted">Members, roles and invitations for this country.</p>
-      <span class="tag soon">coming next</span>
+      <div id="team-body"><p class="muted">Only a country administrator can see the team.</p></div>
     </section>
 
     <section class="card wide">
@@ -158,6 +157,67 @@
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1048576) return Math.round(bytes / 1024) + " KB";
     return (bytes / 1048576).toFixed(1) + " MB";
+  }
+
+  async function loadTeam() {
+    const body = document.getElementById("team-body");
+    const response = await fetch("/portal/api/team");
+    if (!response.ok) {
+      body.innerHTML = '<p class="muted">Only a country administrator can see the team.</p>';
+      return;
+    }
+    const data = await response.json();
+    const members = data.members.map(m => `
+      <div class="row">
+        <div class="name">${m.name}</div>
+        <div class="meta">${m.role} · ${m.status}${m.facility ? " · " + m.facility : ""}</div>
+        <div class="actions">${m.email}</div>
+      </div>`).join("");
+    const invites = data.invitations.length ? data.invitations.map(i => `
+      <div class="row">
+        <div class="name">${i.email}</div>
+        <div class="meta">invited · ${i.role} · expires ${i.expires_at.slice(0,10)}</div>
+        <div class="actions"><button data-id="${i.id}" class="revoke"
+          style="border:0;background:none;color:#a3231f;cursor:pointer">Revoke</button></div>
+      </div>`).join("") : '<p class="muted">No pending invitations.</p>';
+    body.innerHTML = `
+      <div>${members}</div>
+      <h3 style="font-size:.92rem;margin:16px 0 4px">Invite a colleague</h3>
+      <form id="invite" class="upload-row">
+        <input id="invite-email" type="email" placeholder="name@organisation.org" required>
+        <select id="invite-role">
+          <option value="contributor">Contributor</option>
+          <option value="reviewer">Reviewer</option>
+          <option value="tester">Tester</option>
+          <option value="viewer">Viewer</option>
+        </select>
+        <button type="submit">Invite</button>
+      </form>
+      <div class="muted" id="invite-note" style="margin-top:6px"></div>
+      <div style="margin-top:10px">${invites}</div>`;
+    document.getElementById("invite").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const note = document.getElementById("invite-note");
+      const response = await fetch("/portal/api/invitations", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          email: document.getElementById("invite-email").value,
+          role: document.getElementById("invite-role").value
+        })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) { note.textContent = payload.detail || "Invitation failed."; return; }
+      note.innerHTML = payload.email_sent
+        ? "Invitation emailed."
+        : 'Email not sent; copy this link: <a href="' + payload.link + '">' + payload.link + '</a>';
+      loadTeam();
+    });
+    body.querySelectorAll("button.revoke").forEach(button => {
+      button.addEventListener("click", async () => {
+        await fetch("/portal/api/invitations/" + button.dataset.id, {method: "DELETE"});
+        loadTeam();
+      });
+    });
   }
 
   async function loadAssets() {
@@ -245,6 +305,7 @@
 
   load();
   loadAssets();
+  loadTeam();
 </script>
 </body>
 </html>
