@@ -91,3 +91,10 @@ SESSION_COOKIE = os.environ.get("HANNA_SESSION_COOKIE", "hanna_session")
 SESSION_TTL_DAYS = int(os.environ.get("HANNA_SESSION_TTL_DAYS", "90"))
 COOKIE_SECURE = os.environ.get("HANNA_COOKIE_SECURE", "0") == "1"
 INVITE_TTL_DAYS = int(os.environ.get("HANNA_INVITE_TTL_DAYS", "7"))
+
+# Outgoing mail (ZeptoMail SMTP relay). Leave empty to disable sending.
+SMTP_HOST = os.environ.get("ZEPTOMAIL_SMTP_HOST", "")
+SMTP_PORT = int(os.environ.get("ZEPTOMAIL_SMTP_PORT", "465"))
+SMTP_USER = os.environ.get("ZEPTOMAIL_SMTP_USER", "emailapikey")
+SMTP_PASSWORD = os.environ.get("ZEPTOMAIL_SMTP_PASSWORD", "")
+MAIL_FROM = os.environ.get("ZEPTOMAIL_FROM", "support@lastmileroad.org")
