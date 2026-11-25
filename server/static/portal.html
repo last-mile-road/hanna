@@ -43,10 +43,14 @@
 
   <div class="grid">
     <section class="card">
-      <h2>Test the scanner</h2>
-      <p class="muted">Open the capture screen on this device, or scan the country QR on a phone.</p>
-      <a class="button" href="/capture">Open the scanner</a>
-      <a class="button" href="/c/mozambique">Phone entry page</a>
+      <h2>Open on a phone</h2>
+      <p class="muted">Scan this with a phone to open the HANNA portal for
+        <span id="qr-country">the country</span>.</p>
+      <img id="qr" alt="Country portal QR code" width="220" height="220"
+           style="display:block;margin:12px auto;border:1px solid #dde1e6;border-radius:10px">
+      <p class="muted" style="text-align:center">
+        <a id="device-link" href="/c/mozambique">or open the portal on this device</a>
+      </p>
     </section>
 
     <section class="card">
@@ -106,9 +110,11 @@
       account.display_name + " · " + membership.role +
       (membership.facility ? " · " + membership.facility : "");
     if (country.code) {
-      document.querySelectorAll('a[href="/c/mozambique"]').forEach(a => {
-        a.href = "/c/" + encodeURIComponent(country.code);
-      });
+      document.getElementById("qr-country").textContent = country.name;
+      document.getElementById("qr").src =
+        "/api/countries/" + encodeURIComponent(country.code) + "/qr.png";
+      document.getElementById("device-link").href =
+        "/c/" + encodeURIComponent(country.code);
     }
   }
 

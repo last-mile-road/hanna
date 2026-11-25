@@ -2,100 +2,114 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f5bd7">
 <title>HANNA — country entry</title>
 <style>
-  :root { color-scheme: light dark; }
-  body { margin:0; font:16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
-         background:#f6f7f9; color:#1c1f23; }
-  main { max-width:640px; margin:0 auto; padding:22px 18px 60px; }
-  h1 { font-size:1.3rem; margin:0 0 2px; }
-  h2 { font-size:1rem; margin:0 0 8px; }
-  .muted { color:#5b6470; font-size:.88rem; }
-  .banner { margin:16px 0; padding:10px 14px; border-radius:10px;
-            background:#fff7e6; border:1px solid #f0d9a8; color:#7a5a12; font-size:.86rem; }
-  .card { background:#fff; border:1px solid #dde1e6; border-radius:12px; padding:18px; margin:12px 0; }
-  label { display:block; font-size:.82rem; color:#3b424b; margin:9px 0 4px; }
-  input, select { width:100%; box-sizing:border-box; padding:10px 11px; font:inherit;
-                  border:1px solid #c9cfd6; border-radius:8px; background:#fff; color:inherit; }
-  button { width:100%; margin-top:14px; padding:12px; font:inherit; font-weight:600; color:#fff;
-           background:#1f5bd7; border:0; border-radius:8px; cursor:pointer; }
-  button.ghost { background:#fff; color:#1f5bd7; border:1px solid #b9cbf0; }
-  button:disabled { opacity:.6; }
+  :root { color-scheme: light dark; --blue:#1f5bd7; --ink:#1c1f23; --muted:#5b6470;
+          --line:#dde1e6; --bg:#f6f7f9; --card:#ffffff; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:17px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+         background:var(--bg); color:var(--ink); -webkit-text-size-adjust:100%; }
+  main { max-width:560px; margin:0 auto; padding:18px 16px 48px; }
+  h1 { font-size:1.3rem; margin:0; }
+  h2 { font-size:1.02rem; margin:0 0 8px; }
+  .muted { color:var(--muted); font-size:.88rem; }
+  .banner { margin:14px 0; padding:10px 13px; border-radius:12px;
+            background:#fff7e6; border:1px solid #f0d9a8; color:#7a5a12; font-size:.84rem; }
+  .tiles { display:grid; gap:10px; margin:16px 0; }
+  .tile { display:flex; align-items:center; justify-content:center; width:100%;
+          min-height:74px; padding:16px; font:inherit; font-size:1.06rem; font-weight:650;
+          text-align:center; text-decoration:none; color:var(--blue); background:var(--card);
+          border:1px solid #c9d6ef; border-radius:14px; cursor:pointer; }
+  .tile.primary { color:#fff; background:var(--blue); border-color:var(--blue);
+                  min-height:92px; font-size:1.16rem; }
+  .tile:active { transform:scale(.995); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px;
+          padding:16px; margin:12px 0; }
+  label { display:block; font-size:.84rem; color:#3b424b; margin:10px 0 4px; }
+  input, select { width:100%; padding:12px 12px; font:inherit; border:1px solid #c9cfd6;
+                  border-radius:10px; background:var(--card); color:inherit; }
+  button.action { width:100%; margin-top:14px; padding:14px; font:inherit; font-weight:650;
+                  color:#fff; background:var(--blue); border:0; border-radius:12px; cursor:pointer; }
+  button.ghost { background:var(--card); color:var(--blue); border:1px solid #b9cbf0; }
   .row { display:grid; gap:10px; grid-template-columns:1fr 1fr; }
-  @media (max-width:520px) { .row { grid-template-columns:1fr; } }
-  a { color:#1f5bd7; }
+  @media (max-width:430px) { .row { grid-template-columns:1fr; } }
+  a { color:var(--blue); }
   ul { margin:6px 0 0; padding-left:18px; }
-  #error { color:#a3231f; font-size:.88rem; min-height:1.2em; margin-top:8px; }
-  .big { font-size:1.05rem; padding:14px; }
-  .hidden { display:none; }
+  #error, #reg-error { color:#a3231f; font-size:.86rem; min-height:1.1em; margin-top:8px; }
+  .hidden { display:none !important; }
+  .who { font-size:.95rem; }
 </style>
 </head>
 <body>
 <main>
   <h1 id="country-name">HANNA</h1>
-  <div class="muted" id="country-sub">Official portal · test server</div>
+  <div class="muted" id="country-sub">Official portal</div>
 
-  <div class="banner">
-    <strong>Test server.</strong> Dummy cards only. Use your MoH ID as you would in
-    the field; nothing here is a real notification.
-  </div>
+  <div class="banner"><strong>Test server.</strong> Dummy cards only. Nothing here is
+    a real notification.</div>
 
-  <!-- signed in -->
-  <section class="card hidden" id="signed-in">
-    <h2 id="hello">Signed in</h2>
-    <p class="muted" id="who"></p>
-    <button class="big" id="notify">Notify a new case — open the scanner</button>
-    <button class="ghost" id="signout">Sign out</button>
+  <div class="who muted hidden" id="status"></div>
+
+  <nav class="tiles">
+    <button class="tile primary hidden" id="notify">Notify a new case</button>
+    <button class="tile" id="signin-tile">Sign in with MoH ID</button>
+    <button class="tile" id="register-tile">Register</button>
+    <a class="tile" href="#information">Information</a>
+    <a class="tile" href="#training">Training</a>
+  </nav>
+
+  <section class="card" id="signin">
+    <h2>Sign in with your MoH ID</h2>
+    <p class="muted">No password. Your ID tells the system who is notifying.</p>
+    <label for="login-moh">MoH ID</label>
+    <input id="login-moh" inputmode="numeric" autocomplete="username" enterkeyhint="go">
+    <button class="action" id="login">Sign in</button>
+    <div id="error" role="alert"></div>
   </section>
 
-  <!-- signed out -->
-  <div id="signed-out">
-    <section class="card">
-      <h2>Sign in with your MoH ID</h2>
-      <p class="muted">No password. Your ID tells the system who is notifying.</p>
-      <label for="login-moh">MoH ID</label>
-      <input id="login-moh" inputmode="numeric" autocomplete="username">
-      <button id="login">Continue</button>
-      <div id="error" role="alert"></div>
-    </section>
-
-    <section class="card">
-      <h2>Register</h2>
-      <p class="muted">First time here? Register once; your facility and role are
-        attached to your ID.</p>
-      <label for="reg-name">Full name</label>
-      <input id="reg-name" autocomplete="name">
-      <label for="reg-moh">MoH ID</label>
-      <input id="reg-moh" inputmode="numeric">
-      <div class="row">
-        <div>
-          <label for="reg-role">Role</label>
-          <select id="reg-role">
-            <option value="clinician" selected>Clinician</option>
-            <option value="supervisor">Supervisor</option>
-          </select>
-        </div>
-        <div>
-          <label for="reg-facility">Facility</label>
-          <input id="reg-facility">
-        </div>
+  <section class="card" id="register">
+    <h2>Register</h2>
+    <p class="muted">First time? Register once; your facility and role stay attached
+      to your ID.</p>
+    <label for="reg-name">Full name</label>
+    <input id="reg-name" autocomplete="name">
+    <label for="reg-moh">MoH ID</label>
+    <input id="reg-moh" inputmode="numeric">
+    <div class="row">
+      <div>
+        <label for="reg-role">Role</label>
+        <select id="reg-role">
+          <option value="clinician" selected>Clinician</option>
+          <option value="supervisor">Supervisor</option>
+        </select>
       </div>
-      <label for="reg-phone">Phone (optional)</label>
-      <input id="reg-phone" type="tel">
-      <button id="register">Register</button>
-      <div id="reg-error" role="alert"></div>
-    </section>
+      <div>
+        <label for="reg-facility">Facility</label>
+        <input id="reg-facility">
+      </div>
+    </div>
+    <label for="reg-phone">Phone (optional)</label>
+    <input id="reg-phone" type="tel" autocomplete="tel">
+    <button class="action" id="register">Create my account</button>
+    <div id="reg-error" role="alert"></div>
+  </section>
 
-    <section class="card">
-      <h2>Information and training</h2>
-      <ul>
-        <li><a href="https://www.who.int/news-room/fact-sheets/detail/leprosy" target="_blank" rel="noopener">Leprosy — WHO fact sheet</a></li>
-        <li><a href="https://www.leprosy-information.org/" target="_blank" rel="noopener">Leprosy Information (ILEP)</a></li>
-        <li><a href="https://www.who.int/initiatives/skin-ntds" target="_blank" rel="noopener">WHO skin NTDs</a></li>
-      </ul>
-    </section>
-  </div>
+  <section class="card" id="information">
+    <h2>Information</h2>
+    <ul>
+      <li><a href="https://www.who.int/news-room/fact-sheets/detail/leprosy" target="_blank" rel="noopener">Leprosy — WHO fact sheet</a></li>
+      <li><a href="https://www.leprosy-information.org/" target="_blank" rel="noopener">Leprosy Information (ILEP)</a></li>
+      <li><a href="https://www.who.int/initiatives/skin-ntds" target="_blank" rel="noopener">WHO skin NTDs</a></li>
+    </ul>
+  </section>
+
+  <section class="card" id="training">
+    <h2>Training</h2>
+    <p class="muted">Short guides will live here. For now, the WHO and ILEP material
+      above is the reference.</p>
+  </section>
 
   <p class="muted" style="margin-top:18px">
     Country team member? <a href="/login?next=/portal">Sign in to the workspace</a>.
@@ -103,88 +117,85 @@
 </main>
 <script>
   const code = decodeURIComponent(location.pathname.split("/").filter(Boolean).pop() || "");
-  const signedIn = document.getElementById("signed-in");
-  const signedOut = document.getElementById("signed-out");
+  const signedIn = document.getElementById("status");
+  const notify = document.getElementById("notify");
+  const signinTile = document.getElementById("signin-tile");
+  const registerTile = document.getElementById("register-tile");
+  const signin = document.getElementById("signin");
+  const register = document.getElementById("register");
 
   fetch("/api/countries").then(r => r.json()).then(data => {
     const country = (data.countries || []).find(c => c.code === code);
-    if (country) {
-      document.getElementById("country-name").textContent = country.name;
-      document.getElementById("country-sub").textContent = "Official portal · test server";
-    }
+    if (country) document.getElementById("country-name").textContent = country.name;
   });
 
   function showUser(user) {
-    signedIn.classList.remove("hidden");
-    signedOut.classList.add("hidden");
-    document.getElementById("hello").textContent = "Hello, " + user.display_name;
-    document.getElementById("who").textContent =
-      "MoH ID " + user.moh_id + " · " + user.role +
+    signedIn.textContent = "Signed in: " + user.display_name + " · MoH ID " + user.moh_id +
       (user.facility ? " · " + user.facility : "");
+    signedIn.classList.remove("hidden");
+    notify.classList.remove("hidden");
+    signinTile.classList.add("hidden");
+    registerTile.classList.add("hidden");
+    signin.classList.add("hidden");
+    register.classList.add("hidden");
   }
 
-  function showSignedOut() {
+  function showAnonymous() {
     signedIn.classList.add("hidden");
-    signedOut.classList.remove("hidden");
+    notify.classList.add("hidden");
+    signinTile.classList.remove("hidden");
+    registerTile.classList.remove("hidden");
+    signin.classList.remove("hidden");
+    register.classList.remove("hidden");
   }
 
   async function check() {
     const response = await fetch("/field/me");
-    if (response.ok) {
-      const data = await response.json();
-      showUser(data.field_user);
-    } else {
-      showSignedOut();
-    }
+    if (response.ok) showUser((await response.json()).field_user);
+    else showAnonymous();
   }
 
   async function post(url, body) {
-    return fetch(url, {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(body)
-    });
+    return fetch(url, {method:"POST", headers:{"Content-Type":"application/json"},
+                       body:JSON.stringify(body)});
   }
 
   document.getElementById("login").addEventListener("click", async () => {
+    document.getElementById("error").textContent = "";
     const response = await post("/field/login", {
-      country: code,
-      moh_id: document.getElementById("login-moh").value
-    });
+      country: code, moh_id: document.getElementById("login-moh").value});
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
       document.getElementById("error").textContent = body.detail || "Sign-in failed.";
       return;
     }
-    const data = await response.json();
-    showUser(data.field_user);
+    showUser((await response.json()).field_user);
   });
 
   document.getElementById("register").addEventListener("click", async () => {
+    document.getElementById("reg-error").textContent = "";
     const response = await post("/field/register", {
       country: code,
       moh_id: document.getElementById("reg-moh").value,
       display_name: document.getElementById("reg-name").value,
       phone: document.getElementById("reg-phone").value || null,
       facility: document.getElementById("reg-facility").value || null,
-      role: document.getElementById("reg-role").value
-    });
+      role: document.getElementById("reg-role").value});
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
       document.getElementById("reg-error").textContent = body.detail || "Registration failed.";
       return;
     }
-    const data = await response.json();
-    showUser(data.field_user);
+    showUser((await response.json()).field_user);
   });
 
-  document.getElementById("notify").addEventListener("click", () => {
-    location.href = "/capture";
-  });
+  document.getElementById("notify").addEventListener("click", () => { location.href = "/capture"; });
 
-  document.getElementById("signout").addEventListener("click", async () => {
-    await fetch("/field/logout", {method: "POST"});
-    showSignedOut();
+  signinTile.addEventListener("click", () => {
+    document.getElementById("signin").scrollIntoView({behavior:"smooth"});
+  });
+  registerTile.addEventListener("click", () => {
+    document.getElementById("register").scrollIntoView({behavior:"smooth"});
   });
 
   check();

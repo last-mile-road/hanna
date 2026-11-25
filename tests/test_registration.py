@@ -48,3 +48,10 @@ def test_desktop_registration_is_invitation_only():
         },
     )
     assert response.status_code == 403
+
+
+def test_country_qr_is_a_png():
+    response = TestClient(app).get("/api/countries/mozambique/qr.png")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/png"
+    assert response.content.startswith(b"\x89PNG")

@@ -25,7 +25,7 @@ import uuid
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, Response, UploadFile
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, StreamingResponse
@@ -193,6 +193,21 @@ def list_countries():
             for row in rows
         ]
     }
+
+
+@app.get("/api/countries/{code}/qr.png")
+def country_qr(code: str, request: Request):
+    """The country QR, for the wall and for the portal. Points at /c/<code>."""
+    import io
+
+    import qrcode
+
+    url = str(request.base_url).rstrip("/") + f"/c/{code}"
+    image = qrcode.make(url)
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    return Response(content=buffer.getvalue(), media_type="image/png",
+                    headers={"Cache-Control": "no-store"})
 
 
 @app.get("/healthz")

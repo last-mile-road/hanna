@@ -11,6 +11,7 @@ pandas==3.0.6
 pg8000==1.31.5
 pillow==12.2.0
 pydantic==2.13.4
+qrcode[pil]==8.2
 pytest==8.2.2
 pytest-asyncio==0.23.7
 python-multipart==0.0.32
