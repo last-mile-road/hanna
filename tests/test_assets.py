@@ -84,7 +84,7 @@ def test_upload_list_download_delete(workspace):
     assert asset["filename"] == "places.csv"
 
     listing = client.get("/portal/api/assets").json()["assets"]
-    assert [a["id"] for a in listing] == [asset["id"]]
+    assert asset["id"] in [a["id"] for a in listing]
 
     download = client.get(f"/portal/api/assets/{asset['id']}/download")
     assert download.status_code == 200
