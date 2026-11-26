@@ -1,0 +1,13 @@
+[Unit]
+Description=HANNA encrypted backup to Dropbox
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+EnvironmentFile=/etc/hanna/hanna.env
+ExecStart=/srv/hanna/.venv/bin/python /srv/hanna/deploy/backup_to_dropbox.py
+Nice=10
+IOSchedulingClass=idle
