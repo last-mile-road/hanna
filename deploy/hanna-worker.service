@@ -1,0 +1,16 @@
+[Unit]
+Description=HANNA extraction worker
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/srv/hanna
+EnvironmentFile=/etc/hanna/hanna.env
+ExecStart=/srv/hanna/.venv/bin/python -m server.worker
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
