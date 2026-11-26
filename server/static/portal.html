@@ -100,15 +100,11 @@
       <a class="button" href="https://www.who.int/news-room/fact-sheets/detail/leprosy" target="_blank" rel="noopener">WHO fact sheet</a>
     </section>
 
-    <section class="card full" id="messages">
-      <h2>Messages</h2>
-      <div id="message-list"><p class="muted">No messages yet.</p></div>
-      <form id="message-form" style="margin-top:10px">
-        <textarea id="message-body" rows="3" placeholder="Write to the maintainer…"
-          style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #c9cfd6;border-radius:8px;font:inherit"></textarea>
-        <button type="submit" style="margin-top:8px;padding:9px 14px;font:inherit;font-weight:600;color:#fff;background:#1f5bd7;border:0;border-radius:8px;cursor:pointer">Send</button>
-        <div class="muted" id="message-note" style="margin-top:6px"></div>
-      </form>
+    <section class="card full" id="discussion">
+      <h2>Discussion</h2>
+      <p class="muted">Ask questions, report what worked, comment on a card.
+        <strong>#general</strong> is shared by all countries; <strong>#mozambique</strong> is private to this team.</p>
+      <div id="discussion-body"><p class="muted">Loading channels…</p></div>
     </section>
 
     <section class="card full" id="resources">
@@ -170,43 +166,26 @@
     return (bytes / 1048576).toFixed(1) + " MB";
   }
 
-  async function loadMessages() {
-    const list = document.getElementById("message-list");
-    const response = await fetch("/portal/api/messages");
+  async function loadDiscussion() {
+    const body = document.getElementById("discussion-body");
+    const response = await fetch("/portal/api/discussion");
     if (!response.ok) {
-      list.innerHTML = '<p class="muted">Messages are available to country accounts.</p>';
+      body.innerHTML = '<p class="muted">Discussion is available to country accounts.</p>';
       return;
     }
     const data = await response.json();
-    if (!data.messages.length) {
-      list.innerHTML = '<p class="muted">No messages yet.</p>';
-      return;
-    }
-    list.innerHTML = data.messages.map(m => `
-      <div style="padding:8px 0;border-top:1px solid #eef0f3">
-        <div class="muted" style="font-size:.76rem">${m.author} · ${m.created_at.slice(0,16).replace("T"," ")}</div>
-        <div style="overflow-wrap:anywhere">${m.body}</div>
+    body.innerHTML = data.channels.map(channel => `
+      <div style="margin-top:12px">
+        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+          <strong>#${channel.name}</strong>
+          <a href="${channel.url}" target="_blank" rel="noopener">Open channel</a>
+        </div>
+        ${channel.topics.length ? channel.topics.map(t => `
+          <div style="padding:4px 0;border-top:1px solid #eef0f3">
+            <a href="${t.url}" target="_blank" rel="noopener">${t.name}</a>
+          </div>`).join("") : '<p class="muted" style="margin:4px 0">No topics yet.</p>'}
       </div>`).join("");
   }
-
-  document.getElementById("message-form").addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const note = document.getElementById("message-note");
-    const body = document.getElementById("message-body").value;
-    if (!body.trim()) return;
-    const response = await fetch("/portal/api/messages", {
-      method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({body})
-    });
-    if (!response.ok) {
-      const payload = await response.json().catch(() => ({}));
-      note.textContent = payload.detail || "Could not send.";
-      return;
-    }
-    document.getElementById("message-body").value = "";
-    note.textContent = "Sent.";
-    loadMessages();
-  });
 
   async function loadTeam() {
     const body = document.getElementById("team-body");
@@ -355,7 +334,7 @@
   load();
   loadAssets();
   loadTeam();
-  loadMessages();
+  loadDiscussion();
 </script>
 </body>
 </html>

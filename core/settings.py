@@ -111,3 +111,11 @@ ALLOW_OPEN_REGISTRATION = os.environ.get("HANNA_ALLOW_OPEN_REGISTRATION", "0") =
 
 # Where new country messages are announced (best effort).
 NOTIFY_EMAIL = os.environ.get("HANNA_NOTIFY_EMAIL", os.environ.get("ZEPTOMAIL_FROM", ""))
+
+# Zulip discussion (organization cloud). Channel ids are integers in URLs.
+ZULIP_SITE = os.environ.get("ZULIP_SITE", "").rstrip("/")
+ZULIP_BOT_EMAIL = os.environ.get("ZULIP_BOT_EMAIL", "")
+ZULIP_BOT_KEY = os.environ.get("ZULIP_BOT_KEY", "")
+ZULIP_CHANNEL_GENERAL = os.environ.get("ZULIP_CHANNEL_GENERAL", "")
+ZULIP_CHANNEL_MOZAMBIQUE = os.environ.get("ZULIP_CHANNEL_MOZAMBIQUE", "")
+ZULIP_CHANNEL_ANNOUNCEMENTS = os.environ.get("ZULIP_CHANNEL_ANNOUNCEMENTS", "")

@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.parse import quote
+
+import requests as http
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
+import time
+
 from pydantic import BaseModel
 
 from core import assets, auth, mail, messages, settings
@@ -260,3 +265,53 @@ def post_message(payload: MessageIn, account: dict = Depends(require_account)):
         "body": row["body"],
         "created_at": row["created_at"].isoformat(),
     }}
+
+
+_TOPIC_CACHE: dict[str, tuple[float, list]] = {}
+_TOPIC_TTL = 60.0
+
+
+def _topics(channel_id: str, limit: int = 5) -> list[dict]:
+    """Recent topics in a channel, cached briefly. A Zulip outage must not break the portal."""
+    if not (settings.ZULIP_SITE and settings.ZULIP_BOT_KEY and channel_id):
+        return []
+    now = time.time()
+    cached = _TOPIC_CACHE.get(channel_id)
+    if cached and now - cached[0] < _TOPIC_TTL:
+        return cached[1]
+    try:
+        response = http.get(
+            f"{settings.ZULIP_SITE}/api/v1/users/me/{channel_id}/topics",
+            auth=(settings.ZULIP_BOT_EMAIL, settings.ZULIP_BOT_KEY),
+            timeout=5,
+        )
+        topics = response.json().get("topics", []) if response.ok else []
+    except Exception:
+        topics = []
+    _TOPIC_CACHE[channel_id] = (now, topics)
+    return topics[:limit]
+
+
+def _channel(key: str, name: str, channel_id: str) -> dict:
+    base = f"{settings.ZULIP_SITE}/#narrow/channel/{channel_id}-{name}"
+    return {
+        "key": key,
+        "name": name,
+        "url": base,
+        "topics": [
+            {"name": topic["name"], "url": f"{base}/topic/{quote(topic['name'])}"}
+            for topic in _topics(channel_id)
+        ],
+    }
+
+
+@router.get("/discussion")
+def discussion(account: dict = Depends(require_account)):
+    _membership(account)
+    return {
+        "site": settings.ZULIP_SITE,
+        "channels": [
+            _channel("general", "general", settings.ZULIP_CHANNEL_GENERAL),
+            _channel("mozambique", "mozambique", settings.ZULIP_CHANNEL_MOZAMBIQUE),
+        ],
+    }
