@@ -3,6 +3,7 @@
 alembic==1.19.1
 argon2-cffi==25.1.0
 fastapi==0.141.1
+cryptography==50.0.0
 httpx==0.28.1
 numpy==2.5.4
 opencv-python==5.0.0.93
@@ -12,6 +13,7 @@ pg8000==1.31.5
 pillow==12.2.0
 pydantic==2.13.4
 qrcode[pil]==8.2
+requests==2.34.2
 pytest==8.2.2
 pytest-asyncio==0.23.7
 python-multipart==0.0.32
