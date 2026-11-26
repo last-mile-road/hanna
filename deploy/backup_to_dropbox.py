@@ -58,7 +58,7 @@ def dropbox_token() -> str:
     return response.json()["access_token"]
 
 
-def database_parts() -> tuple[str, str, str, str]:
+def database_parts() -> tuple[str, str, str, str, str]:
     url = os.environ.get("DATABASE_URL", "")
     if not url:
         fail("DATABASE_URL is not set")
@@ -68,13 +68,13 @@ def database_parts() -> tuple[str, str, str, str]:
         str(parsed.port or 5432),
         unquote(parsed.username or ""),
         unquote(parsed.path.lstrip("/")),
+        unquote(parsed.password or ""),
     )
 
 
 def dump_database(target: Path) -> None:
-    host, port, user, name = database_parts()
-    password = os.environ.get("PGPASSWORD") or ""
-    env = {**os.environ, "PGPASSWORD": password}
+    host, port, user, name, password = database_parts()
+    env = {**os.environ, "PGPASSWORD": os.environ.get("PGPASSWORD") or password}
     result = subprocess.run(
         ["pg_dump", "-h", host, "-p", port, "-U", user, "-Fc", "-f", str(target), name],
         env=env,
