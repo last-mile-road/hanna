@@ -1,0 +1,7 @@
+[Unit]
+Description=Weekly HANNA server reboot
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/shutdown -r +1 "Weekly maintenance reboot"
