@@ -605,3 +605,31 @@ country_assets = Table(
     Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
 )
 Index("ix_country_assets_country", country_assets.c.country_id)
+
+
+# --- country messages: one thread per country -------------------------------
+# Replaces scattered email. Author details are snapshotted so a deleted account
+# does not erase the record.
+
+country_messages = Table(
+    "country_messages",
+    metadata,
+    Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column("country_id", ForeignKey("countries.id", ondelete="CASCADE"), nullable=False),
+    Column(
+        "author_account_id",
+        UUID(as_uuid=True),
+        ForeignKey("accounts.id", ondelete="SET NULL"),
+    ),
+    Column(
+        "author_field_user_id",
+        UUID(as_uuid=True),
+        ForeignKey("field_users.id", ondelete="SET NULL"),
+    ),
+    Column("author_name", String(128), nullable=False),
+    Column("body", Text, nullable=False),
+    Column("context_type", String(32)),
+    Column("context_id", String(64)),
+    Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
+)
+Index("ix_country_messages_country", country_messages.c.country_id, country_messages.c.created_at)

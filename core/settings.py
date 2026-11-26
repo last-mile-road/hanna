@@ -108,3 +108,6 @@ AUTH_REQUIRED = os.environ.get("HANNA_AUTH_REQUIRED", "0") == "1"
 # Desktop accounts are invitation-only. The country QR registers field users,
 # not accounts. Set to 1 only for a throwaway local experiment.
 ALLOW_OPEN_REGISTRATION = os.environ.get("HANNA_ALLOW_OPEN_REGISTRATION", "0") == "1"
+
+# Where new country messages are announced (best effort).
+NOTIFY_EMAIL = os.environ.get("HANNA_NOTIFY_EMAIL", os.environ.get("ZEPTOMAIL_FROM", ""))

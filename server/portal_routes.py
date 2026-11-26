@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from core import assets, auth, mail
+from core import assets, auth, mail, messages, settings
 from core.db import connect
 from server.auth_routes import require_account
 
@@ -193,3 +193,70 @@ def revoke(invitation_id: str, account: dict = Depends(require_account)):
     if not ok:
         raise HTTPException(404, "invitation not found")
     return {"ok": True}
+
+
+class MessageIn(BaseModel):
+    body: str
+    context_type: str | None = None
+    context_id: str | None = None
+
+
+@router.get("/messages")
+def list_messages(account: dict = Depends(require_account)):
+    membership = _membership(account)
+    with connect() as conn:
+        rows = messages.list_for_country(conn, _country_id(membership))
+    return {
+        "messages": [
+            {
+                "id": str(m["id"]),
+                "author": m["author_name"],
+                "body": m["body"],
+                "context_type": m["context_type"],
+                "context_id": m["context_id"],
+                "created_at": m["created_at"].isoformat(),
+            }
+            for m in rows
+        ]
+    }
+
+
+@router.post("/messages", status_code=201)
+def post_message(payload: MessageIn, account: dict = Depends(require_account)):
+    membership = _membership(account)
+    with connect() as conn:
+        try:
+            row = messages.add(
+                conn,
+                country_id=_country_id(membership),
+                author_name=account["display_name"],
+                body=payload.body,
+                account_id=account["id"],
+                context_type=payload.context_type,
+                context_id=payload.context_id,
+            )
+        except messages.MessageError as exc:
+            conn.rollback()
+            raise HTTPException(422, str(exc))
+        auth.audit(
+            conn,
+            "message_posted",
+            account_id=account["id"],
+            country_id=_country_id(membership),
+            object_type="message",
+            object_id=str(row["id"]),
+        )
+        conn.commit()
+    if settings.NOTIFY_EMAIL:
+        mail.send_mail(
+            settings.NOTIFY_EMAIL,
+            f"HANNA message from {account['display_name']}",
+            f"<p><strong>{account['display_name']}</strong> wrote in the "
+            f"{membership.get('country_code')} workspace:</p><p>{payload.body}</p>",
+        )
+    return {"message": {
+        "id": str(row["id"]),
+        "author": row["author_name"],
+        "body": row["body"],
+        "created_at": row["created_at"].isoformat(),
+    }}

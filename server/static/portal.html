@@ -89,12 +89,23 @@
       <span class="tag soon">coming next</span>
     </section>
 
-    <section class="card wide" id="team">
+    <section class="card" id="team">
       <h2>Team</h2>
       <div id="team-body"><p class="muted">Only a country administrator can see the team.</p></div>
     </section>
 
-    <section class="card wide">
+    <section class="card" id="messages">
+      <h2>Messages</h2>
+      <div id="message-list"><p class="muted">No messages yet.</p></div>
+      <form id="message-form" style="margin-top:10px">
+        <textarea id="message-body" rows="3" placeholder="Write to the maintainer…"
+          style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #c9cfd6;border-radius:8px;font:inherit"></textarea>
+        <button type="submit" style="margin-top:8px;padding:9px 14px;font:inherit;font-weight:600;color:#fff;background:#1f5bd7;border:0;border-radius:8px;cursor:pointer">Send</button>
+        <div class="muted" id="message-note" style="margin-top:6px"></div>
+      </form>
+    </section>
+
+    <section class="card">
       <h2>Information</h2>
       <p class="muted">Leprosy facts, the country brief, and how the test works.</p>
       <a class="button" href="https://www.who.int/news-room/fact-sheets/detail/leprosy" target="_blank" rel="noopener">WHO fact sheet</a>
@@ -158,6 +169,44 @@
     if (bytes < 1048576) return Math.round(bytes / 1024) + " KB";
     return (bytes / 1048576).toFixed(1) + " MB";
   }
+
+  async function loadMessages() {
+    const list = document.getElementById("message-list");
+    const response = await fetch("/portal/api/messages");
+    if (!response.ok) {
+      list.innerHTML = '<p class="muted">Messages are available to country accounts.</p>';
+      return;
+    }
+    const data = await response.json();
+    if (!data.messages.length) {
+      list.innerHTML = '<p class="muted">No messages yet.</p>';
+      return;
+    }
+    list.innerHTML = data.messages.map(m => `
+      <div style="padding:8px 0;border-top:1px solid #eef0f3">
+        <div class="muted" style="font-size:.76rem">${m.author} · ${m.created_at.slice(0,16).replace("T"," ")}</div>
+        <div style="overflow-wrap:anywhere">${m.body}</div>
+      </div>`).join("");
+  }
+
+  document.getElementById("message-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const note = document.getElementById("message-note");
+    const body = document.getElementById("message-body").value;
+    if (!body.trim()) return;
+    const response = await fetch("/portal/api/messages", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({body})
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      note.textContent = payload.detail || "Could not send.";
+      return;
+    }
+    document.getElementById("message-body").value = "";
+    note.textContent = "Sent.";
+    loadMessages();
+  });
 
   async function loadTeam() {
     const body = document.getElementById("team-body");
@@ -306,6 +355,7 @@
   load();
   loadAssets();
   loadTeam();
+  loadMessages();
 </script>
 </body>
 </html>
