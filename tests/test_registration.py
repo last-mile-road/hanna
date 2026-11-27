@@ -55,3 +55,15 @@ def test_country_qr_is_a_png():
     assert response.status_code == 200
     assert response.headers["content-type"] == "image/png"
     assert response.content.startswith(b"\x89PNG")
+
+
+def test_country_ui_strings_are_portuguese():
+    response = TestClient(app).get("/api/countries/mozambique/ui?page=country")
+    assert response.status_code == 200
+    strings = response.json()["strings"]
+    assert strings["lang"] == "pt"
+    assert strings["notify"] == "Notificar um novo caso"
+
+
+def test_country_ui_refuses_unknown_country():
+    assert TestClient(app).get("/api/countries/zznowhere/ui").status_code == 404

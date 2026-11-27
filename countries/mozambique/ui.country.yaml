@@ -1,0 +1,32 @@
+lang: pt
+page_title: HANNA — entrada do país
+subtitle: Portal oficial
+banner_title: Servidor de teste.
+banner_text: Apenas cartões de teste. Nada aqui é uma notificação real.
+notify: Notificar um novo caso
+signin_tile: Entrar com o número de identificação
+register_tile: Registar
+information: Informação
+training: Formação
+signin_title: Entrar com o seu número de identificação
+signin_hint: Sem palavra-passe. O seu número identifica quem está a notificar.
+moh_id: Número de identificação (MoH ID)
+signin_button: Entrar
+register_title: Registar
+register_hint: Primeira vez? Registe-se uma vez; a sua unidade sanitária e função ficam associadas ao seu número.
+full_name: Nome completo
+role: Função
+clinician: Clínico
+supervisor: Supervisor
+facility: Unidade sanitária
+phone_optional: Telefone (opcional)
+create_account: Criar a minha conta
+info_leprosy_who: Lepra — ficha informativa da OMS
+info_leprosy_ilep: Informação sobre a lepra (ILEP)
+info_skin_ntds: Doenças tropicais negligenciadas da pele (OMS)
+training_text: Guias curtos ficarão aqui. Por agora, o material da OMS e da ILEP acima é a referência.
+team_member: Membro da equipa do país?
+workspace_link: Entrar no espaço de trabalho
+signed_in: Sessão iniciada
+signin_failed: Não foi possível entrar.
+registration_failed: Não foi possível registar.

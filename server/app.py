@@ -205,6 +205,21 @@ def list_countries():
     }
 
 
+@app.get("/api/countries/{code}/ui")
+def country_ui(code: str, page: str = "country"):
+    """Strings for a country page, from the pack. English stays the fallback."""
+    if not re.fullmatch(r"[a-z0-9_]+", code) or page != "country":
+        raise HTTPException(404, "unknown page")
+    if not (settings.COUNTRIES_DIR / code).is_dir():
+        raise HTTPException(404, "unknown country")
+    path = settings.COUNTRIES_DIR / code / "ui.country.yaml"
+    if not path.exists():
+        return {"strings": {}}
+    import yaml
+
+    return {"strings": yaml.safe_load(path.read_text()) or {}}
+
+
 @app.get("/api/countries/{code}/qr.png")
 def country_qr(code: str, request: Request):
     """The country QR, for the wall and for the portal. Points at /c/<code>."""

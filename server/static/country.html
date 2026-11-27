@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1f5bd7">
-<title>HANNA — country entry</title>
+<title>HANNA — entrada do país</title>
 <style>
   :root { color-scheme: light dark; --blue:#1f5bd7; --ink:#1c1f23; --muted:#5b6470;
           --line:#dde1e6; --bg:#f6f7f9; --card:#ffffff; }
@@ -40,79 +40,77 @@
   #error, #reg-error { color:#a3231f; font-size:.86rem; min-height:1.1em; margin-top:8px; }
   .hidden { display:none !important; }
   .who { font-size:.95rem; }
+  .i18n-loading { visibility: hidden; }
 </style>
 </head>
 <body>
-<main>
+<main class="i18n-loading">
   <h1 id="country-name">HANNA</h1>
-  <div class="muted" id="country-sub">Official portal</div>
+  <div class="muted" id="country-sub" data-i18n="subtitle">Official portal</div>
 
-  <div class="banner"><strong>Test server.</strong> Dummy cards only. Nothing here is
-    a real notification.</div>
+  <div class="banner"><strong data-i18n="banner_title">Servidor de teste.</strong> <span data-i18n="banner_text">Apenas cartões de teste. Nada aqui é uma notificação real.</span></div>
 
   <div class="who muted hidden" id="status"></div>
 
   <nav class="tiles">
-    <button class="tile primary hidden" id="notify">Notify a new case</button>
-    <button class="tile" id="signin-tile">Sign in with MoH ID</button>
-    <button class="tile" id="register-tile">Register</button>
-    <a class="tile" href="#information">Information</a>
-    <a class="tile" href="#training">Training</a>
+    <button class="tile primary hidden" id="notify" data-i18n="notify">Notify a new case</button>
+    <button class="tile" id="signin-tile" data-i18n="signin_tile">Sign in with MoH ID</button>
+    <button class="tile" id="register-tile" data-i18n="register_tile">Register</button>
+    <a class="tile" href="#information" data-i18n="information">Information</a>
+    <a class="tile" href="#training" data-i18n="training">Training</a>
   </nav>
 
   <section class="card" id="signin">
-    <h2>Sign in with your MoH ID</h2>
-    <p class="muted">No password. Your ID tells the system who is notifying.</p>
-    <label for="login-moh">MoH ID</label>
+    <h2 data-i18n="signin_title">Entrar com o seu número de identificação</h2>
+    <p class="muted" data-i18n="signin_hint">Sem palavra-passe. O seu número identifica quem está a notificar.</p>
+    <label for="login-moh" data-i18n="moh_id">Número de identificação (MoH ID)</label>
     <input id="login-moh" inputmode="numeric" autocomplete="username" enterkeyhint="go">
-    <button class="action" id="login">Sign in</button>
+    <button class="action" id="login" data-i18n="signin_button">Entrar</button>
     <div id="error" role="alert"></div>
   </section>
 
   <section class="card" id="register">
-    <h2>Register</h2>
-    <p class="muted">First time? Register once; your facility and role stay attached
-      to your ID.</p>
-    <label for="reg-name">Full name</label>
+    <h2 data-i18n="register_title">Registar</h2>
+    <p class="muted" data-i18n="register_hint">Primeira vez? Registe-se uma vez; a sua unidade sanitária e função ficam associadas ao seu número.</p>
+    <label for="reg-name" data-i18n="full_name">Nome completo</label>
     <input id="reg-name" autocomplete="name">
-    <label for="reg-moh">MoH ID</label>
+    <label for="reg-moh" data-i18n="moh_id">Número de identificação (MoH ID)</label>
     <input id="reg-moh" inputmode="numeric">
     <div class="row">
       <div>
-        <label for="reg-role">Role</label>
+        <label for="reg-role" data-i18n="role">Função</label>
         <select id="reg-role">
-          <option value="clinician" selected>Clinician</option>
-          <option value="supervisor">Supervisor</option>
+          <option value="clinician" selected data-i18n="clinician">Clínico</option>
+          <option value="supervisor" data-i18n="supervisor">Supervisor</option>
         </select>
       </div>
       <div>
-        <label for="reg-facility">Facility</label>
+        <label for="reg-facility" data-i18n="facility">Unidade sanitária</label>
         <input id="reg-facility">
       </div>
     </div>
-    <label for="reg-phone">Phone (optional)</label>
+    <label for="reg-phone" data-i18n="phone_optional">Telefone (opcional)</label>
     <input id="reg-phone" type="tel" autocomplete="tel">
-    <button class="action" id="register">Create my account</button>
+    <button class="action" id="register" data-i18n="create_account">Criar a minha conta</button>
     <div id="reg-error" role="alert"></div>
   </section>
 
   <section class="card" id="information">
-    <h2>Information</h2>
+    <h2 data-i18n="information">Informação</h2>
     <ul>
-      <li><a href="https://www.who.int/news-room/fact-sheets/detail/leprosy" target="_blank" rel="noopener">Leprosy — WHO fact sheet</a></li>
-      <li><a href="https://www.leprosy-information.org/" target="_blank" rel="noopener">Leprosy Information (ILEP)</a></li>
-      <li><a href="https://www.who.int/initiatives/skin-ntds" target="_blank" rel="noopener">WHO skin NTDs</a></li>
+      <li><a href="https://www.who.int/news-room/fact-sheets/detail/leprosy" target="_blank" rel="noopener" data-i18n="info_leprosy_who">Lepra — ficha informativa da OMS</a></li>
+      <li><a href="https://www.leprosy-information.org/" target="_blank" rel="noopener" data-i18n="info_leprosy_ilep">Informação sobre a lepra (ILEP)</a></li>
+      <li><a href="https://www.who.int/initiatives/skin-ntds" target="_blank" rel="noopener" data-i18n="info_skin_ntds">Doenças tropicais negligenciadas da pele (OMS)</a></li>
     </ul>
   </section>
 
   <section class="card" id="training">
-    <h2>Training</h2>
-    <p class="muted">Short guides will live here. For now, the WHO and ILEP material
-      above is the reference.</p>
+    <h2 data-i18n="training">Formação</h2>
+    <p class="muted" data-i18n="training_text">Guias curtos ficarão aqui. Por agora, o material da OMS e da ILEP acima é a referência.</p>
   </section>
 
   <p class="muted" style="margin-top:18px">
-    Country team member? <a href="/login?next=/portal">Sign in to the workspace</a>.
+    <span data-i18n="team_member">Membro da equipa do país?</span> <a href="/login?next=/portal" data-i18n="workspace_link">Entrar no espaço de trabalho</a>.
   </p>
 </main>
 <script>
@@ -124,13 +122,33 @@
   const signin = document.getElementById("signin");
   const register = document.getElementById("register");
 
+  let STR = {};
+  const t = (key, fallback) => STR[key] || fallback;
+
+  async function loadStrings() {
+    try {
+      const response = await fetch("/api/countries/" + encodeURIComponent(code) + "/ui?page=country");
+      if (response.ok) {
+        const data = await response.json();
+        STR = data.strings || {};
+      }
+    } catch (err) { STR = {}; }
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+      const key = el.getAttribute("data-i18n");
+      if (STR[key]) el.textContent = STR[key];
+    });
+    if (STR.lang) document.documentElement.lang = STR.lang;
+    document.querySelector("main").classList.remove("i18n-loading");
+  }
+
   fetch("/api/countries").then(r => r.json()).then(data => {
     const country = (data.countries || []).find(c => c.code === code);
     if (country) document.getElementById("country-name").textContent = country.name;
   });
 
   function showUser(user) {
-    signedIn.textContent = "Signed in: " + user.display_name + " · MoH ID " + user.moh_id +
+    signedIn.textContent = t("signed_in", "Sessão iniciada") + ": " + user.display_name +
+      " · " + t("moh_id", "Número de identificação") + " " + user.moh_id +
       (user.facility ? " · " + user.facility : "");
     signedIn.classList.remove("hidden");
     notify.classList.remove("hidden");
@@ -166,7 +184,7 @@
       country: code, moh_id: document.getElementById("login-moh").value});
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      document.getElementById("error").textContent = body.detail || "Sign-in failed.";
+      document.getElementById("error").textContent = body.detail || t("signin_failed", "Não foi possível entrar.");
       return;
     }
     showUser((await response.json()).field_user);
@@ -183,7 +201,7 @@
       role: document.getElementById("reg-role").value});
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      document.getElementById("reg-error").textContent = body.detail || "Registration failed.";
+      document.getElementById("reg-error").textContent = body.detail || t("registration_failed", "Não foi possível registar.");
       return;
     }
     showUser((await response.json()).field_user);
@@ -198,6 +216,7 @@
     document.getElementById("register").scrollIntoView({behavior:"smooth"});
   });
 
+  loadStrings();
   check();
 </script>
 </body>
